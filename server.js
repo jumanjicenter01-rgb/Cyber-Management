@@ -7,6 +7,7 @@ const fs = require('fs');
 const os = require('os');
 const dgram = require('dgram');
 const net = require('net');
+const crypto = require('crypto');
 
 const app = express();
 const server = http.createServer(app);
@@ -73,15 +74,15 @@ const DATA_FILE = path.join(__dirname, 'cyber_data.json');
 
 // Default PCs setup with MAC addresses for Wake-on-LAN
 const DEFAULT_PCS = [
-  { id: 'PC-01', name: 'PC 01', ip: '192.168.88.101', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:01', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'PC-02', name: 'PC 02', ip: '192.168.88.102', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:02', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'PC-03', name: 'PC 03', ip: '192.168.88.103', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:03', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'PC-04', name: 'PC 04', ip: '192.168.88.104', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:04', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'PC-05', name: 'PC 05', ip: '192.168.88.105', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:05', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'PC-06', name: 'PC 06', ip: '192.168.88.106', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:06', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'VIP-01', name: 'VIP Room 01', ip: '192.168.88.201', zone: 'VIP Arena', ratePerHour: 35, specs: 'RTX 4080 • 240Hz • OLED', mac: '00:1A:2B:3C:4D:11', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'VIP-02', name: 'VIP Room 02', ip: '192.168.88.202', zone: 'VIP Arena', ratePerHour: 35, specs: 'RTX 4080 • 240Hz • OLED', mac: '00:1A:2B:3C:4D:12', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'STR-01', name: 'Streamer Booth', ip: '192.168.88.250', zone: 'Streamer Booth', ratePerHour: 50, specs: 'Dual PC • 360Hz • Shure Mic', mac: '00:1A:2B:3C:4D:21', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null }
+  { id: 'PC-01', name: 'PC 01', ip: '10.10.10.101', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:01', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
+  { id: 'PC-02', name: 'PC 02', ip: '10.10.10.102', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:02', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
+  { id: 'PC-03', name: 'PC 03', ip: '10.10.10.103', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:03', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
+  { id: 'PC-04', name: 'PC 04', ip: '10.10.10.104', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:04', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
+  { id: 'PC-05', name: 'PC 05', ip: '10.10.10.105', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:05', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
+  { id: 'PC-06', name: 'PC 06', ip: '10.10.10.106', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:06', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
+  { id: 'VIP-01', name: 'VIP Room 01', ip: '10.10.10.201', zone: 'VIP Arena', ratePerHour: 35, specs: 'RTX 4080 • 240Hz • OLED', mac: '00:1A:2B:3C:4D:11', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
+  { id: 'VIP-02', name: 'VIP Room 02', ip: '10.10.10.202', zone: 'VIP Arena', ratePerHour: 35, specs: 'RTX 4080 • 240Hz • OLED', mac: '00:1A:2B:3C:4D:12', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
+  { id: 'STR-01', name: 'Streamer Booth', ip: '10.10.10.250', zone: 'Streamer Booth', ratePerHour: 50, specs: 'Dual PC • 360Hz • Shure Mic', mac: '00:1A:2B:3C:4D:21', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null }
 ];
 
 // Default Cafeteria Menu
@@ -280,14 +281,14 @@ let db = {
       violations: []
     },
     mikrotik: {
-      host: '192.168.88.1',
+      host: '10.10.10.1',
       port: 8728,
       restPort: 80,
       username: 'admin',
-      password: '',
+      password: '0184255',
       connected: false,
       lastVerified: null,
-      useRestApi: true,
+      useRestApi: false,
       vpnList: 'GAMING-VPN',
       activeVpnServer: '185.220.101.5',
       vpnServers: [
@@ -1065,45 +1066,178 @@ ${peerRules}
 :put ">> CyberPulse Multi-Node Gaming VPN configured on ${cfg.host} <<"`;
 }
 
+// Native RouterOS API Binary Protocol (Supports RouterOS v6 and v7 on Port 8728)
+function encodeRouterOsLength(len) {
+  if (len < 0x80) return Buffer.from([len]);
+  if (len < 0x4000) return Buffer.from([(len >> 8) | 0x80, len & 0xFF]);
+  return Buffer.from([(len >> 16) | 0xC0, (len >> 8) & 0xFF, len & 0xFF]);
+}
+
+function encodeRouterOsSentence(words) {
+  const bufs = words.map(w => {
+    const b = Buffer.from(w, 'utf8');
+    return Buffer.concat([encodeRouterOsLength(b.length), b]);
+  });
+  bufs.push(Buffer.from([0]));
+  return Buffer.concat(bufs);
+}
+
+function runRouterOsApi(host, port, user, pass, cmdWords, timeout = 3000) {
+  return new Promise((resolve, reject) => {
+    const socket = new net.Socket();
+    let loggedIn = false;
+    let results = [];
+    let buffer = Buffer.alloc(0);
+
+    const timer = setTimeout(() => {
+      socket.destroy();
+      reject(new Error(`RouterOS API timeout after ${timeout}ms at ${host}:${port}`));
+    }, timeout);
+
+    socket.connect(port || 8728, host, () => {
+      socket.write(encodeRouterOsSentence(['/login', '=name=' + user, '=password=' + (pass || '')]));
+    });
+
+    socket.on('data', (chunk) => {
+      buffer = Buffer.concat([buffer, chunk]);
+      
+      while (buffer.length > 0) {
+        let offset = 0;
+        let words = [];
+        let sentenceComplete = false;
+
+        while (offset < buffer.length) {
+          let b = buffer[offset++];
+          let len = 0;
+          if ((b & 0x80) === 0) {
+            len = b;
+          } else if ((b & 0xC0) === 0x80) {
+            if (offset >= buffer.length) { offset--; break; }
+            len = ((b & 0x3F) << 8) | buffer[offset++];
+          } else if ((b & 0xE0) === 0xC0) {
+            if (offset + 1 >= buffer.length) { offset--; break; }
+            len = ((b & 0x1F) << 16) | (buffer[offset++] << 8) | buffer[offset++];
+          }
+
+          if (len === 0) {
+            sentenceComplete = true;
+            break;
+          } else {
+            if (offset + len > buffer.length) {
+              offset -= (b & 0x80) === 0 ? 1 : ((b & 0xC0) === 0x80 ? 2 : 3);
+              break;
+            }
+            words.push(buffer.slice(offset, offset + len).toString('utf8'));
+            offset += len;
+          }
+        }
+
+        if (!sentenceComplete) break;
+        buffer = buffer.slice(offset);
+
+        const type = words[0];
+        if (!loggedIn) {
+          if (type === '!done') {
+            const retWord = words.find(w => w.startsWith('=ret='));
+            if (retWord) {
+              const chal = retWord.replace('=ret=', '');
+              const md5 = crypto.createHash('md5');
+              md5.update(Buffer.concat([Buffer.from([0]), Buffer.from(pass || '', 'utf8'), Buffer.from(chal, 'hex')]));
+              const resp = '00' + md5.digest('hex');
+              socket.write(encodeRouterOsSentence(['/login', '=name=' + user, '=response=' + resp]));
+              return;
+            }
+            loggedIn = true;
+            socket.write(encodeRouterOsSentence(cmdWords));
+          } else if (type === '!trap') {
+            clearTimeout(timer);
+            socket.destroy();
+            const msg = words.find(w => w.startsWith('=message=')) || '=message=Authentication failed';
+            return reject(new Error(msg.replace('=message=', '')));
+          }
+        } else {
+          results.push(words);
+          if (type === '!done' || type === '!trap') {
+            clearTimeout(timer);
+            socket.destroy();
+            return resolve(results);
+          }
+        }
+      }
+    });
+
+    socket.on('error', (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+  });
+}
+
 async function addPcToMikrotikVpn(pc, serverIp) {
   const mt = (db.settings && db.settings.mikrotik) || {};
-  const targetIp = pc.ip || `192.168.88.${100 + parseInt(pc.id.replace(/\D/g, '') || 1)}`;
+  const targetIp = pc.ip || `10.10.10.${100 + parseInt(pc.id.replace(/\D/g, '') || 1)}`;
   if (!pc.ip) pc.ip = targetIp;
 
   const srvObj = (mt.vpnServers || []).find(s => s.ip === serverIp) || { name: 'Gaming VPN', ip: serverIp, flag: '🌐' };
+  const listName = mt.vpnList || 'GAMING-VPN';
+  const comment = `CyberPulse-${pc.id}-${pc.name}->${srvObj.name}(${serverIp})`;
 
-  if (mt && mt.host && mt.connected) {
+  if (mt && mt.host) {
     try {
-      const authHeader = 'Basic ' + Buffer.from(`${mt.username}:${mt.password || ''}`).toString('base64');
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      // 1. Primary method: Native RouterOS API on port 8728 (Works on v6 and v7)
+      const queryRes = await runRouterOsApi(
+        mt.host,
+        mt.port || 8728,
+        mt.username || 'admin',
+        mt.password || '',
+        ['/ip/firewall/address-list/print', '?address=' + targetIp, '?list=' + listName]
+      );
 
-      const res = await fetch(`http://${mt.host}:${mt.restPort || 80}/rest/ip/firewall/address-list`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': authHeader
-        },
-        body: JSON.stringify({
-          list: mt.vpnList || 'GAMING-VPN',
-          address: targetIp,
-          comment: `CyberPulse-${pc.id}-${pc.name}->${srvObj.name}(${serverIp})`
-        }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        addAudit('MikroTik Rule Synced', `Added ${targetIp} (${pc.name}) to RouterOS list ${mt.vpnList || 'GAMING-VPN'} -> ${srvObj.flag} ${srvObj.name}`, 'success');
-        return { success: true, synced: true };
-      } else {
-        const errText = await res.text();
-        addAudit('MikroTik REST Warning', `RouterOS status ${res.status}: ${errText.slice(0, 80)}`, 'warning');
-        return { success: true, synced: false, warning: `RouterOS error: ${res.status}` };
+      let existingId = null;
+      for (const sent of queryRes) {
+        const idWord = sent.find(w => w.startsWith('=.id='));
+        if (idWord) existingId = idWord.replace('=.id=', '');
       }
-    } catch (err) {
-      addAudit('MikroTik Dispatch Error', `Could not reach RouterOS: ${err.message}`, 'warning');
-      return { success: true, synced: false, error: err.message };
+
+      if (existingId) {
+        await runRouterOsApi(
+          mt.host,
+          mt.port || 8728,
+          mt.username || 'admin',
+          mt.password || '',
+          ['/ip/firewall/address-list/set', '=.id=' + existingId, '=comment=' + comment]
+        );
+      } else {
+        await runRouterOsApi(
+          mt.host,
+          mt.port || 8728,
+          mt.username || 'admin',
+          mt.password || '',
+          ['/ip/firewall/address-list/add', '=list=' + listName, '=address=' + targetIp, '=comment=' + comment]
+        );
+      }
+
+      mt.connected = true;
+      addAudit('MikroTik Rule Synced', `Added ${targetIp} (${pc.name}) to RouterOS list ${listName} -> ${srvObj.flag} ${srvObj.name} (${serverIp})`, 'success');
+      return { success: true, synced: true };
+    } catch (apiErr) {
+      // 2. Fallback method: RouterOS v7 REST API
+      try {
+        const authHeader = 'Basic ' + Buffer.from(`${mt.username}:${mt.password || ''}`).toString('base64');
+        const res = await fetch(`http://${mt.host}:${mt.restPort || 80}/rest/ip/firewall/address-list`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
+          body: JSON.stringify({ list: listName, address: targetIp, comment })
+        });
+        if (res.ok) {
+          mt.connected = true;
+          addAudit('MikroTik Rule Synced', `Added ${targetIp} (${pc.name}) to RouterOS list ${listName} via REST -> ${srvObj.flag} ${srvObj.name}`, 'success');
+          return { success: true, synced: true };
+        }
+      } catch (restErr) {}
+
+      addAudit('MikroTik Dispatch Warning', `Could not dispatch rule to RouterOS at ${mt.host}: ${apiErr.message}`, 'warning');
+      return { success: true, synced: false, error: apiErr.message };
     }
   } else {
     addAudit('VPN Configured Locally', `Assigned ${pc.name} (${targetIp}) to ${srvObj.flag} ${srvObj.name} (${serverIp})`, 'info');
@@ -1114,37 +1248,53 @@ async function addPcToMikrotikVpn(pc, serverIp) {
 async function removePcFromMikrotikVpn(pc) {
   const mt = (db.settings && db.settings.mikrotik) || {};
   const targetIp = pc.ip || `192.168.88.${100 + parseInt(pc.id.replace(/\D/g, '') || 1)}`;
+  const listName = mt.vpnList || 'GAMING-VPN';
 
-  if (mt && mt.host && mt.connected) {
+  if (mt && mt.host) {
     try {
-      const authHeader = 'Basic ' + Buffer.from(`${mt.username}:${mt.password || ''}`).toString('base64');
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      // 1. Primary method: Native RouterOS API on port 8728
+      const queryRes = await runRouterOsApi(
+        mt.host,
+        mt.port || 8728,
+        mt.username || 'admin',
+        mt.password || '',
+        ['/ip/firewall/address-list/print', '?address=' + targetIp, '?list=' + listName]
+      );
 
-      const listName = mt.vpnList || 'GAMING-VPN';
-      const searchRes = await fetch(`http://${mt.host}:${mt.restPort || 80}/rest/ip/firewall/address-list?address=${targetIp}&list=${listName}`, {
-        headers: { 'Authorization': authHeader },
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (searchRes.ok) {
-        const items = await searchRes.json();
-        if (Array.isArray(items) && items.length > 0) {
+      for (const sent of queryRes) {
+        const idWord = sent.find(w => w.startsWith('=.id='));
+        if (idWord) {
+          const entryId = idWord.replace('=.id=', '');
+          await runRouterOsApi(
+            mt.host,
+            mt.port || 8728,
+            mt.username || 'admin',
+            mt.password || '',
+            ['/ip/firewall/address-list/remove', '=.id=' + entryId]
+          );
+        }
+      }
+      addAudit('MikroTik Rule Removed', `Removed ${targetIp} (${pc.name}) from RouterOS list ${listName}`, 'info');
+      return true;
+    } catch (apiErr) {
+      // 2. Fallback method: RouterOS v7 REST API
+      try {
+        const authHeader = 'Basic ' + Buffer.from(`${mt.username}:${mt.password || ''}`).toString('base64');
+        const searchRes = await fetch(`http://${mt.host}:${mt.restPort || 80}/rest/ip/firewall/address-list?address=${targetIp}&list=${listName}`, {
+          headers: { 'Authorization': authHeader }
+        });
+        if (searchRes.ok) {
+          const items = await searchRes.json();
           for (const item of items) {
-            const itemId = item['.id'];
-            if (itemId) {
-              await fetch(`http://${mt.host}:${mt.restPort || 80}/rest/ip/firewall/address-list/${itemId}`, {
+            if (item['.id']) {
+              await fetch(`http://${mt.host}:${mt.restPort || 80}/rest/ip/firewall/address-list/${item['.id']}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': authHeader }
               });
             }
           }
-          addAudit('MikroTik Rule Removed', `Removed ${targetIp} (${pc.name}) from RouterOS list ${listName}`, 'info');
         }
-      }
-    } catch (err) {
-      addAudit('MikroTik Delete Error', `Failed removing rule from RouterOS: ${err.message}`, 'warning');
+      } catch (restErr) {}
     }
   }
   return true;
@@ -1197,84 +1347,84 @@ function checkMikrotikConnection(host, port, timeout = 1500) {
 async function verifyMikrotikRouter(mt) {
   if (!mt || !mt.host) return { connected: false, error: 'MikroTik host IP is missing' };
 
-  // Real connection check - probe RouterOS API port first (default 8728)
-  const apiCheck = await checkMikrotikConnection(mt.host, mt.port || 8728, 2000);
-  
-  // Also check Web/REST port if configured (default 80 or 443)
-  let restCheck = { connected: false };
-  if (mt.restPort) {
-    restCheck = await checkMikrotikConnection(mt.host, mt.restPort, 2000);
-  }
+  // 1. Authenticate and query system resource via native RouterOS API port 8728
+  try {
+    const apiRes = await runRouterOsApi(
+      mt.host,
+      mt.port || 8728,
+      mt.username || 'admin',
+      mt.password || '',
+      ['/system/resource/print'],
+      2500
+    );
 
-  // If REST is reachable and username is provided, query RouterOS system resource
-  if (restCheck.connected && mt.username) {
-    try {
-      const authHeader = 'Basic ' + Buffer.from(`${mt.username}:${mt.password || ''}`).toString('base64');
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
-      const res = await fetch(`http://${mt.host}:${mt.restPort || 80}/rest/system/resource`, {
-        headers: { 'Authorization': authHeader },
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      if (res.ok) {
-        const sysInfo = await res.json();
-        mt.connected = true;
-        mt.lastVerified = new Date().toISOString();
-        const boardName = sysInfo['board-name'] || sysInfo.platform || 'MikroTik RouterOS';
-        const version = sysInfo.version || 'v7';
-        return {
-          connected: true,
-          model: boardName,
-          routerOsVersion: version,
-          host: mt.host,
-          port: mt.port || 8728,
-          uptime: sysInfo.uptime,
-          cpuLoad: sysInfo['cpu-load'],
-          message: `Connected to ${boardName} (RouterOS ${version})`
-        };
+    let boardName = 'MikroTik RouterOS';
+    let version = 'v6';
+    let uptime = '';
+    let cpuLoad = '';
+
+    for (const sent of apiRes) {
+      for (const word of sent) {
+        if (word.startsWith('=board-name=')) boardName = word.replace('=board-name=', '');
+        if (word.startsWith('=version=')) version = word.replace('=version=', '');
+        if (word.startsWith('=uptime=')) uptime = word.replace('=uptime=', '');
+        if (word.startsWith('=cpu-load=')) cpuLoad = word.replace('=cpu-load=', '') + '%';
       }
-    } catch (e) {
-      // REST auth/data query failed, continue with socket check result
     }
-  }
 
-  if (apiCheck.connected) {
     mt.connected = true;
     mt.lastVerified = new Date().toISOString();
     return {
       connected: true,
-      model: 'MikroTik RouterOS (API Port 8728)',
-      routerOsVersion: 'RouterOS v7 (API Verified)',
+      model: boardName,
+      routerOsVersion: version,
       host: mt.host,
       port: mt.port || 8728,
-      message: `Verified live connection to RouterOS at ${mt.host}:${mt.port || 8728}`
+      uptime,
+      cpuLoad,
+      message: `Verified live connection to ${boardName} (RouterOS ${version})`
     };
-  }
+  } catch (apiErr) {
+    // 2. If port 8728 fails, try REST on port 80/443
+    if (mt.restPort) {
+      try {
+        const authHeader = 'Basic ' + Buffer.from(`${mt.username}:${mt.password || ''}`).toString('base64');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch(`http://${mt.host}:${mt.restPort || 80}/rest/system/resource`, {
+          headers: { 'Authorization': authHeader },
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const sysInfo = await res.json();
+          mt.connected = true;
+          mt.lastVerified = new Date().toISOString();
+          const boardName = sysInfo['board-name'] || sysInfo.platform || 'MikroTik RouterOS';
+          const version = sysInfo.version || 'v7';
+          return {
+            connected: true,
+            model: boardName,
+            routerOsVersion: version,
+            host: mt.host,
+            port: mt.restPort,
+            uptime: sysInfo.uptime,
+            cpuLoad: sysInfo['cpu-load'],
+            message: `Connected to ${boardName} (RouterOS ${version})`
+          };
+        }
+      } catch (restErr) {}
+    }
 
-  if (restCheck.connected) {
-    mt.connected = true;
-    mt.lastVerified = new Date().toISOString();
+    mt.connected = false;
+    mt.lastError = apiErr.message;
     return {
-      connected: true,
-      model: 'MikroTik RouterOS (WebFig/REST)',
-      routerOsVersion: 'RouterOS v7 (WebFig Verified)',
+      connected: false,
       host: mt.host,
-      port: mt.restPort,
-      message: `Verified live connection to RouterOS at ${mt.host}:${mt.restPort}`
+      port: mt.port || 8728,
+      error: apiErr.message,
     };
   }
-
-  // Connection failed - strictly mark disconnected
-  mt.connected = false;
-  mt.lastError = apiCheck.error || 'Connection timed out';
-  return {
-    connected: false,
-    host: mt.host,
-    port: mt.port || 8728,
-    error: apiCheck.error || 'Connection timed out or host unreachable',
-    message: `Cannot connect to MikroTik router at ${mt.host}:${mt.port || 8728}`
-  };
 }
 
 // Persist Admin View Mode

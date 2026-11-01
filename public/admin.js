@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
       isRevenueRevealed = false;
       if (state && state.shift) updateShiftStats(state.shift);
       window.cyberAudio?.playClick?.();
-      showToast('🔒 تم إخفاء مبالغ الإيرادات');
+      showToast('🔒 Revenue figures hidden');
     } else {
       openRevenueAuthModal();
     }
@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const password = (revenuePasswordInput ? revenuePasswordInput.value : '').trim();
       if (!password) {
         if (revenueAuthErrorMessage) {
-          revenueAuthErrorMessage.textContent = 'يرجى إدخال كلمة المرور!';
+          revenueAuthErrorMessage.textContent = 'Please enter manager password!';
           revenueAuthErrorMessage.style.display = 'block';
         }
         return;
@@ -378,10 +378,10 @@ document.addEventListener('DOMContentLoaded', () => {
             closeRevenueAuthModal();
             window.cyberAudio?.playCash?.();
             if (state && state.shift) updateShiftStats(state.shift);
-            showToast('✅ تم تأكيد الهوية وإظهار الإيرادات');
+            showToast('✅ Identity verified. Revenue unlocked.');
           } else {
             if (revenueAuthErrorMessage) {
-              revenueAuthErrorMessage.textContent = res.error || 'كلمة المرور غير صحيحة!';
+              revenueAuthErrorMessage.textContent = res.error || 'Incorrect authorization password!';
               revenueAuthErrorMessage.style.display = 'block';
             }
             window.cyberAudio?.playWarning?.();
@@ -390,7 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(() => {
           if (revenueAuthErrorMessage) {
-            revenueAuthErrorMessage.textContent = 'خطأ في الاتصال بالسيرفر!';
+            revenueAuthErrorMessage.textContent = 'Server connection error!';
             revenueAuthErrorMessage.style.display = 'block';
           }
         });
@@ -904,6 +904,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const ordersCount = (pc.orders || []).reduce((acc, it) => acc + (it.qty || 1), 0);
 
+      let actionsToolbarHtml = '';
+      if (pc.status === 'in_session' && pc.session) {
+        actionsToolbarHtml = `
+          <div class="pc-actions-toolbar pc-actions-top">
+            <button class="btn-card-action btn-vpn-toggle ${pc.vpnEnabled ? 'vpn-active' : ''}" onclick="togglePcVPN('${pc.id}')" title="Gaming VPN ${pc.vpnEnabled ? '(Active - Click to Disable)' : '(Click to Enable)'}">
+              <span class="btn-act-icon">${pc.vpnEnabled ? '🛡️' : '⚡'}</span>
+            </button>
+            <button class="btn-card-action btn-screen-view" onclick="openRemoteModal('${pc.id}')" title="Live Screen Stream">
+              <span class="btn-act-icon">👁️</span>
+            </button>
+            <button class="btn-card-action btn-more-options" onclick="toggleLockPc('${pc.id}')" title="${pc.status === 'locked' ? 'Unlock PC' : 'Lock PC'}">
+              <span class="btn-act-icon">${pc.status === 'locked' ? '🔓' : '🔒'}</span>
+            </button>
+            <button class="btn-card-action btn-checkout-card" onclick="openCheckoutModal('${pc.id}')" title="Checkout & Settle Bill">
+              <span class="btn-act-icon">🧾</span>
+            </button>
+          </div>
+        `;
+      } else {
+        actionsToolbarHtml = `
+          <div class="pc-actions-toolbar pc-actions-top">
+            <button class="btn-card-action btn-start-quick" onclick="openStartSessionModal('${pc.id}')" title="Start Session">
+              <span class="btn-act-icon">▶️</span>
+            </button>
+            <button class="btn-card-action btn-vpn-toggle ${pc.vpnEnabled ? 'vpn-active' : ''}" onclick="togglePcVPN('${pc.id}')" title="Gaming VPN ${pc.vpnEnabled ? '(Active - Click to Disable)' : '(Click to Enable)'}">
+              <span class="btn-act-icon">${pc.vpnEnabled ? '🛡️' : '⚡'}</span>
+            </button>
+            <button class="btn-card-action btn-screen-view" onclick="openRemoteModal('${pc.id}')" title="Live Screen Monitor">
+              <span class="btn-act-icon">👁️</span>
+            </button>
+            <button class="btn-card-action btn-more-options" onclick="toggleLockPc('${pc.id}')" title="${pc.status === 'locked' ? 'Unlock PC' : 'Lock PC'}">
+              <span class="btn-act-icon">${pc.status === 'locked' ? '🔓' : '🔒'}</span>
+            </button>
+          </div>
+        `;
+      }
+
       let bodyContent = '';
       if (pc.status === 'in_session' && pc.session) {
         bodyContent = `
@@ -920,40 +957,10 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             ${ordersCount > 0 ? `<div class="orders-mini-pill">🍔 Cafe Orders: ${ordersCount} items</div>` : ''}
           </div>
-
-          <div class="pc-actions-toolbar">
-            <button class="btn-card-action btn-vpn-toggle ${pc.vpnEnabled ? 'vpn-active' : ''}" onclick="togglePcVPN('${pc.id}')" title="Toggle Load-Balanced Gaming VPN">
-              <span>${pc.vpnEnabled ? '🛡️' : '⚡'}</span> <span class="btn-lbl">${pc.vpnEnabled ? 'VPN ON' : 'VPN'}</span>
-            </button>
-            <button class="btn-card-action btn-screen-view" onclick="openRemoteModal('${pc.id}')" title="Live Stream View">
-              <span>👁️</span> <span class="btn-lbl">Stream</span>
-            </button>
-            <button class="btn-card-action btn-more-options" onclick="toggleLockPc('${pc.id}')" title="Lock PC">
-              <span>🔒</span> <span class="btn-lbl">Lock</span>
-            </button>
-            <button class="btn-card-action btn-checkout-card" onclick="openCheckoutModal('${pc.id}')" title="Checkout & Bill">
-              <span>🧾</span> <span class="btn-lbl">Bill</span>
-            </button>
-          </div>
         `;
       } else {
         bodyContent = `
           ${hardwareModelHtml}
-
-          <div class="pc-actions-toolbar">
-            <button class="btn-card-action btn-start-quick" onclick="openStartSessionModal('${pc.id}')" title="Start Session">
-              <span>⚡</span> <span class="btn-lbl">Start</span>
-            </button>
-            <button class="btn-card-action btn-vpn-toggle ${pc.vpnEnabled ? 'vpn-active' : ''}" onclick="togglePcVPN('${pc.id}')" title="Toggle Load-Balanced Gaming VPN">
-              <span>${pc.vpnEnabled ? '🛡️' : '⚡'}</span> <span class="btn-lbl">${pc.vpnEnabled ? 'VPN ON' : 'VPN'}</span>
-            </button>
-            <button class="btn-card-action btn-screen-view" onclick="openRemoteModal('${pc.id}')" title="View Screen">
-              <span>👁️</span> <span class="btn-lbl">Screen</span>
-            </button>
-            <button class="btn-card-action btn-more-options" onclick="toggleLockPc('${pc.id}')" title="${pc.status === 'locked' ? 'Unlock PC' : 'Lock PC'}">
-              <span>${pc.status === 'locked' ? '🔓' : '🔒'}</span> <span class="btn-lbl">${pc.status === 'locked' ? 'Unlock' : 'Lock'}</span>
-            </button>
-          </div>
         `;
       }
 
@@ -969,9 +976,10 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="header-name-row" style="display:flex; align-items:center; justify-content:center; gap:0.4rem; position:relative;">
             <div class="centered-title">${pc.name}</div>
           </div>
-          <div class="centered-sub">${pc.specs} • IP: ${pc.ip || '192.168.88.101'}</div>
+          <div class="centered-sub">${pc.specs} • IP: ${pc.ip || '10.10.10.101'}</div>
           ${vpnBadgeHtml}
         </div>
+        ${actionsToolbarHtml}
         ${bodyContent}
       `;
 
@@ -1943,7 +1951,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // [EN]
+  // Start Session on Selected PC
+  const btnStartSelect = document.getElementById('btnStartSelect');
+  if (btnStartSelect) {
+    btnStartSelect.addEventListener('click', () => {
+      if (selectedPcs.size === 0) {
+        return alert('Please select a PC to start a session!');
+      }
+      const firstId = Array.from(selectedPcs)[0];
+      openStartSessionModal(firstId);
+    });
+  }
+
+  // Lock / Unlock Selected PCs
+  const btnLockSelect = document.getElementById('btnLockSelect');
+  if (btnLockSelect) {
+    btnLockSelect.addEventListener('click', () => {
+      if (selectedPcs.size === 0) {
+        return alert('Please select at least one PC to lock/unlock!');
+      }
+      selectedPcs.forEach(pcId => {
+        toggleLockPc(pcId);
+      });
+    });
+  }
+
+  // Restart Selected PCs
   const btnRestartSelect = document.getElementById('btnRestartSelect');
   if (btnRestartSelect) {
     btnRestartSelect.addEventListener('click', () => {
