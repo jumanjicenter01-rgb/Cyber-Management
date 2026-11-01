@@ -2751,6 +2751,16 @@ select option:checked {
   box-shadow: 0 0 15px rgba(0, 243, 255, 0.6);
 }
 
+.btn-scan-pcs-top {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: rgba(168, 85, 247, 0.4);
+}
+.btn-scan-pcs-top:hover {
+  background: #a855f7;
+  color: #fff;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
+}
+
 .btn-clear-pcs-top {
   background: rgba(255, 51, 102, 0.12);
   border-color: rgba(255, 51, 102, 0.35);

@@ -944,9 +944,9 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
       const btnAdd = pcsCardsGrid.querySelector('#btnEmptyAddPc');
-      if (btnAdd) btnAdd.addEventListener('click', openAddPcModal);
+      if (btnAdd) btnAdd.addEventListener('click', () => openAddPcModal());
       const btnRef = pcsCardsGrid.querySelector('#btnEmptyRefresh');
-      if (btnRef) btnRef.addEventListener('click', () => fetchState());
+      if (btnRef) btnRef.addEventListener('click', () => scanNetworkLan());
       return;
     }
 
@@ -2801,6 +2801,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
+  }
+
+  async function scanNetworkLan() {
+    showToast('Network Scanner 📡', 'جاري فحص الشبكة المحلية وتلقيط الأجهزة...');
+    try {
+      const res = await fetch('/api/network/scan', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        state.pcs = data.pcs || [];
+        updateShiftSummary();
+        renderPcsGrid();
+        renderSurveillanceGrid();
+        if (window.cyberAudio) window.cyberAudio.playUnlock();
+        if (data.newlyAddedCount > 0) {
+          showToast('Scan Successful ⚡', `تم اكتشاف وتسجيل ${data.newlyAddedCount} جهاز جديد من الصالة!`);
+        } else if (data.discoveredCount > 0) {
+          showToast('Network Verified ✔', `تم فحص أجهزة الشبكة (${data.discoveredCount} جهاز نشط).`);
+        } else {
+          showToast('Scan Finished ℹ️', 'لم يتم العثور على أجهزة جديدة حالياً. تأكد من فتح أجهزة الصالة.');
+        }
+      }
+    } catch (err) {
+      showToast('Error', 'فشل في فحص الشبكة: ' + err.message);
+    }
+  }
+  window.scanNetworkLan = scanNetworkLan;
+  window.openAddPcModal = openAddPcModal;
+
+  const btnScanPcsTop = document.getElementById('btnScanPcsTop');
+  if (btnScanPcsTop) {
+    btnScanPcsTop.addEventListener('click', scanNetworkLan);
   }
 
   // Lock / Unlock Selected PCs

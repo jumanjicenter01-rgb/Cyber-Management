@@ -8,6 +8,7 @@ const os = require('os');
 const dgram = require('dgram');
 const net = require('net');
 const crypto = require('crypto');
+const { exec } = require('child_process');
 
 const app = express();
 const server = http.createServer(app);
@@ -653,6 +654,83 @@ app.post('/api/pcs/clear-all', (req, res) => {
   addAudit('Registry Cleared', `Cleared all ${count} stations from registry. Awaiting auto-discovery.`, 'warning');
   io.emit('state_updated', { pcs: [] });
   res.json({ success: true, message: `Cleared ${count} stations` });
+});
+
+// Local LAN Network Device Auto-Scanner (ARP Scan & Subnet Discovery)
+app.post('/api/network/scan', (req, res) => {
+  const localIp = getLocalIpAddress();
+  exec('arp -a', (err, stdout, stderr) => {
+    const discovered = [];
+    if (!err && stdout) {
+      const lines = stdout.split('\n');
+      for (const line of lines) {
+        const match = line.trim().match(/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\s+([0-9a-fA-F-]+)\s+(\w+)/);
+        if (match) {
+          const ip = match[1];
+          const mac = match[2].replace(/-/g, ':').toUpperCase();
+          const type = match[3];
+
+          // Filter out gateway (.1), broadcast (.255), multicast (224.x, 239.x), and localhost/self
+          if (ip.endsWith('.255') || ip.startsWith('224.') || ip.startsWith('239.') || ip === '255.255.255.255' || ip === localIp || ip === '127.0.0.1') {
+            continue;
+          }
+          if (ip.endsWith('.1')) {
+            // Likely default router gateway, skip
+            continue;
+          }
+
+          discovered.push({ ip, mac, type });
+        }
+      }
+    }
+
+    let newlyAddedCount = 0;
+    discovered.forEach(dev => {
+      let pc = db.pcs.find(p => p.ip === dev.ip || (dev.mac && p.mac && p.mac === dev.mac));
+      if (!pc) {
+        newlyAddedCount++;
+        const stationNum = db.pcs.length + 1;
+        const newStation = {
+          id: `PC-${String(stationNum).padStart(2, '0')}`,
+          name: `PC ${String(stationNum).padStart(2, '0')}`,
+          ip: dev.ip,
+          mac: dev.mac || '00:00:00:00:00:00',
+          zone: 'Standard',
+          ratePerHour: (db.settings && db.settings.pricing && db.settings.pricing.standardRate) || 20,
+          specs: 'Detected LAN Station',
+          status: 'available',
+          isOnline: true,
+          session: null,
+          orders: [],
+          currentGame: null,
+          lastActive: Date.now(),
+          vpnEnabled: false,
+          vpnServer: null,
+          notes: 'Auto-detected via LAN ARP Scan'
+        };
+        db.pcs.push(newStation);
+        io.emit('pc_discovered', newStation);
+      } else {
+        pc.isOnline = true;
+        if (dev.mac) pc.mac = dev.mac;
+        io.emit('pc_online_status', { pcId: pc.id, isOnline: true, ip: pc.ip });
+      }
+    });
+
+    if (newlyAddedCount > 0) {
+      saveData();
+      addAudit('LAN Scan Completed', `Network scan discovered and registered ${newlyAddedCount} new station(s)`, 'success');
+      io.emit('state_updated', { pcs: db.pcs });
+    }
+
+    res.json({
+      success: true,
+      discoveredCount: discovered.length,
+      newlyAddedCount,
+      pcs: db.pcs,
+      message: `Scanned LAN! Found ${discovered.length} active network device(s), ${newlyAddedCount} newly registered.`
+    });
+  });
 });
 
 // Update PC Visuals & Neon Colors
