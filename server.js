@@ -1781,13 +1781,22 @@ ${ifaceCommands}
 
 # 5. Populate Destination Address List for Roblox & Valorant Vivox Voice
 /ip firewall address-list remove [find list=GAMING-UNBLOCK-DESTINATIONS]
-/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=20.0.0.0/8 comment="Vivox-ValorantVoice-Azure"
-/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=188.42.95.0/24 comment="Vivox-ValorantVoice-Relay"
-/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=185.180.12.0/22 comment="Vivox-Voice-Cluster"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=roblox.com comment="Roblox-Main"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=www.roblox.com comment="Roblox-WWW"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=setup.rbxcdn.com comment="Roblox-Setup-CDN"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=rbxcdn.com comment="Roblox-CDN"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=web.roblox.com comment="Roblox-Web"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=api.roblox.com comment="Roblox-API"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=versioncompatibility.api.roblox.com comment="Roblox-Version-API"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=ecsv2.roblox.com comment="Roblox-ECS-API"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=clientsettings.api.roblox.com comment="Roblox-ClientSettings"
 /ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=128.116.0.0/16 comment="Roblox-Core-Game"
 /ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=209.206.40.0/21 comment="Roblox-Servers-1"
 /ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=208.79.152.0/22 comment="Roblox-Servers-2"
 /ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=199.193.16.0/20 comment="Roblox-Servers-3"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=20.0.0.0/8 comment="Vivox-ValorantVoice-Azure"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=188.42.95.0/24 comment="Vivox-ValorantVoice-Relay"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=185.180.12.0/22 comment="Vivox-Voice-Cluster"
 
 # 6. Create Selective Mangle Rule (Roblox & Valorant Voice Split-Tunneling)
 /ip firewall mangle remove [find comment="CyberPulse Gaming Traffic to VPN"]
@@ -2404,13 +2413,22 @@ async function executeMikrotikProvisioning(mt) {
 
   // 4. Populate destination address list for Roblox and Valorant Vivox Voice Chat
   const unblockTargets = [
-    { addr: '20.0.0.0/8', comment: 'Vivox-ValorantVoice-Azure' },
-    { addr: '188.42.95.0/24', comment: 'Vivox-ValorantVoice-Relay' },
-    { addr: '185.180.12.0/22', comment: 'Vivox-Voice-Cluster' },
+    { addr: 'roblox.com', comment: 'Roblox-Main' },
+    { addr: 'www.roblox.com', comment: 'Roblox-WWW' },
+    { addr: 'setup.rbxcdn.com', comment: 'Roblox-Setup-CDN' },
+    { addr: 'rbxcdn.com', comment: 'Roblox-CDN' },
+    { addr: 'web.roblox.com', comment: 'Roblox-Web' },
+    { addr: 'api.roblox.com', comment: 'Roblox-API' },
+    { addr: 'versioncompatibility.api.roblox.com', comment: 'Roblox-Version-API' },
+    { addr: 'ecsv2.roblox.com', comment: 'Roblox-ECS-API' },
+    { addr: 'clientsettings.api.roblox.com', comment: 'Roblox-ClientSettings' },
     { addr: '128.116.0.0/16', comment: 'Roblox-Core-Game' },
     { addr: '209.206.40.0/21', comment: 'Roblox-Servers-1' },
     { addr: '208.79.152.0/22', comment: 'Roblox-Servers-2' },
-    { addr: '199.193.16.0/20', comment: 'Roblox-Servers-3' }
+    { addr: '199.193.16.0/20', comment: 'Roblox-Servers-3' },
+    { addr: '20.0.0.0/8', comment: 'Vivox-ValorantVoice-Azure' },
+    { addr: '188.42.95.0/24', comment: 'Vivox-ValorantVoice-Relay' },
+    { addr: '185.180.12.0/22', comment: 'Vivox-Voice-Cluster' }
   ];
 
   for (const t of unblockTargets) {
