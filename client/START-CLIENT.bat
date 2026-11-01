@@ -19,8 +19,8 @@ if "%PC_NAME%"=="" (
     echo     (Zero-Install Mode: Works without any programming software)
     echo ================================================================
     echo.
-    set /p PC_NAME="Enter Station Name / ID (e.g. PC-01 or PC-02 or VIP-01) [Default: PC-01]: "
-    if "%PC_NAME%"=="" set "PC_NAME=PC-01"
+    set /p PC_NAME="Enter Station Name / ID [Press Enter for %COMPUTERNAME%]: "
+    if "%PC_NAME%"=="" set "PC_NAME=%COMPUTERNAME%"
     
     set /p SERVER_IP="Enter Cashier Server IP (e.g. 192.168.1.100 or localhost) [Default: localhost]: "
     if "%SERVER_IP%"=="" set "SERVER_IP=localhost"

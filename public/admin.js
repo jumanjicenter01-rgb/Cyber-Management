@@ -474,6 +474,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  socket.on('pc_discovered', (newPc) => {
+    if (!state.pcs) state.pcs = [];
+    const existing = state.pcs.find(p => p.id === newPc.id);
+    if (!existing) {
+      state.pcs.push(newPc);
+    } else {
+      Object.assign(existing, newPc);
+    }
+    updateShiftSummary();
+    renderPcsGrid();
+    renderSurveillanceGrid();
+    if (window.cyberAudio) window.cyberAudio.playUnlock();
+    showToast('Device Discovered 📡', `New station connected from network: ${newPc.name} [${newPc.id}] (${newPc.ip})`);
+  });
+
+  socket.on('pc_removed', (data) => {
+    if (!state.pcs) return;
+    state.pcs = state.pcs.filter(p => p.id !== data.pcId);
+    selectedPcs.delete(data.pcId);
+    updateShiftSummary();
+    renderPcsGrid();
+    renderSurveillanceGrid();
+  });
+
+  socket.on('state_updated', (data) => {
+    if (data && Array.isArray(data.pcs)) {
+      state.pcs = data.pcs;
+      updateShiftSummary();
+      renderPcsGrid();
+      renderSurveillanceGrid();
+    }
+  });
+
   socket.on('shift_updated', (shift) => {
     state.shift = shift;
     updateShiftSummary();
@@ -892,10 +925,45 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pcsCardsGrid) pcsCardsGrid.className = 'pc-cards-grid view-' + (currentViewMode || 'large');
     pcsCardsGrid.innerHTML = '';
 
+    if (!state.pcs || state.pcs.length === 0) {
+      pcsCardsGrid.innerHTML = `
+        <div class="empty-pcs-state" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4.5rem 2rem; background: rgba(13, 17, 27, 0.7); border: 2px dashed rgba(0, 243, 255, 0.35); border-radius: 20px; text-align: center; margin: 1.5rem 0;">
+          <div style="font-size: 3.8rem; margin-bottom: 1rem; filter: drop-shadow(0 0 15px rgba(0,243,255,0.6));">📡</div>
+          <h3 style="font-family: 'Cairo', 'Orbitron', sans-serif; color: #00f3ff; font-size: 1.5rem; margin-bottom: 0.6rem; font-weight: 700;">في انتظار اتصال الأجهزة من الشبكة...</h3>
+          <p style="color: #94a3b8; font-size: 1rem; max-width: 550px; line-height: 1.7; margin-bottom: 1.8rem;">
+            تم مسح جميع الأجهزة الوهمية بنجاح! بمجرد تشغيل ملف <code>START-CLIENT.bat</code> أو فتح رابط الكلاينت على أي جهاز في الصالة، سيتم التقاطه وإضافته هنا فوراً وبشكل تلقائي.
+          </p>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+            <button class="btn btn-primary" id="btnEmptyAddPc" style="padding: 0.7rem 1.4rem; font-size: 0.95rem;">
+              <span>➕</span> إضافة جهاز يدوياً
+            </button>
+            <button class="btn btn-secondary" id="btnEmptyRefresh" style="padding: 0.7rem 1.4rem; font-size: 0.95rem;">
+              <span>🔄</span> فحص الشبكة الآن
+            </button>
+          </div>
+        </div>
+      `;
+      const btnAdd = pcsCardsGrid.querySelector('#btnEmptyAddPc');
+      if (btnAdd) btnAdd.addEventListener('click', openAddPcModal);
+      const btnRef = pcsCardsGrid.querySelector('#btnEmptyRefresh');
+      if (btnRef) btnRef.addEventListener('click', () => fetchState());
+      return;
+    }
+
     const filtered = state.pcs.filter(p => {
       if (activeFilter === 'all') return true;
       return p.status === activeFilter;
     });
+
+    if (filtered.length === 0) {
+      pcsCardsGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #64748b;">
+          <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🔍</div>
+          <div style="font-size: 1.1rem; color: #94a3b8;">لا توجد أجهزة مطابقة للفلتر المحدد (${activeFilter})</div>
+        </div>
+      `;
+      return;
+    }
 
     filtered.forEach(pc => {
       const card = document.createElement('div');
@@ -2631,6 +2699,106 @@ document.addEventListener('DOMContentLoaded', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ pcIds: [pcId] })
         }).then(r => r.json()).then(res => alert(res.message || 'Shutdown command dispatched'));
+      }
+    });
+  }
+
+  const ctxActDeletePc = document.getElementById('ctxActDeletePc');
+  if (ctxActDeletePc) {
+    ctxActDeletePc.addEventListener('click', async () => {
+      const pcId = activeContextMenuPcId;
+      hidePcContextMenu();
+      if (!pcId) return;
+      const pc = state.pcs.find(p => p.id === pcId);
+      const name = pc ? pc.name : pcId;
+      if (confirm(`هل أنت متأكد من رغبتك في إزالة الجهاز [${name}] نهائياً من الصالة؟`)) {
+        try {
+          const res = await fetch(`/api/pcs/${pcId}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (data.success) {
+            state.pcs = data.pcs;
+            selectedPcs.delete(pcId);
+            updateShiftSummary();
+            renderPcsGrid();
+            renderSurveillanceGrid();
+            showToast('Station Removed', `Removed ${name} from registry.`);
+          } else {
+            alert(data.error || 'Failed to remove station');
+          }
+        } catch (err) {
+          alert('Error removing station');
+        }
+      }
+    });
+  }
+
+  function openAddPcModal() {
+    const modal = document.getElementById('modalAddPc');
+    if (!modal) return;
+    const nextNum = (state.pcs || []).length + 1;
+    const defaultId = `PC-${String(nextNum).padStart(2, '0')}`;
+    document.getElementById('addPcId').value = defaultId;
+    document.getElementById('addPcName').value = `PC ${String(nextNum).padStart(2, '0')}`;
+    document.getElementById('addPcIp').value = `192.168.1.${100 + nextNum}`;
+    modal.classList.add('active');
+  }
+
+  const btnAddPcTop = document.getElementById('btnAddPcTop');
+  if (btnAddPcTop) {
+    btnAddPcTop.addEventListener('click', openAddPcModal);
+  }
+
+  const formAddPc = document.getElementById('formAddPc');
+  if (formAddPc) {
+    formAddPc.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('addPcId').value.trim();
+      const name = document.getElementById('addPcName').value.trim();
+      const ip = document.getElementById('addPcIp').value.trim();
+      const zone = document.getElementById('addPcZone').value;
+      const ratePerHour = parseFloat(document.getElementById('addPcRate').value) || 20;
+
+      try {
+        const res = await fetch('/api/pcs/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, name, ip, zone, ratePerHour })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('modalAddPc');
+          state.pcs = data.pcs;
+          updateShiftSummary();
+          renderPcsGrid();
+          renderSurveillanceGrid();
+          showToast('Station Registered 🖥️', `Station ${name || id} added successfully!`);
+        } else {
+          alert(data.error || 'Failed to add station');
+        }
+      } catch (err) {
+        alert('Error adding station: ' + err.message);
+      }
+    });
+  }
+
+  const btnClearPcsTop = document.getElementById('btnClearPcsTop');
+  if (btnClearPcsTop) {
+    btnClearPcsTop.addEventListener('click', async () => {
+      if (confirm('هل أنت متأكد من مسح جميع الأجهزة المسجلة/الوهمية؟\n\nستكون القائمة فارغة في انتظار التقاط الأجهزة الحقيقية بمجرد اتصالها بالشبكة.')) {
+        try {
+          const res = await fetch('/api/pcs/clear-all', { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+            state.pcs = [];
+            selectedPcs.clear();
+            updateShiftSummary();
+            renderPcsGrid();
+            renderSurveillanceGrid();
+            showToast('All Stations Cleared 🧹', 'تم مسح الأجهزة بنجاح، في انتظار اتصال الأجهزة من الشبكة.');
+          }
+        } catch (err) {
+          showToast('Error', 'Failed to clear stations');
+        }
       }
     });
   }

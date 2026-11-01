@@ -185,6 +185,12 @@
             <button class="btn-power-act btn-transfer-top" id="btnTransferSelect" title="Transfer Active Session for Selected PC">
               <span class="power-act-icon">🔀</span>
             </button>
+            <button class="btn-power-act btn-add-pc-top" id="btnAddPcTop" title="Add Station Manually (إضافة جهاز يدوي)">
+              <span class="power-act-icon">➕</span>
+            </button>
+            <button class="btn-power-act btn-clear-pcs-top" id="btnClearPcsTop" title="Clear Dummy / Offline Devices (مسح الأجهزة الوهمية)">
+              <span class="power-act-icon">🧹</span>
+            </button>
           </div>
 
           <!-- View Mode Display System -->
@@ -1805,6 +1811,10 @@
     <button class="ctx-item ctx-danger" id="ctxActShutdown">
       <span>🛑</span> Shutdown Machine
     </button>
+    <div class="ctx-divider"></div>
+    <button class="ctx-item ctx-danger" id="ctxActDeletePc" style="color: #ff3366;">
+      <span>🗑️</span> Remove Station / إزالة الجهاز
+    </button>
   </div>
 
   <!-- ============================================================== -->
@@ -2603,6 +2613,50 @@
         <button class="btn btn-primary btn-block" id="btnSubmitIconPicker">
           <span>💾</span> Apply & Save Icon
         </button>
+      </div>
+  <!-- ============================================================== -->
+  <!-- MODAL: ADD STATION MANUALLY                                    -->
+  <!-- ============================================================== -->
+  <div id="modalAddPc" class="modal-overlay">
+    <div class="modal-box" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🖥️</span> إضافة جهاز يدوي / Add Station
+        </div>
+        <button class="modal-close" onclick="closeModal('modalAddPc')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.5rem;">
+        <form id="formAddPc">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="display:block; margin-bottom: 0.4rem; color: #94a3b8; font-size: 0.85rem;">معرف الجهاز / Station ID (e.g. PC-01):</label>
+            <input type="text" id="addPcId" class="modal-input" placeholder="PC-01" required style="width: 100%; padding: 0.6rem; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); color: #fff;">
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="display:block; margin-bottom: 0.4rem; color: #94a3b8; font-size: 0.85rem;">اسم الجهاز المعروض / Display Name:</label>
+            <input type="text" id="addPcName" class="modal-input" placeholder="PC 01" style="width: 100%; padding: 0.6rem; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); color: #fff;">
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="display:block; margin-bottom: 0.4rem; color: #94a3b8; font-size: 0.85rem;">IP الجهاز في الشبكة / Station IP:</label>
+            <input type="text" id="addPcIp" class="modal-input" placeholder="192.168.1.101" style="width: 100%; padding: 0.6rem; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); color: #fff;">
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="display:block; margin-bottom: 0.4rem; color: #94a3b8; font-size: 0.85rem;">المنطقة / Zone:</label>
+            <select id="addPcZone" class="modal-input" style="width: 100%; padding: 0.6rem; border-radius: 8px; background: #0c101b; border: 1px solid rgba(255,255,255,0.15); color: #fff;">
+              <option value="Standard">Standard Zone</option>
+              <option value="VIP Arena">VIP Arena</option>
+              <option value="Streamer Booth">Streamer Booth</option>
+              <option value="PlayStation Area">PlayStation Area</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label style="display:block; margin-bottom: 0.4rem; color: #94a3b8; font-size: 0.85rem;">سعر الساعة / Hourly Rate (EGP):</label>
+            <input type="number" id="addPcRate" class="modal-input" value="20" min="1" step="1" style="width: 100%; padding: 0.6rem; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); color: #fff;">
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap: 0.8rem;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('modalAddPc')">إلغاء</button>
+            <button type="submit" class="btn btn-primary btn-sm">حفظ الجهاز 💾</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

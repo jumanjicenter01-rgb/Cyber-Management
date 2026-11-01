@@ -1,8 +1,8 @@
 // Client Gaming Launcher & Lock Screen Controller
 document.addEventListener('DOMContentLoaded', () => {
-  // Get PC ID from URL query (?pc=PC-01) or default
+  // Get PC ID from URL query (?pc=PC-01) or localStorage
   const urlParams = new URLSearchParams(window.location.search);
-  const pcId = urlParams.get('pc') || 'PC-01';
+  let pcId = urlParams.get('pc') || localStorage.getItem('cyberpulse_pc_id') || '';
 
   // State
   let pcState = null;
@@ -50,8 +50,23 @@ document.addEventListener('DOMContentLoaded', () => {
   let offlineTicker = null;
 
   socket.on('connect', () => {
-    console.log('Connected to Cyber Server, registering as:', pcId);
-    socket.emit('register_role', { role: 'client', pcId });
+    console.log('Connected to Cyber Server, registering as:', pcId || 'Auto-Detect LAN');
+    socket.emit('register_role', {
+      role: 'client',
+      pcId,
+      hostname: window.location.hostname || pcId,
+      specs: `${navigator.hardwareConcurrency || 8} Cores • Gaming Client`
+    });
+  });
+
+  socket.on('registered', (data) => {
+    if (data && data.pcId) {
+      pcId = data.pcId;
+      localStorage.setItem('cyberpulse_pc_id', data.pcId);
+      if (lockPcName) lockPcName.textContent = data.pcId;
+      if (hudPcName) hudPcName.textContent = data.pcId;
+    }
+  });
 
     // Stop offline ticker when reconnected to server
     if (offlineTicker) {

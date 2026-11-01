@@ -72,18 +72,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // -------------------------------------------------------------
 const DATA_FILE = path.join(__dirname, 'cyber_data.json');
 
-// Default PCs setup with MAC addresses for Wake-on-LAN
-const DEFAULT_PCS = [
-  { id: 'PC-01', name: 'PC 01', ip: '10.10.10.101', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:01', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'PC-02', name: 'PC 02', ip: '10.10.10.102', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:02', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'PC-03', name: 'PC 03', ip: '10.10.10.103', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:03', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'PC-04', name: 'PC 04', ip: '10.10.10.104', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:04', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'PC-05', name: 'PC 05', ip: '10.10.10.105', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:05', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'PC-06', name: 'PC 06', ip: '10.10.10.106', zone: 'Standard', ratePerHour: 20, specs: 'RTX 4060 • 144Hz', mac: '00:1A:2B:3C:4D:06', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'VIP-01', name: 'VIP Room 01', ip: '10.10.10.201', zone: 'VIP Arena', ratePerHour: 35, specs: 'RTX 4080 • 240Hz • OLED', mac: '00:1A:2B:3C:4D:11', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'VIP-02', name: 'VIP Room 02', ip: '10.10.10.202', zone: 'VIP Arena', ratePerHour: 35, specs: 'RTX 4080 • 240Hz • OLED', mac: '00:1A:2B:3C:4D:12', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null },
-  { id: 'STR-01', name: 'Streamer Booth', ip: '10.10.10.250', zone: 'Streamer Booth', ratePerHour: 50, specs: 'Dual PC • 360Hz • Shure Mic', mac: '00:1A:2B:3C:4D:21', status: 'available', session: null, orders: [], currentGame: null, isOnline: false, lastActive: Date.now(), vpnEnabled: false, vpnServer: null }
-];
+// Default PCs setup (Empty - Devices auto-discovered from local network)
+const DEFAULT_PCS = [];
 
 // Default Cafeteria Menu
 const DEFAULT_MENU = [
@@ -364,17 +354,12 @@ function loadData() {
       const raw = fs.readFileSync(DATA_FILE, 'utf8');
       const parsed = JSON.parse(raw);
       if (parsed.pcs && Array.isArray(parsed.pcs)) {
-        db.pcs = DEFAULT_PCS.map(dp => {
-          const saved = parsed.pcs.find(p => p.id === dp.id);
-          if (saved) {
-            return {
-              ...dp,
-              ...saved,
-              isOnline: false // Offline until station connects
-            };
-          }
-          return dp;
-        });
+        db.pcs = parsed.pcs.map(saved => ({
+          ...saved,
+          isOnline: false // Offline until station connects
+        }));
+      } else {
+        db.pcs = [];
       }
       if (parsed.menu && parsed.menu.length) db.menu = parsed.menu;
       if (parsed.games && parsed.games.length) db.games = parsed.games;
@@ -611,6 +596,63 @@ app.post('/api/settings/branding', (req, res) => {
   addAudit('Branding Updated', `Shop name configured to "${db.settings.branding.shopName}"`, 'info');
   io.emit('branding_updated', db.settings.branding);
   res.json({ success: true, branding: db.settings.branding });
+});
+
+// PC Station Management: Add Station Manually, Delete Station, Clear All Stations
+app.post('/api/pcs/add', (req, res) => {
+  const { id, name, ip, zone, ratePerHour, specs, mac } = req.body;
+  const newId = (id || `PC-${String(db.pcs.length + 1).padStart(2, '0')}`).trim();
+  if (db.pcs.find(p => p.id.toLowerCase() === newId.toLowerCase())) {
+    return res.status(400).json({ error: `Station ID "${newId}" already exists!` });
+  }
+
+  const newPc = {
+    id: newId,
+    name: name ? String(name).trim() : newId,
+    ip: ip ? String(ip).trim() : '127.0.0.1',
+    mac: mac ? String(mac).trim() : '00:00:00:00:00:00',
+    zone: zone ? String(zone).trim() : 'Standard',
+    ratePerHour: parseFloat(ratePerHour) || (db.settings && db.settings.pricing && db.settings.pricing.standardRate) || 20,
+    specs: specs ? String(specs).trim() : 'Gaming PC',
+    status: 'available',
+    isOnline: false,
+    session: null,
+    orders: [],
+    currentGame: null,
+    lastActive: Date.now(),
+    vpnEnabled: false,
+    vpnServer: null,
+    notes: 'Manually added station'
+  };
+
+  db.pcs.push(newPc);
+  saveData();
+  addAudit('Station Added', `Station ${newPc.name} [${newPc.id}] added to registry`, 'info');
+  io.emit('pc_discovered', newPc);
+  io.emit('state_updated', { pcs: db.pcs });
+  res.json({ success: true, pc: newPc, pcs: db.pcs });
+});
+
+app.delete('/api/pcs/:id', (req, res) => {
+  const { id } = req.params;
+  const index = db.pcs.findIndex(p => p.id === id);
+  if (index === -1) return res.status(404).json({ error: 'Device not found' });
+
+  const deletedPc = db.pcs.splice(index, 1)[0];
+  saveData();
+  addAudit('Station Removed', `Station ${deletedPc.name} [${deletedPc.id}] removed from registry`, 'warning');
+  io.emit('pc_removed', { pcId: id });
+  io.emit('state_updated', { pcs: db.pcs });
+  res.json({ success: true, deletedPc, pcs: db.pcs });
+});
+
+app.post('/api/pcs/clear-all', (req, res) => {
+  const count = db.pcs.length;
+  db.pcs = [];
+  saveData();
+  addAudit('Registry Cleared', `Cleared all ${count} stations from registry. Awaiting auto-discovery.`, 'warning');
+  io.emit('state_updated', { pcs: [] });
+  res.json({ success: true, message: `Cleared ${count} stations` });
 });
 
 // Update PC Visuals & Neon Colors
@@ -2031,16 +2073,54 @@ io.on('connection', (socket) => {
     if (clientIp.startsWith('::ffff:')) clientIp = clientIp.replace('::ffff:', '');
     if (clientIp === '::1' || clientIp === '127.0.0.1') clientIp = '127.0.0.1 (Localhost)';
 
-    if (data.role === 'client' && data.pcId) {
-      socket.join(`pc_${data.pcId}`);
-      const pc = db.pcs.find(p => p.id === data.pcId);
+    if (data.role === 'client') {
+      let targetId = (data.pcId || '').trim();
+      if (!targetId) {
+        // Auto-assign station ID based on current count
+        const nextNum = db.pcs.length + 1;
+        targetId = `PC-${String(nextNum).padStart(2, '0')}`;
+      }
+      socket.pcId = targetId;
+      socket.join(`pc_${targetId}`);
+
+      let pc = db.pcs.find(p => p.id.toLowerCase() === targetId.toLowerCase());
       if (pc) {
         pc.isOnline = true;
         pc.ip = data.ip || clientIp;
         pc.lastActive = Date.now();
+        if (data.specs) pc.specs = data.specs;
+        if (data.mac) pc.mac = data.mac;
         io.emit('pc_online_status', { pcId: pc.id, isOnline: true, ip: pc.ip });
-        addAudit('Client Connected', `${pc.name} connected to server from IP: ${pc.ip}`, 'info');
+        io.emit('pc_updated', pc);
+        addAudit('Station Connected', `${pc.name} [${pc.id}] connected from IP: ${pc.ip}`, 'info');
+      } else {
+        // AUTO-DISCOVER NEW NETWORK DEVICE!
+        const autoNum = db.pcs.length + 1;
+        const newPc = {
+          id: targetId,
+          name: data.pcName || data.hostname || targetId,
+          ip: data.ip || clientIp,
+          mac: data.mac || '00:00:00:00:00:00',
+          zone: data.zone || 'Standard',
+          ratePerHour: (db.settings && db.settings.pricing && db.settings.pricing.standardRate) || 20,
+          specs: data.specs || 'Auto-Detected Station (LAN)',
+          status: 'available',
+          session: null,
+          orders: [],
+          currentGame: null,
+          isOnline: true,
+          lastActive: Date.now(),
+          vpnEnabled: false,
+          vpnServer: null,
+          notes: 'Auto-detected from LAN'
+        };
+        db.pcs.push(newPc);
+        addAudit('Station Auto-Discovered', `Detected new station ${newPc.name} [${newPc.id}] from network (${newPc.ip})`, 'success');
+        io.emit('pc_discovered', newPc);
+        io.emit('state_updated', { pcs: db.pcs });
+        saveData();
       }
+      socket.emit('registered', { success: true, pcId: targetId });
     } else if (data.role === 'admin') {
       socket.join('admins');
     }
