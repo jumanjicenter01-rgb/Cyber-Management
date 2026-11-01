@@ -3889,7 +3889,7 @@ document.addEventListener('DOMContentLoaded', () => {
       password: document.getElementById('mtPassword')?.value || '',
       vpnList: document.getElementById('mtVpnList')?.value?.trim() || 'GAMING-VPN',
       vpnServer: document.getElementById('mtVpnServer')?.value?.trim() || '219.100.37.115',
-      vpnProto: document.getElementById('mtVpnProto')?.value || 'l2tp',
+      vpnProto: document.getElementById('mtVpnProto')?.value || 'sstp',
       vpnUser: document.getElementById('mtVpnUser')?.value?.trim() || 'vpn',
       vpnPassword: document.getElementById('mtVpnPassword')?.value || 'vpn',
       vpnIpsecSecret: document.getElementById('mtVpnIpsecSecret')?.value || 'vpn',

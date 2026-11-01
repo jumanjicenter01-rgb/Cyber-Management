@@ -287,7 +287,7 @@ let db = {
       lastVerified: null,
       useRestApi: false,
       vpnList: 'GAMING-VPN',
-      vpnProto: 'l2tp',
+      vpnProto: 'sstp',
       vpnServer: '219.100.37.115',
       vpnUser: 'vpn',
       vpnPassword: 'vpn',
@@ -1443,15 +1443,21 @@ function generateMikrotikScript(cfg) {
   const host = (cfg && cfg.host) || '10.10.10.1';
   const vpnList = (cfg && cfg.vpnList) || 'GAMING-VPN';
   const vpnServer = (cfg && (cfg.vpnServer || cfg.activeVpnServer)) || '219.100.37.115';
+  const vpnProto = ((cfg && cfg.vpnProto) || 'sstp').toLowerCase();
   const vpnUser = (cfg && cfg.vpnUser) || 'vpn';
   const vpnPassword = (cfg && cfg.vpnPassword) || 'vpn';
   const vpnIpsecSecret = (cfg && cfg.vpnIpsecSecret) || 'vpn';
   const robloxDst = (cfg && cfg.robloxDst) || '128.116.0.0/16';
   const routingMark = (cfg && cfg.routingMark) || 'to_GAMING_VPN';
 
+  const ifaceCommands = vpnProto === 'l2tp'
+    ? `/interface l2tp-client add name=vpn-gaming-out connect-to=${vpnServer} user=${vpnUser} password=${vpnPassword} use-ipsec=yes ipsec-secret=${vpnIpsecSecret} default-route-distance=10 add-default-route=no disabled=no comment="CyberPulse Gaming VPN Tunnel"`
+    : `/interface sstp-client add name=vpn-gaming-out connect-to=${vpnServer} port=443 user=${vpnUser} password=${vpnPassword} verify-server-certificate=no default-route-distance=10 add-default-route=no disabled=no comment="CyberPulse Gaming VPN Tunnel"`;
+
   return `# ==============================================================
 # CyberPulse Cyber Cafe Management - MikroTik RouterOS Setup
 # Engine: Diskless-Safe Selective Split-Tunnel (Roblox & Gaming)
+# Protocol: ${vpnProto.toUpperCase()} (Port 443 SSL - Bypasses ISP Firewall)
 # Compatible with: RouterOS v6.49.x & RouterOS v7.x
 # Router IP: ${host}
 # ==============================================================
@@ -1464,9 +1470,10 @@ function generateMikrotikScript(cfg) {
 
 # 1. Clean up any previous CyberPulse VPN interface
 /interface l2tp-client remove [find name=vpn-gaming-out]
+/interface sstp-client remove [find name=vpn-gaming-out]
 
-# 2. Create the Free High-Speed L2TP/IPsec Client Interface
-/interface l2tp-client add name=vpn-gaming-out connect-to=${vpnServer} user=${vpnUser} password=${vpnPassword} use-ipsec=yes ipsec-secret=${vpnIpsecSecret} default-route-distance=10 add-default-route=no disabled=no comment="CyberPulse Gaming VPN Tunnel"
+# 2. Create High-Speed ${vpnProto.toUpperCase()} Gaming Client Interface
+${ifaceCommands}
 
 # 3. Create Dedicated Route for Marked Gaming Traffic
 /ip route remove [find comment="CyberPulse Route to Gaming VPN"]
@@ -1481,10 +1488,14 @@ function generateMikrotikScript(cfg) {
 /ip firewall mangle remove [find comment="CyberPulse Gaming Traffic to VPN"]
 /ip firewall mangle add chain=prerouting src-address-list=${vpnList} dst-address=${robloxDst} action=mark-routing new-routing-mark=${routingMark} passthrough=no comment="CyberPulse Gaming Traffic to VPN"
 
-# 6. Safety check: ensure Router IP is never in the VPN list
+# 6. TCP MSS Clamping (Prevents packet fragmentation over tunnel)
+/ip firewall mangle remove [find comment="CyberPulse Clamp MSS to PMTU"]
+/ip firewall mangle add chain=forward protocol=tcp tcp-flags=syn out-interface=vpn-gaming-out action=change-mss new-mss=clamp-to-pmtu passthrough=yes comment="CyberPulse Clamp MSS to PMTU"
+
+# 7. Safety check: ensure Router IP is never in the VPN list
 /ip firewall address-list remove [find list=${vpnList} address=${host}]
 
-# 7. Log success to RouterOS System Log
+# 8. Log success to RouterOS System Log
 :log info "CyberPulse Selective Gaming VPN rules successfully provisioned on RouterOS"
 :put ">> CyberPulse Diskless Selective VPN configured successfully on ${host} <<"`;
 }
@@ -1942,48 +1953,98 @@ async function executeMikrotikProvisioning(mt) {
   const robloxDst = mt.robloxDst || '128.116.0.0/16';
   const routingMark = mt.routingMark || 'to_GAMING_VPN';
 
+  const proto = ((mt && mt.vpnProto) || 'sstp').toLowerCase();
   const results = [];
 
-  // 1. Interface: Check existing L2TP client 'vpn-gaming-out'
-  const ifaces = await runRouterOsApi(mt.host, port, username, password, [
-    '/interface/l2tp-client/print',
-    '?name=vpn-gaming-out'
-  ]);
-  let ifaceId = null;
-  for (const item of ifaces) {
-    const idWord = item.find(w => w.startsWith('=.id='));
-    if (idWord) ifaceId = idWord.replace('=.id=', '');
-  }
+  // 1. Interface: Manage SSTP / L2TP client 'vpn-gaming-out'
+  if (proto === 'l2tp') {
+    // Remove conflicting SSTP interface if any
+    const oldSstp = await runRouterOsApi(mt.host, port, username, password, ['/interface/sstp-client/print', '?name=vpn-gaming-out']);
+    for (const item of oldSstp) {
+      const idWord = item.find(w => w.startsWith('=.id='));
+      if (idWord) await runRouterOsApi(mt.host, port, username, password, ['/interface/sstp-client/remove', '=.id=' + idWord.replace('=.id=', '')]);
+    }
 
-  if (ifaceId) {
-    await runRouterOsApi(mt.host, port, username, password, [
-      '/interface/l2tp-client/set',
-      '=.id=' + ifaceId,
-      '=connect-to=' + vpnServer,
-      '=user=' + vpnUser,
-      '=password=' + vpnPassword,
-      '=use-ipsec=yes',
-      '=ipsec-secret=' + vpnIpsecSecret,
-      '=default-route-distance=10',
-      '=add-default-route=no',
-      '=disabled=no'
-    ]);
-    results.push(`Updated L2TP client interface 'vpn-gaming-out' -> Connect to: ${vpnServer}`);
+    const ifaces = await runRouterOsApi(mt.host, port, username, password, ['/interface/l2tp-client/print', '?name=vpn-gaming-out']);
+    let ifaceId = null;
+    for (const item of ifaces) {
+      const idWord = item.find(w => w.startsWith('=.id='));
+      if (idWord) ifaceId = idWord.replace('=.id=', '');
+    }
+    if (ifaceId) {
+      await runRouterOsApi(mt.host, port, username, password, [
+        '/interface/l2tp-client/set',
+        '=.id=' + ifaceId,
+        '=connect-to=' + vpnServer,
+        '=user=' + vpnUser,
+        '=password=' + vpnPassword,
+        '=use-ipsec=yes',
+        '=ipsec-secret=' + vpnIpsecSecret,
+        '=default-route-distance=10',
+        '=add-default-route=no',
+        '=disabled=no'
+      ]);
+      results.push(`Updated L2TP client interface 'vpn-gaming-out' -> Connect to: ${vpnServer}`);
+    } else {
+      await runRouterOsApi(mt.host, port, username, password, [
+        '/interface/l2tp-client/add',
+        '=name=vpn-gaming-out',
+        '=connect-to=' + vpnServer,
+        '=user=' + vpnUser,
+        '=password=' + vpnPassword,
+        '=use-ipsec=yes',
+        '=ipsec-secret=' + vpnIpsecSecret,
+        '=default-route-distance=10',
+        '=add-default-route=no',
+        '=disabled=no',
+        '=comment=CyberPulse Gaming VPN Tunnel'
+      ]);
+      results.push(`Created L2TP client interface 'vpn-gaming-out' -> Connect to: ${vpnServer}`);
+    }
   } else {
-    await runRouterOsApi(mt.host, port, username, password, [
-      '/interface/l2tp-client/add',
-      '=name=vpn-gaming-out',
-      '=connect-to=' + vpnServer,
-      '=user=' + vpnUser,
-      '=password=' + vpnPassword,
-      '=use-ipsec=yes',
-      '=ipsec-secret=' + vpnIpsecSecret,
-      '=default-route-distance=10',
-      '=add-default-route=no',
-      '=disabled=no',
-      '=comment=CyberPulse Gaming VPN Tunnel'
-    ]);
-    results.push(`Created L2TP client interface 'vpn-gaming-out' -> Connect to: ${vpnServer}`);
+    // SSTP (Port 443 SSL - Bypasses ISP firewall)
+    const oldL2tp = await runRouterOsApi(mt.host, port, username, password, ['/interface/l2tp-client/print', '?name=vpn-gaming-out']);
+    for (const item of oldL2tp) {
+      const idWord = item.find(w => w.startsWith('=.id='));
+      if (idWord) await runRouterOsApi(mt.host, port, username, password, ['/interface/l2tp-client/remove', '=.id=' + idWord.replace('=.id=', '')]);
+    }
+
+    const sstps = await runRouterOsApi(mt.host, port, username, password, ['/interface/sstp-client/print', '?name=vpn-gaming-out']);
+    let ifaceId = null;
+    for (const item of sstps) {
+      const idWord = item.find(w => w.startsWith('=.id='));
+      if (idWord) ifaceId = idWord.replace('=.id=', '');
+    }
+    if (ifaceId) {
+      await runRouterOsApi(mt.host, port, username, password, [
+        '/interface/sstp-client/set',
+        '=.id=' + ifaceId,
+        '=connect-to=' + vpnServer,
+        '=port=443',
+        '=user=' + vpnUser,
+        '=password=' + vpnPassword,
+        '=verify-server-certificate=no',
+        '=default-route-distance=10',
+        '=add-default-route=no',
+        '=disabled=no'
+      ]);
+      results.push(`Updated SSTP client interface 'vpn-gaming-out' (Port 443 SSL) -> Connect to: ${vpnServer}`);
+    } else {
+      await runRouterOsApi(mt.host, port, username, password, [
+        '/interface/sstp-client/add',
+        '=name=vpn-gaming-out',
+        '=connect-to=' + vpnServer,
+        '=port=443',
+        '=user=' + vpnUser,
+        '=password=' + vpnPassword,
+        '=verify-server-certificate=no',
+        '=default-route-distance=10',
+        '=add-default-route=no',
+        '=disabled=no',
+        '=comment=CyberPulse Gaming VPN Tunnel'
+      ]);
+      results.push(`Created SSTP client interface 'vpn-gaming-out' (Port 443 SSL) -> Connect to: ${vpnServer}`);
+    }
   }
 
   // 2. Route: Dedicated routing for gaming traffic via vpn-gaming-out
@@ -2073,7 +2134,34 @@ async function executeMikrotikProvisioning(mt) {
     results.push(`Created Selective Mangle: src-address-list=${vpnList} & dst-address=${robloxDst} -> mark-routing ${routingMark}`);
   }
 
-  // 5. Ensure router IP is never in the VPN list (strictly target selected PCs only)
+  // 5. TCP MSS Clamping to prevent packet fragmentation over tunnel
+  const mssCheck = await runRouterOsApi(mt.host, port, username, password, [
+    '/ip/firewall/mangle/print',
+    '?comment=CyberPulse Clamp MSS to PMTU'
+  ]);
+  let mssId = null;
+  for (const m of mssCheck) {
+    const idWord = m.find(w => w.startsWith('=.id='));
+    if (idWord) mssId = idWord.replace('=.id=', '');
+  }
+  if (!mssId) {
+    await runRouterOsApi(mt.host, port, username, password, [
+      '/ip/firewall/mangle/add',
+      '=chain=forward',
+      '=protocol=tcp',
+      '=tcp-flags=syn',
+      '=out-interface=vpn-gaming-out',
+      '=action=change-mss',
+      '=new-mss=clamp-to-pmtu',
+      '=passthrough=yes',
+      '=comment=CyberPulse Clamp MSS to PMTU'
+    ]);
+    results.push(`Added TCP MSS Clamping rule for out-interface=vpn-gaming-out (Prevents packet fragmentation)`);
+  } else {
+    results.push(`TCP MSS Clamping rule for out-interface=vpn-gaming-out verified active`);
+  }
+
+  // 6. Ensure router IP is never in the VPN list (strictly target selected PCs only)
   const aCheck = await runRouterOsApi(mt.host, port, username, password, [
     '/ip/firewall/address-list/print',
     '?list=' + vpnList,
@@ -2091,7 +2179,7 @@ async function executeMikrotikProvisioning(mt) {
     }
   }
 
-  // 6. Log to RouterOS system log
+  // 7. Log to RouterOS system log
   await runRouterOsApi(mt.host, port, username, password, [
     '/log/info',
     '=message=CyberPulse Selective Gaming VPN rules successfully provisioned on RouterOS'
