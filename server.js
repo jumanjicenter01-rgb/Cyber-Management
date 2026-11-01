@@ -2058,6 +2058,39 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Client time sync after server maintenance/restart
+  socket.on('client_sync_session_time', (data) => {
+    if (!data || !data.pcId) return;
+    const pc = db.pcs.find(p => p.id === data.pcId);
+    if (pc && pc.session && pc.status === 'in_session') {
+      let changed = false;
+      if (typeof data.elapsedSeconds === 'number' && data.elapsedSeconds > (pc.session.elapsedSeconds || 0)) {
+        pc.session.elapsedSeconds = data.elapsedSeconds;
+        changed = true;
+      }
+      if (typeof data.remainingSeconds === 'number' && pc.session.remainingSeconds !== null) {
+        pc.session.remainingSeconds = Math.min(pc.session.remainingSeconds, data.remainingSeconds);
+        changed = true;
+      }
+      if (data.expired) {
+        pc.session.expired = true;
+        pc.status = 'locked';
+        changed = true;
+      }
+      if (changed) {
+        // Re-calculate open cost
+        if (pc.session.type === 'open' && !pc.isAdminSession) {
+          const chargeableSecs = Math.max(0, pc.session.elapsedSeconds - ((pc.session.freeMinutesAdded || 0) * 60));
+          pc.session.gameCost = Math.round((chargeableSecs / 3600) * pc.ratePerHour * 100) / 100;
+          pc.session.totalCost = pc.session.gameCost + (pc.session.ordersCost || 0);
+        }
+        addAudit('Session Resynced', `Resynced offline time for ${pc.name} after server restart: ${pc.session.elapsedSeconds}s elapsed`);
+        io.emit('pc_updated', pc);
+        saveData();
+      }
+    }
+  });
+
   // Client updates current game
   socket.on('game_launched', (data) => {
     const pc = db.pcs.find(p => p.id === data.pcId);

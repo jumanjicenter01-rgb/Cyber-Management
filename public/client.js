@@ -40,12 +40,61 @@ document.addEventListener('DOMContentLoaded', () => {
   const screenCaptureCtx = screenCaptureCanvas.getContext('2d');
   const adminCursor = document.getElementById('adminCursor');
 
-  // Connect Socket.io
-  const socket = io();
+  // Connect Socket.io with auto-reconnection
+  const socket = io({
+    reconnection: true,
+    reconnectionDelay: 2000,
+    reconnectionAttempts: Infinity
+  });
+
+  let offlineTicker = null;
 
   socket.on('connect', () => {
     console.log('Connected to Cyber Server, registering as:', pcId);
     socket.emit('register_role', { role: 'client', pcId });
+
+    // Stop offline ticker when reconnected to server
+    if (offlineTicker) {
+      clearInterval(offlineTicker);
+      offlineTicker = null;
+    }
+
+    // If station was in an active session during server maintenance, sync played duration back to server
+    if (pcState && pcState.status === 'in_session' && pcState.session) {
+      socket.emit('client_sync_session_time', {
+        pcId,
+        elapsedSeconds: pcState.session.elapsedSeconds,
+        remainingSeconds: pcState.session.remainingSeconds,
+        expired: !!pcState.session.expired
+      });
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.warn('Server connection paused. Session running in offline resilience mode.');
+    // Keep session alive locally without kicking the client or interrupting the game
+    if (!offlineTicker) {
+      offlineTicker = setInterval(() => {
+        if (pcState && pcState.status === 'in_session' && pcState.session && !pcState.session.isPaused) {
+          const s = pcState.session;
+          s.elapsedSeconds = (s.elapsedSeconds || 0) + 1;
+
+          if (s.type === 'fixed_time' || s.type === 'fixed_amount') {
+            if (s.remainingSeconds !== null && s.remainingSeconds !== undefined) {
+              s.remainingSeconds = Math.max(0, s.remainingSeconds - 1);
+              if (s.remainingSeconds === 0 && !s.expired) {
+                s.expired = true;
+                pcState.status = 'locked';
+                updatePcUI(pcState);
+                if (window.cyberAudio) window.cyberAudio.playWarning();
+                showAlertBanner('Time Expired!', 'Your session time has ended.');
+              }
+            }
+          }
+          updateTimerDisplay(s);
+        }
+      }, 1000);
+    }
   });
 
   // Clock Update for Lock Screen
