@@ -138,7 +138,8 @@ let db = {
     power: {
       autoShutdownIdleEnabled: true,
       idleThresholdMinutes: 10,
-      warningCountdownSeconds: 60
+      warningCountdownSeconds: 60,
+      pauseSessionOnDisconnect: true // Auto-pause session timer during station power outage
     },
     statusIcons: {
       maintenance: 'fa-solid fa-wrench',
@@ -339,6 +340,61 @@ let db = {
   }
 };
 
+// Database auto-persistence and crash recovery
+function saveData() {
+  try {
+    const exportData = {
+      pcs: db.pcs,
+      menu: db.menu,
+      games: db.games,
+      shift: db.shift,
+      settings: db.settings,
+      invoices: (db.invoices || []).slice(0, 100),
+      auditLog: (db.auditLog || []).slice(0, 100)
+    };
+    fs.writeFileSync(DATA_FILE, JSON.stringify(exportData, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Failed to save cyber data to disk:', err.message);
+  }
+}
+
+function loadData() {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const raw = fs.readFileSync(DATA_FILE, 'utf8');
+      const parsed = JSON.parse(raw);
+      if (parsed.pcs && Array.isArray(parsed.pcs)) {
+        db.pcs = DEFAULT_PCS.map(dp => {
+          const saved = parsed.pcs.find(p => p.id === dp.id);
+          if (saved) {
+            return {
+              ...dp,
+              ...saved,
+              isOnline: false // Offline until station connects
+            };
+          }
+          return dp;
+        });
+      }
+      if (parsed.menu && parsed.menu.length) db.menu = parsed.menu;
+      if (parsed.games && parsed.games.length) db.games = parsed.games;
+      if (parsed.shift) db.shift = parsed.shift;
+      if (parsed.settings) db.settings = { ...db.settings, ...parsed.settings };
+      if (parsed.invoices) db.invoices = parsed.invoices;
+      if (parsed.auditLog) db.auditLog = parsed.auditLog;
+      console.log('✔ Successfully recovered cyber database state from cyber_data.json');
+    }
+  } catch (err) {
+    console.error('Failed to load cyber data from disk:', err.message);
+  }
+}
+loadData();
+
+process.on('SIGINT', () => { saveData(); process.exit(); });
+process.on('SIGTERM', () => { saveData(); process.exit(); });
+
+let lastDataSaveTime = Date.now();
+
 // Log audit event
 function addAudit(action, details, level = 'info') {
   const item = {
@@ -364,6 +420,13 @@ setInterval(() => {
 
   db.pcs.forEach(pc => {
     if (pc.status === 'in_session' && pc.session) {
+      // Pause session timer if station is offline (power outage on station)
+      const pauseOnDisconnect = (db.settings && db.settings.power && db.settings.power.pauseSessionOnDisconnect !== false);
+      if (pauseOnDisconnect && !pc.isOnline) {
+        pc.session.isPaused = true;
+        return; // Freeze timer during power loss on client PC!
+      }
+      pc.session.isPaused = false;
       pc.session.elapsedSeconds++;
 
       // If fixed time / amount, the game cost is fixed (full package value), not counting up like a meter!
@@ -461,6 +524,12 @@ setInterval(() => {
       currentGame: p.currentGame,
       ordersCount: (p.orders || []).length
     })));
+  }
+
+  // Auto-persist active sessions every 10 seconds to safeguard against unexpected power outage
+  if (now - lastDataSaveTime > 10000) {
+    lastDataSaveTime = now;
+    saveData();
   }
 }, 1000);
 
@@ -784,6 +853,7 @@ app.post('/api/session/start', (req, res) => {
 
   io.emit('pc_updated', pc);
   io.to(`pc_${pc.id}`).emit('session_started', pc.session);
+  saveData();
   res.json({ success: true, pc });
 });
 
@@ -817,6 +887,7 @@ app.post('/api/session/start-admin', (req, res) => {
   addAudit('Admin Session Started', `Free admin session started on ${pc.name}`, 'info');
   io.emit('pc_updated', pc);
   io.to(`pc_${pc.id}`).emit('session_started', pc.session);
+  saveData();
   res.json({ success: true, pc });
 });
 
@@ -839,6 +910,7 @@ app.post('/api/session/add-free-time', (req, res) => {
   addAudit('Free Time Granted', `Granted +${minutes} min free bonus time to ${pc.name} (${pc.session.customerName})`, 'success');
   io.emit('pc_updated', pc);
   io.to(`pc_${pc.id}`).emit('session_updated', pc.session);
+  saveData();
   res.json({ success: true, pc, message: `Added ${minutes} free minutes successfully` });
 });
 
@@ -890,6 +962,7 @@ app.post('/api/session/end', (req, res) => {
   io.emit('pc_updated', pc);
   io.emit('shift_updated', db.shift);
   io.to(`pc_${pc.id}`).emit('session_closed', { invoice });
+  saveData();
   res.json({ success: true, invoice, pc });
 });
 
@@ -929,6 +1002,7 @@ app.post('/api/orders/add', (req, res) => {
     io.emit('shift_updated', db.shift);
   }
 
+  saveData();
   res.json({ success: true, order: orderItem });
 });
 
@@ -1019,6 +1093,7 @@ app.post('/api/session/transfer', (req, res) => {
   io.emit('pc_updated', fromPc);
   io.emit('pc_updated', toPc);
 
+  saveData();
   res.json({ success: true, fromPc, toPc });
 });
 
@@ -2320,6 +2395,7 @@ app.post('/api/wordfilter/test-trigger', (req, res) => {
 
     io.emit('pc_updated', pc);
     socket.emit('order_confirmed', { orders: addedOrders, total });
+    saveData();
   });
 
   // Disconnect handler

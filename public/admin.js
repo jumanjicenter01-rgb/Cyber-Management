@@ -964,9 +964,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const isElapsedType = pc.session.type === 'open' || pc.session.type === 'admin' || pc.isAdminSession;
-      const timerStr = (pc.status === 'in_session' && pc.session)
+      let timerStr = (pc.status === 'in_session' && pc.session)
         ? (isElapsedType ? formatTime(pc.session.elapsedSeconds) : formatTime(pc.session.remainingSeconds))
         : '';
+      if (pc.session && pc.session.isPaused) {
+        timerStr = `⏸️ ${timerStr} (PAUSED)`;
+      }
       const costDisplayVal = (pc.session.type === 'admin' || pc.isAdminSession) ? '0.00' : (pc.session.totalCost || 0).toFixed(2);
       const costStr = (pc.status === 'in_session' && pc.session)
         ? `<span class="cost-num">${costDisplayVal}</span> <small>EGP</small>`
