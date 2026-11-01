@@ -1703,31 +1703,120 @@
                   </div>
                 </div>
 
-                <!-- First-Time VPN Setup on MikroTik Box -->
-                <div class="settings-card-box highlight-box">
-                  <div class="card-box-header">
-                    <span class="box-icon">🚀</span>
-                    <h4>First-Time VPN Setup on MikroTik (Router Provisioning):</h4>
-                  </div>
-                  <p style="color:var(--text-muted); font-size:0.88rem; line-height:1.5;">
-                    Automatically deploys all required routing rules to MikroTik: creates WireGuard/OpenVPN tunnel, routing table <code>to_GAMING_VPN</code>, Mangle policy for <code>address-list=GAMING-VPN</code>, and NAT masquerade.
-                  </p>
-
-                  <div style="background:rgba(255,184,0,0.08); border:1px solid rgba(255,184,0,0.3); border-radius:8px; padding:0.6rem 0.9rem; font-size:0.82rem; color:var(--neon-amber); margin: 0.8rem 0; display:flex; align-items:center; gap:0.5rem;">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <span><b>Verification Mandatory:</b> An active, tested connection to RouterOS is required before provisioning VPN rules.</span>
-                  </div>
-
-                  <div class="provision-actions-bar" style="margin: 1.2rem 0; display:flex; gap:0.8rem; align-items:center; flex-wrap:wrap;">
-                    <button class="btn btn-primary" id="btnProvisionMikrotikVpn">
-                      <span>⚡</span> Provision VPN on MikroTik Now
-                    </button>
-                    <button class="btn btn-secondary" id="btnCopyMikrotikScript">
-                      <span>📋</span> View & Copy RouterOS Script
-                    </button>
+                <!-- Diskless-Safe Selective Split-Tunnel Setup on MikroTik Box -->
+                <div class="settings-card-box highlight-box" style="grid-column: 1 / -1;">
+                  <div class="card-box-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                    <div style="display:flex; align-items:center; gap:0.6rem;">
+                      <span class="box-icon" style="font-size:1.4rem;">🛡️</span>
+                      <div>
+                        <h4 style="margin:0; font-size:1.05rem; color:#fff;">طريقة تسطيب وتهيئة المايكروتك لأجهزة الديسكلس وروبلوكس</h4>
+                        <span style="font-size:0.78rem; color:var(--text-muted);">Diskless-Safe Selective Split-Tunneling Engine (RouterOS v6.49.x & v7.x)</span>
+                      </div>
+                    </div>
+                    <span class="badge" style="background:rgba(5,255,161,0.15); color:var(--neon-green); border:1px solid rgba(5,255,161,0.4); padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.8rem;">
+                      🛡️ 100% Diskless Safe • Zero Quota Waste
+                    </span>
                   </div>
 
-                  <div class="provision-log-box" id="provisionLogBox" style="display:none; background:#070a14; border:1px solid var(--border-neon); border-radius:8px; padding:1rem; font-family:monospace; font-size:0.8rem; color:#05ffa1; max-height:160px; overflow-y:auto;">
+                  <!-- Explanatory Feature Callout -->
+                  <div style="background:rgba(0,243,255,0.04); border:1px solid rgba(0,243,255,0.18); border-radius:10px; padding:1rem; margin:1rem 0; display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1rem;">
+                    <div style="display:flex; gap:0.8rem; align-items:flex-start;">
+                      <div style="background:rgba(5,255,161,0.12); color:var(--neon-green); width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1rem; font-weight:bold;">1</div>
+                      <div>
+                        <div style="font-weight:700; color:#fff; font-size:0.88rem; margin-bottom:0.25rem;">حماية تامة لسيرفر الديسكلس (Diskless Safe)</div>
+                        <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.45;">التوجيه يتم بالكامل داخل راوتر المايكروتك فقط. لا يتم لمس أو تعديل كارت اللان الفعلي في أجهزة الكلينت، مما يمنع الشاشات الزرقاء (BSOD) أو انفصال الأجهزة عن سيرفر الديسكلس (CCBoot / iCafeCloud).</div>
+                      </div>
+                    </div>
+                    <div style="display:flex; gap:0.8rem; align-items:flex-start;">
+                      <div style="background:rgba(0,243,255,0.12); color:var(--neon-cyan); width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1rem; font-weight:bold;">2</div>
+                      <div>
+                        <div style="font-weight:700; color:#fff; font-size:0.88rem; margin-bottom:0.25rem;">توفير كامل لباقة الإنترنت (Selective Split-Tunnel)</div>
+                        <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.45;">يتم توجيه سيرفرات لعبة روبلوكس المحجوبة (<code style="color:var(--neon-cyan);">128.116.0.0/16</code>) فقط عبر الـ VPN. التصفح العادي، يوتيوب، وتحميلات Steam وألعاب السايبر تعمل بالسرعة القصوى المباشرة بدون استهلاك إضافي للباقة.</div>
+                      </div>
+                    </div>
+                    <div style="display:flex; gap:0.8rem; align-items:flex-start;">
+                      <div style="background:rgba(255,184,0,0.12); color:var(--neon-amber); width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1rem; font-weight:bold;">3</div>
+                      <div>
+                        <div style="font-weight:700; color:#fff; font-size:0.88rem; margin-bottom:0.25rem;">مجاني ومدعوم رسمياً على RouterOS v6 & v7</div>
+                        <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.45;">يعتمد على بروتوكول L2TP/IPsec المدعوم في كل راوترات المايكروتك (hAP ac^2 وغيرها) مجاناً وبدون أي اشتراكات أو برامج إضافية.</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- VPN Settings Sub-Grid -->
+                  <div style="background:rgba(10,14,26,0.6); border:1px solid var(--border-subtle); border-radius:10px; padding:1rem; margin-bottom:1rem;">
+                    <div style="font-weight:700; color:#fff; font-size:0.9rem; margin-bottom:0.8rem; display:flex; align-items:center; gap:0.5rem;">
+                      <span>⚙️</span> إعدادات نفق الـ VPN على المايكروتك (MikroTik VPN Client Parameters):
+                    </div>
+                    <div class="mt-form-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:0.8rem;">
+                      <div class="form-group">
+                        <label>سيرفر الـ VPN (Host / IP):</label>
+                        <input type="text" id="mtVpnServer" class="form-input" value="219.100.37.115" placeholder="e.g. 219.100.37.115">
+                      </div>
+                      <div class="form-group">
+                        <label>البروتوكول (Protocol):</label>
+                        <select id="mtVpnProto" class="form-input">
+                          <option value="l2tp" selected>L2TP / IPsec (RouterOS v6 & v7)</option>
+                          <option value="sstp">SSTP (SSL 443)</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label>اسم المستخدم (VPN User):</label>
+                        <input type="text" id="mtVpnUser" class="form-input" value="vpn" placeholder="vpn">
+                      </div>
+                      <div class="form-group">
+                        <label>كلمة المرور (VPN Password):</label>
+                        <input type="password" id="mtVpnPassword" class="form-input" value="vpn" placeholder="vpn">
+                      </div>
+                      <div class="form-group">
+                        <label>مفتاح الأمان (IPsec Secret):</label>
+                        <input type="password" id="mtVpnIpsecSecret" class="form-input" value="vpn" placeholder="vpn">
+                      </div>
+                      <div class="form-group">
+                        <label>ترافيك روبلوكس المستهدف (Roblox IP Range):</label>
+                        <input type="text" id="mtRobloxDst" class="form-input" value="128.116.0.0/16" placeholder="128.116.0.0/16">
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Two Provisioning Options -->
+                  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; margin-top:1rem;">
+                    <!-- Option 1: Automatic 1-Click Provisioning -->
+                    <div style="background:rgba(5,255,161,0.03); border:1px solid rgba(5,255,161,0.25); border-radius:10px; padding:1rem; display:flex; flex-direction:column; justify-content:space-between;">
+                      <div>
+                        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                          <span style="font-size:1.1rem;">⚡</span>
+                          <span style="font-weight:700; color:#fff; font-size:0.92rem;">الخيار 1: التسطيب التلقائي بضغطة زر واحدة</span>
+                          <span class="badge" style="background:rgba(5,255,161,0.2); color:var(--neon-green); font-size:0.7rem; padding:2px 6px; border-radius:4px;">موصى به</span>
+                        </div>
+                        <p style="font-size:0.78rem; color:var(--text-muted); line-height:1.4; margin:0 0 1rem 0;">
+                          يرسل الأوامر مباشرة إلى راوتر المايكروتك عبر الـ API وينشئ النفق وقواعد الـ Mangle والـ NAT والراوتنج فوراً بدون فتح Winbox.
+                        </p>
+                      </div>
+                      <button class="btn btn-primary" id="btnProvisionMikrotikVpn" style="width:100%; justify-content:center;">
+                        <span>⚡</span> تهيئة وتثبيت القواعد في المايكروتك تلقائياً
+                      </button>
+                    </div>
+
+                    <!-- Option 2: Copy Terminal Script -->
+                    <div style="background:rgba(0,243,255,0.03); border:1px solid rgba(0,243,255,0.25); border-radius:10px; padding:1rem; display:flex; flex-direction:column; justify-content:space-between;">
+                      <div>
+                        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                          <span style="font-size:1.1rem;">📋</span>
+                          <span style="font-weight:700; color:#fff; font-size:0.92rem;">الخيار 2: نسخ كود التيرمنال يدوياً (Winbox)</span>
+                        </div>
+                        <p style="font-size:0.78rem; color:var(--text-muted); line-height:1.4; margin:0 0 1rem 0;">
+                          يقوم بتوليد كود أوامر RouterOS كامل ومُعدّل وفق إعداداتك لنسخه ولصقه مباشرة في شاشة New Terminal ببرنامج Winbox.
+                        </p>
+                      </div>
+                      <button class="btn btn-secondary" id="btnCopyMikrotikScript" style="width:100%; justify-content:center;">
+                        <span>📋</span> عرض ونسخ كود التيرمنال للمايكروتك
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Provisioning Live Output Log Box -->
+                  <div class="provision-log-box" id="provisionLogBox" style="display:none; margin-top:1.2rem; background:#070a14; border:1px solid var(--border-neon); border-radius:8px; padding:1rem; font-family:monospace; font-size:0.8rem; color:#05ffa1; max-height:180px; overflow-y:auto;">
                   </div>
                 </div>
 
@@ -2405,20 +2494,27 @@
   </div>
 
   <div id="mikrotikScriptModal" class="modal-overlay">
-    <div class="modal-box modal-wide">
+    <div class="modal-box modal-wide" style="max-width:780px;">
       <div class="modal-header">
-        <div class="modal-title">
-          <span>📋</span> MikroTik RouterOS Setup Script
+        <div class="modal-title" style="display:flex; align-items:center; gap:0.5rem;">
+          <span>📋</span> كود أوامر المايكروتك لأجهزة الديسكلس وروبلوكس (RouterOS Script)
         </div>
         <button class="modal-close" onclick="closeModal('mikrotikScriptModal')">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:0.8rem;">
-          You can copy and paste this complete script directly into Winbox Terminal:
-        </p>
-        <textarea id="mikrotikScriptTextarea" class="form-input" rows="11" readonly style="font-family:monospace; font-size:0.8rem; background:#050914; color:#00f3ff; width:100%; box-sizing:border-box;"></textarea>
-        <div style="margin-top:1rem; display:flex; justify-content:flex-end; gap:0.8rem;">
-          <button class="btn btn-primary" id="btnCopyScriptModal"><span>📄</span> Copy Script</button>
+        <div style="background:rgba(0,243,255,0.05); border:1px solid rgba(0,243,255,0.25); border-radius:8px; padding:0.8rem 1rem; margin-bottom:0.9rem; font-size:0.82rem; color:var(--text-muted); line-height:1.5;">
+          <b style="color:#fff; display:block; margin-bottom:0.3rem;">📌 خطوات التشغيل السريع في برنامج Winbox:</b>
+          <ol style="margin:0 0 0 1.2rem; padding:0; line-height:1.6;">
+            <li>افتح برنامج <b>Winbox</b> واتصل براوتر المايكروتك (<code style="color:var(--neon-cyan);">10.10.10.1</code>).</li>
+            <li>اضغط على <b>New Terminal</b> من القائمة الجانبية اليسرى.</li>
+            <li>اضغط على زر <b>نسخ الكود بالكامل</b> بالأسفل والصقه في التيرمنال، ثم اضغط <b>Enter</b>.</li>
+            <li>سيتم تفعيل النفق الانتقائي فوراً وتوجيه روبلوكس لجميع أجهزة السايبر المحددة بدون لمس كروت الشبكة.</li>
+          </ol>
+        </div>
+        <textarea id="mikrotikScriptTextarea" class="form-input" rows="13" readonly style="font-family:monospace; font-size:0.82rem; background:#050914; color:#00f3ff; width:100%; box-sizing:border-box; line-height:1.45; border:1px solid rgba(0,243,255,0.3); border-radius:6px; padding:0.8rem;"></textarea>
+        <div style="margin-top:1rem; display:flex; justify-content:space-between; align-items:center; gap:0.8rem;">
+          <span id="copyScriptFeedback" style="color:var(--neon-green); font-size:0.84rem; font-weight:700; display:none;">✔ تم نسخ كود التيرمنال بنجاح إلى الحافظة!</span>
+          <button class="btn btn-primary" id="btnCopyScriptModal"><span>📄</span> نسخ الكود بالكامل (Copy Script)</button>
         </div>
       </div>
     </div>

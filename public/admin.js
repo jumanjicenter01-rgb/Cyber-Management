@@ -3880,6 +3880,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function getMikrotikPayload() {
+    return {
+      host: document.getElementById('mtHost')?.value?.trim() || '10.10.10.1',
+      port: parseInt(document.getElementById('mtPort')?.value) || 8728,
+      restPort: parseInt(document.getElementById('mtRestPort')?.value) || 80,
+      username: document.getElementById('mtUsername')?.value?.trim() || 'admin',
+      password: document.getElementById('mtPassword')?.value || '',
+      vpnList: document.getElementById('mtVpnList')?.value?.trim() || 'GAMING-VPN',
+      vpnServer: document.getElementById('mtVpnServer')?.value?.trim() || '219.100.37.115',
+      vpnProto: document.getElementById('mtVpnProto')?.value || 'l2tp',
+      vpnUser: document.getElementById('mtVpnUser')?.value?.trim() || 'vpn',
+      vpnPassword: document.getElementById('mtVpnPassword')?.value || 'vpn',
+      vpnIpsecSecret: document.getElementById('mtVpnIpsecSecret')?.value || 'vpn',
+      robloxDst: document.getElementById('mtRobloxDst')?.value?.trim() || '128.116.0.0/16',
+      routingMark: 'to_GAMING_VPN'
+    };
+  }
+
   function renderMikrotikSection() {
     fetch('/api/mikrotik/config')
       .then(r => r.json())
@@ -3895,13 +3913,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const userEl = document.getElementById('mtUsername');
         const passEl = document.getElementById('mtPassword');
         const vpnListEl = document.getElementById('mtVpnList');
+        const vpnServerEl = document.getElementById('mtVpnServer');
+        const vpnProtoEl = document.getElementById('mtVpnProto');
+        const vpnUserEl = document.getElementById('mtVpnUser');
+        const vpnPassEl = document.getElementById('mtVpnPassword');
+        const vpnIpsecEl = document.getElementById('mtVpnIpsecSecret');
+        const robloxDstEl = document.getElementById('mtRobloxDst');
 
-        if (hostEl) hostEl.value = mt.host || '192.168.88.1';
+        if (hostEl) hostEl.value = mt.host || '10.10.10.1';
         if (portEl) portEl.value = mt.port || 8728;
         if (restPortEl) restPortEl.value = mt.restPort || 80;
         if (userEl) userEl.value = mt.username || 'admin';
         if (passEl && mt.password) passEl.value = mt.password;
         if (vpnListEl) vpnListEl.value = mt.vpnList || 'GAMING-VPN';
+        if (vpnServerEl) vpnServerEl.value = mt.vpnServer || mt.activeVpnServer || '219.100.37.115';
+        if (vpnProtoEl && mt.vpnProto) vpnProtoEl.value = mt.vpnProto;
+        if (vpnUserEl) vpnUserEl.value = mt.vpnUser || 'vpn';
+        if (vpnPassEl && mt.vpnPassword) vpnPassEl.value = mt.vpnPassword;
+        if (vpnIpsecEl && mt.vpnIpsecSecret) vpnIpsecEl.value = mt.vpnIpsecSecret;
+        if (robloxDstEl) robloxDstEl.value = mt.robloxDst || '128.116.0.0/16';
 
         updateMikrotikStatusUI(mt);
         renderVpnServersTable(mt.vpnServers || []);
@@ -3914,14 +3944,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnTestMikrotikConn.disabled = true;
       btnTestMikrotikConn.innerHTML = '<span>⏳</span> Testing RouterOS...';
 
-      const payload = {
-        host: document.getElementById('mtHost')?.value?.trim() || '192.168.88.1',
-        port: parseInt(document.getElementById('mtPort')?.value) || 8728,
-        restPort: parseInt(document.getElementById('mtRestPort')?.value) || 80,
-        username: document.getElementById('mtUsername')?.value?.trim() || 'admin',
-        password: document.getElementById('mtPassword')?.value || '',
-        vpnList: document.getElementById('mtVpnList')?.value?.trim() || 'GAMING-VPN'
-      };
+      const payload = getMikrotikPayload();
 
       fetch('/api/mikrotik/config', {
         method: 'POST',
@@ -3937,11 +3960,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ok && data.connected) {
           updateMikrotikStatusUI({ connected: true, model: data.model });
           window.cyberAudio?.playUnlock?.();
-          alert(`Connected to MikroTik RouterOS successfully!\nModel: ${data.model}\nStatus: ${data.message}`);
+          alert(`تم الاتصال براوتر المايكروتك بنجاح!\nالموديل: ${data.model}\nالحالة: متصل وجاهز للتهيئة.`);
         } else {
           updateMikrotikStatusUI({ connected: false });
           window.cyberAudio?.playWarning?.();
-          alert(`Could not connect to MikroTik router at ${payload.host}:${payload.port}.\nError: ${data.error || data.message || 'Connection refused or timed out'}\nPlease verify router IP, port, and credentials.`);
+          alert(`فشل الاتصال براوتر المايكروتك على ${payload.host}:${payload.port}.\nالخطأ: ${data.error || data.message || 'Connection refused or timed out'}\nتأكد من عنوان IP والمنفذ واسم المستخدم وكلمة المرور.`);
         }
       })
       .catch(err => {
@@ -3955,14 +3978,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnSaveMikrotikSettings) {
     btnSaveMikrotikSettings.addEventListener('click', () => {
-      const payload = {
-        host: document.getElementById('mtHost')?.value?.trim() || '192.168.88.1',
-        port: parseInt(document.getElementById('mtPort')?.value) || 8728,
-        restPort: parseInt(document.getElementById('mtRestPort')?.value) || 80,
-        username: document.getElementById('mtUsername')?.value?.trim() || 'admin',
-        password: document.getElementById('mtPassword')?.value || '',
-        vpnList: document.getElementById('mtVpnList')?.value?.trim() || 'GAMING-VPN'
-      };
+      const payload = getMikrotikPayload();
 
       btnSaveMikrotikSettings.disabled = true;
       btnSaveMikrotikSettings.innerHTML = '<span>💾</span> Saving...';
@@ -3980,7 +3996,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!state.settings) state.settings = {};
           state.settings.mikrotik = res.mikrotik;
           window.cyberAudio?.playCash?.();
-          alert('MikroTik router configuration saved successfully.');
+          alert('تم حفظ إعدادات راوتر المايكروتك ونفق الألعاب بنجاح.');
         }
       })
       .catch(err => {
@@ -3994,16 +4010,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnProvisionMikrotikVpn) {
     btnProvisionMikrotikVpn.addEventListener('click', () => {
       btnProvisionMikrotikVpn.disabled = true;
-      btnProvisionMikrotikVpn.innerHTML = '<span>⏳</span> Provisioning VPN...';
+      btnProvisionMikrotikVpn.innerHTML = '<span>⏳</span> جاري التهيئة على المايكروتك...';
 
-      const payload = {
-        host: document.getElementById('mtHost')?.value?.trim() || '192.168.88.1',
-        port: parseInt(document.getElementById('mtPort')?.value) || 8728,
-        restPort: parseInt(document.getElementById('mtRestPort')?.value) || 80,
-        username: document.getElementById('mtUsername')?.value?.trim() || 'admin',
-        password: document.getElementById('mtPassword')?.value || '',
-        vpnList: document.getElementById('mtVpnList')?.value?.trim() || 'GAMING-VPN'
-      };
+      const payload = getMikrotikPayload();
 
       fetch('/api/mikrotik/config', {
         method: 'POST',
@@ -4015,25 +4024,29 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(r => r.json().then(data => ({ ok: r.ok, data })))
         .then(({ ok, data }) => {
           btnProvisionMikrotikVpn.disabled = false;
-          btnProvisionMikrotikVpn.innerHTML = '<span>⚡</span> Provision VPN on MikroTik Now';
+          btnProvisionMikrotikVpn.innerHTML = '<span>⚡</span> تهيئة وتثبيت القواعد في المايكروتك تلقائياً';
           if (ok && data.success) {
             if (provisionLogBox) {
               provisionLogBox.style.display = 'block';
+              const logLines = (data.executedResults || []).map(item => `<div>✔ ${item}</div>`).join('');
               provisionLogBox.innerHTML = `
-                <div style="color:var(--neon-green); font-weight:bold; margin-bottom:0.5rem;">[SUCCESS] MikroTik RouterOS Gaming VPN Provisioned:</div>
-                <pre style="margin:0; white-space:pre-wrap; font-size:0.75rem; color:#a0f0d0;">${data.script}</pre>
+                <div style="color:var(--neon-green); font-weight:bold; margin-bottom:0.6rem;">🛡️ [SUCCESS] تم تهيئة المايكروتك للديسكلس وروبلوكس بنجاح:</div>
+                <div style="color:#05ffa1; font-size:0.78rem; line-height:1.6; margin-bottom:0.8rem;">${logLines}</div>
+                <div style="color:var(--neon-cyan); font-size:0.75rem; border-top:1px solid rgba(0,243,255,0.2); padding-top:0.5rem;">
+                  <b>الملاحظات:</b> أجهزة الديسكلس آمنة تماماً. فقط حركة سيرفرات روبلوكس ستمر عبر النفق، بينما التصفح العادي وتحميلات الألعاب تمر بالسرعة القصوى المباشرة.
+                </div>
               `;
             }
             window.cyberAudio?.playUnlock?.();
-            alert('Gaming VPN rules successfully provisioned on MikroTik RouterOS.');
+            alert('تمت تهيئة وتثبيت قواعد المايكروتك بنجاح!');
           } else {
             window.cyberAudio?.playWarning?.();
-            alert('Failed to provision VPN: ' + (data.error || 'Router connection error.'));
+            alert('فشل في تهيئة المايكروتك: ' + (data.error || 'خطأ في الاتصال بالراوتر'));
           }
         })
         .catch(err => {
           btnProvisionMikrotikVpn.disabled = false;
-          btnProvisionMikrotikVpn.innerHTML = '<span>⚡</span> Provision VPN on MikroTik Now';
+          btnProvisionMikrotikVpn.innerHTML = '<span>⚡</span> تهيئة وتثبيت القواعد في المايكروتك تلقائياً';
           alert('Error during provisioning: ' + err.message);
         });
     });
@@ -4041,34 +4054,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnCopyMikrotikScript) {
     btnCopyMikrotikScript.addEventListener('click', () => {
-      const vpnList = document.getElementById('mtVpnList')?.value?.trim() || 'GAMING-VPN';
-      const scriptText = `# ==============================================================
-# CyberPulse Gaming Lounge - MikroTik RouterOS Setup Script
-# ==============================================================
-/interface wireguard add listen-port=51820 name=vpn-gaming-out comment="CyberPulse Gaming VPN Tunnel"
-/ip firewall address-list add list=${vpnList} address=127.0.0.1 comment="VPN Initializer"
-/ip firewall address-list remove [find list=${vpnList} address=127.0.0.1]
-/routing table add name=to_GAMING_VPN fib
-/ip route add dst-address=0.0.0.0/0 gateway=vpn-gaming-out routing-table=to_GAMING_VPN comment="CyberPulse Route to VPN"
-/ip firewall mangle add chain=prerouting src-address-list=${vpnList} action=mark-routing new-routing-mark=to_GAMING_VPN passthrough=no comment="CyberPulse Gaming Traffic to VPN"
-/ip firewall nat add chain=srcnat out-interface=vpn-gaming-out action=masquerade comment="CyberPulse VPN Masquerade"
-:log info "CyberPulse Gaming VPN rules successfully provisioned on RouterOS"`;
+      btnCopyMikrotikScript.disabled = true;
+      btnCopyMikrotikScript.innerHTML = '<span>⏳</span> جاري توليد الكود...';
 
-      const textarea = document.getElementById('mikrotikScriptTextarea');
-      if (textarea) textarea.value = scriptText;
-      openModal('mikrotikScriptModal');
+      const payload = getMikrotikPayload();
+
+      fetch('/api/mikrotik/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(r => r.json())
+      .then(() => fetch('/api/mikrotik/script'))
+      .then(r => r.json())
+      .then(res => {
+        btnCopyMikrotikScript.disabled = false;
+        btnCopyMikrotikScript.innerHTML = '<span>📋</span> عرض ونسخ كود التيرمنال للمايكروتك';
+        if (res.success && res.script) {
+          const textarea = document.getElementById('mikrotikScriptTextarea');
+          if (textarea) textarea.value = res.script;
+          const fb = document.getElementById('copyScriptFeedback');
+          if (fb) fb.style.display = 'none';
+          openModal('mikrotikScriptModal');
+        } else {
+          alert('تعذر استخراج كود التيرمنال');
+        }
+      })
+      .catch(err => {
+        btnCopyMikrotikScript.disabled = false;
+        btnCopyMikrotikScript.innerHTML = '<span>📋</span> عرض ونسخ كود التيرمنال للمايكروتك';
+        alert('Failed to generate script: ' + err.message);
+      });
     });
   }
 
   if (btnCopyScriptModal) {
     btnCopyScriptModal.addEventListener('click', () => {
       const textarea = document.getElementById('mikrotikScriptTextarea');
+      const fb = document.getElementById('copyScriptFeedback');
       if (textarea) {
         navigator.clipboard.writeText(textarea.value).then(() => {
-          btnCopyScriptModal.innerHTML = '<span>✅</span> Copied to Clipboard!';
+          btnCopyScriptModal.innerHTML = '<span>✅</span> تم النسخ إلى الحافظة!';
+          if (fb) fb.style.display = 'inline';
           window.cyberAudio?.playClick?.();
           setTimeout(() => {
-            btnCopyScriptModal.innerHTML = '<span>📄</span> Copy Script';
+            btnCopyScriptModal.innerHTML = '<span>📄</span> نسخ الكود بالكامل (Copy Script)';
           }, 2500);
         });
       }

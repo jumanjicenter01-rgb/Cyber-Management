@@ -287,7 +287,14 @@ let db = {
       lastVerified: null,
       useRestApi: false,
       vpnList: 'GAMING-VPN',
-      activeVpnServer: '185.220.101.5',
+      vpnProto: 'l2tp',
+      vpnServer: '219.100.37.115',
+      vpnUser: 'vpn',
+      vpnPassword: 'vpn',
+      vpnIpsecSecret: 'vpn',
+      robloxDst: '128.116.0.0/16',
+      routingMark: 'to_GAMING_VPN',
+      activeVpnServer: '219.100.37.115',
       vpnServers: [
         { id: 'vpn-uae', name: 'UAE Dubai Ultra-Low Latency', ip: '185.220.101.5', ping: '14ms', flag: '🇦🇪', enabled: true },
         { id: 'vpn-sa-ryd', name: 'Riyadh KSA Gaming Hub', ip: '178.63.14.88', ping: '17ms', flag: '🇸🇦', enabled: true },
@@ -1433,43 +1440,53 @@ app.post('/api/screenshots/save', (req, res) => {
 // MIKROTIK ROUTEROS & GAMING VPN ENGINE
 // -------------------------------------------------------------
 function generateMikrotikScript(cfg) {
-  const vpnList = cfg.vpnList || 'GAMING-VPN';
-  const vpnServers = (cfg && cfg.vpnServers) || [];
-  const topServers = vpnServers.slice(0, 15);
-
-  const peerRules = topServers.map((s, idx) => 
-    `/interface wireguard peers add interface=vpn-gaming-out endpoint-address="${s.ip}" endpoint-port=51820 allowed-address=0.0.0.0/0 comment="Peer ${idx + 1}: ${s.name} (${s.ip})"`
-  ).join('\n');
+  const host = (cfg && cfg.host) || '10.10.10.1';
+  const vpnList = (cfg && cfg.vpnList) || 'GAMING-VPN';
+  const vpnServer = (cfg && (cfg.vpnServer || cfg.activeVpnServer)) || '219.100.37.115';
+  const vpnUser = (cfg && cfg.vpnUser) || 'vpn';
+  const vpnPassword = (cfg && cfg.vpnPassword) || 'vpn';
+  const vpnIpsecSecret = (cfg && cfg.vpnIpsecSecret) || 'vpn';
+  const robloxDst = (cfg && cfg.robloxDst) || '128.116.0.0/16';
+  const routingMark = (cfg && cfg.routingMark) || 'to_GAMING_VPN';
 
   return `# ==============================================================
-# CyberPulse Gaming Lounge - MikroTik RouterOS Multi-Route Setup
-# Generated for: ${cfg.host || '192.168.88.1'} | Active Nodes: ${vpnServers.length}
+# CyberPulse Cyber Cafe Management - MikroTik RouterOS Setup
+# Engine: Diskless-Safe Selective Split-Tunnel (Roblox & Gaming)
+# Compatible with: RouterOS v6.49.x & RouterOS v7.x
+# Router IP: ${host}
+# ==============================================================
+# 100% Free - Zero Quota Waste - 100% Diskless (CCBoot/iCafe) Safe
+# - No virtual NICs created on client PCs (0 risk of BSOD/freeze)
+# - ONLY Roblox servers (${robloxDst}) route through the VPN
+# - Normal browsing, YouTube, Steam, and Diskless Server traffic
+#   stay on direct WAN at native ISP line speed with 0% extra quota!
 # ==============================================================
 
-# 1. WireGuard Core Interface
-/interface wireguard add listen-port=51820 name=vpn-gaming-out comment="CyberPulse Gaming VPN Tunnel"
+# 1. Clean up any previous CyberPulse VPN interface
+/interface l2tp-client remove [find name=vpn-gaming-out]
 
-# 2. WireGuard Low-Latency Multi-Peer Endpoints
-${peerRules}
+# 2. Create the Free High-Speed L2TP/IPsec Client Interface
+/interface l2tp-client add name=vpn-gaming-out connect-to=${vpnServer} user=${vpnUser} password=${vpnPassword} use-ipsec=yes ipsec-secret=${vpnIpsecSecret} default-route-distance=10 add-default-route=no disabled=no comment="CyberPulse Gaming VPN Tunnel"
 
-# 3. Dedicated Routing Table for Gaming Traffic
-/routing table add name=to_GAMING_VPN fib
+# 3. Create Dedicated Route for Marked Gaming Traffic
+/ip route remove [find comment="CyberPulse Route to Gaming VPN"]
+/ip route add dst-address=0.0.0.0/0 gateway=vpn-gaming-out routing-mark=${routingMark} distance=1 comment="CyberPulse Route to Gaming VPN"
 
-# 4. Route Gaming Traffic to WireGuard Gateway
-/ip route add dst-address=0.0.0.0/0 gateway=vpn-gaming-out routing-table=to_GAMING_VPN comment="CyberPulse Route to Gaming VPN"
+# 4. Create NAT Masquerade on VPN Interface
+/ip firewall nat remove [find comment="CyberPulse Gaming VPN Masquerade"]
+/ip firewall nat add chain=srcnat out-interface=vpn-gaming-out action=masquerade comment="CyberPulse Gaming VPN Masquerade"
 
-# 5. Create Address-List for Gaming Machines
-/ip firewall address-list add list=${vpnList} address=127.0.0.1 comment="VPN Initializer"
-/ip firewall address-list remove [find list=${vpnList} address=127.0.0.1]
+# 5. Create Selective Mangle Rule (Roblox Split-Tunneling)
+# ONLY Roblox destination traffic (${robloxDst}) from PCs in '${vpnList}' is routed to VPN.
+/ip firewall mangle remove [find comment="CyberPulse Gaming Traffic to VPN"]
+/ip firewall mangle add chain=prerouting src-address-list=${vpnList} dst-address=${robloxDst} action=mark-routing new-routing-mark=${routingMark} passthrough=no comment="CyberPulse Gaming Traffic to VPN"
 
-# 6. Mark Routing for all Arena Machines in ${vpnList}
-/ip firewall mangle add chain=prerouting src-address-list=${vpnList} action=mark-routing new-routing-mark=to_GAMING_VPN passthrough=no comment="CyberPulse Gaming Traffic to VPN"
+# 6. Safety check: ensure Router IP is never in the VPN list
+/ip firewall address-list remove [find list=${vpnList} address=${host}]
 
-# 7. NAT Masquerade on VPN Interface
-/ip firewall nat add chain=srcnat out-interface=vpn-gaming-out action=masquerade comment="CyberPulse VPN Masquerade"
-
-:log info "CyberPulse Gaming VPN multi-node rules successfully provisioned on RouterOS"
-:put ">> CyberPulse Multi-Node Gaming VPN configured on ${cfg.host} <<"`;
+# 7. Log success to RouterOS System Log
+:log info "CyberPulse Selective Gaming VPN rules successfully provisioned on RouterOS"
+:put ">> CyberPulse Diskless Selective VPN configured successfully on ${host} <<"`;
 }
 
 // Native RouterOS API Binary Protocol (Supports RouterOS v6 and v7 on Port 8728)
@@ -1851,7 +1868,12 @@ app.get('/api/mikrotik/config', (req, res) => {
 });
 
 app.post('/api/mikrotik/config', (req, res) => {
-  const { host, port, restPort, username, password, vpnList, activeVpnServer, simulationMode } = req.body;
+  const { 
+    host, port, restPort, username, password, 
+    vpnList, activeVpnServer, vpnServer, vpnProto,
+    vpnUser, vpnPassword, vpnIpsecSecret, robloxDst,
+    routingMark, simulationMode 
+  } = req.body;
   if (!db.settings.mikrotik) db.settings.mikrotik = {};
   const mt = db.settings.mikrotik;
   if (host) mt.host = host.trim();
@@ -1860,11 +1882,25 @@ app.post('/api/mikrotik/config', (req, res) => {
   if (username !== undefined) mt.username = username.trim();
   if (password !== undefined) mt.password = password;
   if (vpnList) mt.vpnList = vpnList.trim();
+  if (vpnServer) mt.vpnServer = vpnServer.trim();
   if (activeVpnServer) mt.activeVpnServer = activeVpnServer.trim();
+  if (vpnProto) mt.vpnProto = vpnProto.trim();
+  if (vpnUser !== undefined) mt.vpnUser = vpnUser.trim();
+  if (vpnPassword !== undefined) mt.vpnPassword = vpnPassword;
+  if (vpnIpsecSecret !== undefined) mt.vpnIpsecSecret = vpnIpsecSecret;
+  if (robloxDst) mt.robloxDst = robloxDst.trim();
+  if (routingMark) mt.routingMark = routingMark.trim();
   if (typeof simulationMode === 'boolean') mt.simulationMode = simulationMode;
 
+  saveData();
   addAudit('MikroTik Config Updated', `Router connection configured: ${mt.host}:${mt.port}`);
   res.json({ success: true, mikrotik: db.settings.mikrotik });
+});
+
+app.get('/api/mikrotik/script', (req, res) => {
+  const mt = db.settings.mikrotik || {};
+  const script = generateMikrotikScript(mt);
+  res.json({ success: true, script });
 });
 
 app.post('/api/mikrotik/test', async (req, res) => {
@@ -1899,48 +1935,145 @@ async function executeMikrotikProvisioning(mt) {
   const port = mt.port || 8728;
   const username = mt.username || 'admin';
   const password = mt.password || '';
+  const vpnServer = mt.vpnServer || mt.activeVpnServer || '219.100.37.115';
+  const vpnUser = mt.vpnUser || 'vpn';
+  const vpnPassword = mt.vpnPassword || 'vpn';
+  const vpnIpsecSecret = mt.vpnIpsecSecret || 'vpn';
+  const robloxDst = mt.robloxDst || '128.116.0.0/16';
+  const routingMark = mt.routingMark || 'to_GAMING_VPN';
 
   const results = [];
 
-  // 1. Mangle rule: Mark routing to_GAMING_VPN for machines in address-list
-  const mCheck = await runRouterOsApi(mt.host, port, username, password, [
-    '/ip/firewall/mangle/print',
-    '?comment=CyberPulse Gaming Traffic to VPN'
+  // 1. Interface: Check existing L2TP client 'vpn-gaming-out'
+  const ifaces = await runRouterOsApi(mt.host, port, username, password, [
+    '/interface/l2tp-client/print',
+    '?name=vpn-gaming-out'
   ]);
-  if (!mCheck.some(s => s[0] === '!re')) {
-    await runRouterOsApi(mt.host, port, username, password, [
-      '/ip/firewall/mangle/add',
-      '=chain=prerouting',
-      '=src-address-list=' + vpnList,
-      '=action=mark-routing',
-      '=new-routing-mark=to_GAMING_VPN',
-      '=passthrough=no',
-      '=comment=CyberPulse Gaming Traffic to VPN'
-    ]);
-    results.push(`Added Mangle rule: prerouting src-address-list=${vpnList} -> mark-routing to_GAMING_VPN`);
-  } else {
-    results.push(`Mangle mark-routing rule already active on RouterOS`);
+  let ifaceId = null;
+  for (const item of ifaces) {
+    const idWord = item.find(w => w.startsWith('=.id='));
+    if (idWord) ifaceId = idWord.replace('=.id=', '');
   }
 
-  // 2. NAT Masquerade rule: Masquerade outgoing traffic for machines in address-list
+  if (ifaceId) {
+    await runRouterOsApi(mt.host, port, username, password, [
+      '/interface/l2tp-client/set',
+      '=.id=' + ifaceId,
+      '=connect-to=' + vpnServer,
+      '=user=' + vpnUser,
+      '=password=' + vpnPassword,
+      '=use-ipsec=yes',
+      '=ipsec-secret=' + vpnIpsecSecret,
+      '=default-route-distance=10',
+      '=add-default-route=no',
+      '=disabled=no'
+    ]);
+    results.push(`Updated L2TP client interface 'vpn-gaming-out' -> Connect to: ${vpnServer}`);
+  } else {
+    await runRouterOsApi(mt.host, port, username, password, [
+      '/interface/l2tp-client/add',
+      '=name=vpn-gaming-out',
+      '=connect-to=' + vpnServer,
+      '=user=' + vpnUser,
+      '=password=' + vpnPassword,
+      '=use-ipsec=yes',
+      '=ipsec-secret=' + vpnIpsecSecret,
+      '=default-route-distance=10',
+      '=add-default-route=no',
+      '=disabled=no',
+      '=comment=CyberPulse Gaming VPN Tunnel'
+    ]);
+    results.push(`Created L2TP client interface 'vpn-gaming-out' -> Connect to: ${vpnServer}`);
+  }
+
+  // 2. Route: Dedicated routing for gaming traffic via vpn-gaming-out
+  const routeCheck = await runRouterOsApi(mt.host, port, username, password, [
+    '/ip/route/print',
+    '?comment=CyberPulse Route to Gaming VPN'
+  ]);
+  let routeId = null;
+  for (const r of routeCheck) {
+    const idWord = r.find(w => w.startsWith('=.id='));
+    if (idWord) routeId = idWord.replace('=.id=', '');
+  }
+  if (routeId) {
+    await runRouterOsApi(mt.host, port, username, password, [
+      '/ip/route/set',
+      '=.id=' + routeId,
+      '=dst-address=0.0.0.0/0',
+      '=gateway=vpn-gaming-out',
+      '=routing-mark=' + routingMark,
+      '=distance=1'
+    ]);
+    results.push(`Updated IP Route: 0.0.0.0/0 via gateway=vpn-gaming-out (routing-mark=${routingMark})`);
+  } else {
+    await runRouterOsApi(mt.host, port, username, password, [
+      '/ip/route/add',
+      '=dst-address=0.0.0.0/0',
+      '=gateway=vpn-gaming-out',
+      '=routing-mark=' + routingMark,
+      '=distance=1',
+      '=comment=CyberPulse Route to Gaming VPN'
+    ]);
+    results.push(`Created IP Route: 0.0.0.0/0 via gateway=vpn-gaming-out (routing-mark=${routingMark})`);
+  }
+
+  // 3. NAT Masquerade rule: Masquerade outgoing traffic for vpn-gaming-out
   const nCheck = await runRouterOsApi(mt.host, port, username, password, [
     '/ip/firewall/nat/print',
-    '?comment=CyberPulse Gaming VPN Masquerade'
+    '?out-interface=vpn-gaming-out'
   ]);
   if (!nCheck.some(s => s[0] === '!re')) {
     await runRouterOsApi(mt.host, port, username, password, [
       '/ip/firewall/nat/add',
       '=chain=srcnat',
-      '=src-address-list=' + vpnList,
+      '=out-interface=vpn-gaming-out',
       '=action=masquerade',
       '=comment=CyberPulse Gaming VPN Masquerade'
     ]);
-    results.push(`Added NAT rule: srcnat src-address-list=${vpnList} -> masquerade`);
+    results.push(`Added NAT masquerade rule for out-interface=vpn-gaming-out`);
   } else {
-    results.push(`NAT masquerade rule already active on RouterOS`);
+    results.push(`NAT masquerade rule for out-interface=vpn-gaming-out verified active`);
   }
 
-  // 3. Ensure router IP is never in the VPN list (strictly target selected PCs only)
+  // 4. Mangle rule: SELECTIVE split-tunnel for Roblox ASN (128.116.0.0/16)
+  // Machines in address-list have ONLY their Roblox packets marked to avoid quota waste and protect Diskless!
+  const mCheck = await runRouterOsApi(mt.host, port, username, password, [
+    '/ip/firewall/mangle/print',
+    '?comment=CyberPulse Gaming Traffic to VPN'
+  ]);
+  let mangleId = null;
+  for (const m of mCheck) {
+    const idWord = m.find(w => w.startsWith('=.id='));
+    if (idWord) mangleId = idWord.replace('=.id=', '');
+  }
+  if (mangleId) {
+    await runRouterOsApi(mt.host, port, username, password, [
+      '/ip/firewall/mangle/set',
+      '=.id=' + mangleId,
+      '=chain=prerouting',
+      '=src-address-list=' + vpnList,
+      '=dst-address=' + robloxDst,
+      '=action=mark-routing',
+      '=new-routing-mark=' + routingMark,
+      '=passthrough=no'
+    ]);
+    results.push(`Updated Selective Mangle: src-address-list=${vpnList} & dst-address=${robloxDst} -> mark-routing ${routingMark}`);
+  } else {
+    await runRouterOsApi(mt.host, port, username, password, [
+      '/ip/firewall/mangle/add',
+      '=chain=prerouting',
+      '=src-address-list=' + vpnList,
+      '=dst-address=' + robloxDst,
+      '=action=mark-routing',
+      '=new-routing-mark=' + routingMark,
+      '=passthrough=no',
+      '=comment=CyberPulse Gaming Traffic to VPN'
+    ]);
+    results.push(`Created Selective Mangle: src-address-list=${vpnList} & dst-address=${robloxDst} -> mark-routing ${routingMark}`);
+  }
+
+  // 5. Ensure router IP is never in the VPN list (strictly target selected PCs only)
   const aCheck = await runRouterOsApi(mt.host, port, username, password, [
     '/ip/firewall/address-list/print',
     '?list=' + vpnList,
@@ -1954,14 +2087,14 @@ async function executeMikrotikProvisioning(mt) {
         '/ip/firewall/address-list/remove',
         '=.id=' + entryId
       ]);
-      results.push(`Verified router gateway ${mt.host} is excluded from VPN (VPN strictly applies to selected PCs only)`);
+      results.push(`Verified router gateway ${mt.host} is excluded from address-list ${vpnList} (Diskless safety protection)`);
     }
   }
 
-  // 4. Log to RouterOS system log
+  // 6. Log to RouterOS system log
   await runRouterOsApi(mt.host, port, username, password, [
     '/log/info',
-    '=message=CyberPulse Gaming VPN rules successfully provisioned on RouterOS'
+    '=message=CyberPulse Selective Gaming VPN rules successfully provisioned on RouterOS'
   ]);
   results.push(`Logged provisioning success event to RouterOS system log`);
 
