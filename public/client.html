@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberPulse Client - Gaming Launcher & Lock Screen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="client.css">
+</head>
+<body>
+  <!-- ============================================================== -->
+  <!-- 1. LOCKED SCREEN OVERLAY                                      -->
+  <!-- ============================================================== -->
+  <div id="lockScreen" class="lock-screen active">
+    <div class="lock-backdrop"></div>
+    <div class="cyber-grid-bg"></div>
+
+    <!-- Top Info -->
+    <header class="lock-header">
+      <div class="lounge-brand">
+        <span class="brand-icon">⚡</span>
+        <div>
+          <h1 class="brand-title">CYBERPULSE</h1>
+          <p class="brand-sub">GAMING ARENA & ESPORTS LOUNGE</p>
+        </div>
+      </div>
+      <div class="pc-badge-large" id="lockPcBadge">
+        <span class="pulse-dot"></span>
+        <span id="lockPcName">PC-01</span>
+        <span class="specs-tag" id="lockPcSpecs">RTX 4060 • 144Hz</span>
+      </div>
+      <div class="lock-clock">
+        <div id="lockTime" class="digital-time">19:30:00</div>
+        <div id="lockDate" class="digital-date">Saturday, Oct 31</div>
+      </div>
+    </header>
+
+    <!-- Center Status & Actions -->
+    <main class="lock-center">
+      <div class="lock-card">
+        <div class="lock-icon-wrap">
+          <div class="lock-halo"></div>
+          <span class="lock-icon">🔒</span>
+        </div>
+        <h2 class="lock-title">Station Currently Locked</h2>
+        <p class="lock-desc">Please visit the cashier counter to start a session, or log in with your membership code</p>
+
+        <!-- Login Tabs -->
+        <div class="lock-actions">
+          <button class="btn btn-primary" id="btnMemberLoginModal">
+            <span>🔑</span> Member Login / Top-Up Code
+          </button>
+          <button class="btn btn-secondary" id="btnCallCashierLocked">
+            <span>🔔</span> Call Cashier
+          </button>
+        </div>
+
+        <div class="quick-pricing-pill">
+          <span>Hourly Rate: <b id="lockPcRate">20.00 EGP/hr</b></span>
+          <span>•</span>
+          <span>Minimum: 30 minutes</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer Rules -->
+    <footer class="lock-footer">
+      <div class="rule-item"><span>🚭</span> No smoking inside the lounge</div>
+      <div class="rule-item"><span>🍔</span> Cafeteria orders available in launcher</div>
+      <div class="rule-item"><span>🎧</span> Please handle peripherals with care</div>
+      <div class="rule-item"><span>🛡️</span> All stations monitored with instant security</div>
+    </footer>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- 2. UNLOCKED GAMING LAUNCHER                                   -->
+  <!-- ============================================================== -->
+  <div id="launcherScreen" class="launcher-screen">
+    
+    <!-- Top Gaming HUD Bar -->
+    <header class="gaming-hud">
+      <div class="hud-left">
+        <div class="hud-pc-tag">
+          <span class="hud-indicator active"></span>
+          <span id="hudPcName">PC-01</span>
+          <span class="hud-zone-pill" id="hudPcZone">Standard</span>
+        </div>
+        <div class="hud-user-tag">
+          <span class="user-avatar">🎮</span>
+          <span id="hudCustomerName">Guest</span>
+        </div>
+      </div>
+
+      <!-- Center Countdown & Cost -->
+      <div class="hud-center">
+        <div class="hud-timer-card">
+          <div class="hud-label">Remaining Time</div>
+          <div class="hud-timer-val" id="hudTimer">01:00:00</div>
+        </div>
+        <div class="hud-cost-card">
+          <div class="hud-label">Current Cost</div>
+          <div class="hud-cost-val"><span id="hudTotalCost">0.00</span> <small>EGP</small></div>
+        </div>
+      </div>
+
+      <!-- Right Quick Actions -->
+      <div class="hud-right">
+        <button class="btn-hud btn-snack" id="btnOpenCafeteria">
+          <span class="hud-icon">🍔</span>
+          <span>Cafeteria & Snacks</span>
+          <span class="badge-count" id="hudOrderCount">0</span>
+        </button>
+        <button class="btn-hud btn-help" id="btnCallStaffLauncher">
+          <span class="hud-icon">🔔</span>
+          <span>Call Cashier</span>
+        </button>
+        <button class="btn-hud btn-end" id="btnRequestEndSession">
+          <span class="hud-icon">⏹️</span>
+          <span>End Session</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Launcher Body -->
+    <div class="launcher-body">
+      <!-- Sidebar Categories -->
+      <aside class="launcher-sidebar">
+        <div class="sidebar-title">Game Categories</div>
+        <nav class="category-nav">
+          <button class="cat-btn active" data-category="all">
+            <span class="cat-icon">🔥</span>
+            <span>All Games</span>
+            <span class="cat-count">9</span>
+          </button>
+          <button class="cat-btn" data-category="Shooters">
+            <span class="cat-icon">🎯</span>
+            <span>Shooters (FPS)</span>
+          </button>
+          <button class="cat-btn" data-category="Battle Royale">
+            <span class="cat-icon">🪂</span>
+            <span>Battle Royale (BR)</span>
+          </button>
+          <button class="cat-btn" data-category="MOBA">
+            <span class="cat-icon">⚔️</span>
+            <span>MOBA & Strategy</span>
+          </button>
+          <button class="cat-btn" data-category="Sports">
+            <span class="cat-icon">⚽</span>
+            <span>Sports & Racing</span>
+          </button>
+          <button class="cat-btn" data-category="Open World">
+            <span class="cat-icon">🌆</span>
+            <span>Open World & Adventure</span>
+          </button>
+        </nav>
+
+        <!-- System Specs & Ping Widget -->
+        <div class="sys-widget">
+          <div class="widget-row">
+            <span>Ping:</span>
+            <span class="text-neon-green" id="clientPing">18ms</span>
+          </div>
+          <div class="widget-row">
+            <span>Refresh Rate:</span>
+            <span class="text-neon-cyan">144 FPS</span>
+          </div>
+          <div class="widget-row">
+            <span>GPU:</span>
+            <span class="text-muted">RTX 4060 8GB</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Games Grid Section -->
+      <main class="launcher-main">
+        <div class="games-toolbar">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="gameSearchInput" placeholder="Search game (e.g. Valorant, FC 25, CS2)...">
+          </div>
+          <div class="games-stat">
+            Available <b id="displayedGamesCount">9</b> games ready to play
+          </div>
+        </div>
+
+        <div class="games-grid" id="gamesGrid">
+          <!-- Game cards populated dynamically -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- 3. IN-GAME SIMULATION WINDOW                                   -->
+  <!-- ============================================================== -->
+  <div id="gameWindow" class="game-window">
+    <div class="game-hud-overlay">
+      <div class="game-info-badge">
+        <span class="blink-dot"></span>
+        <span>Now Playing: <b id="activeGameTitle">Valorant</b></span>
+      </div>
+      <div class="game-timer-pill">
+        <span>Time Left: </span>
+        <span id="inGameTimer">00:45:10</span>
+      </div>
+      <button class="btn btn-danger btn-sm" id="btnExitGame">
+        <span>✖</span> Exit to Launcher
+      </button>
+    </div>
+
+    <!-- Game View Simulation Canvas -->
+    <div class="game-canvas-container">
+      <canvas id="gameCanvas" width="1280" height="720"></canvas>
+      <div class="game-watermark">CYBERPULSE ARENA • LIVE GAMEPLAY</div>
+      <!-- Virtual Admin Cursor (for Full Remote Control) -->
+      <div id="adminCursor" class="admin-remote-cursor">
+        <div class="cursor-pointer"></div>
+        <span class="cursor-tag">Admin (Remote Control)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- 4. MODALS & POPUPS                                            -->
+  <!-- ============================================================== -->
+
+  <!-- Cafeteria Order Modal -->
+  <div id="cafeModal" class="modal-overlay">
+    <div class="modal-box modal-wide">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🍔</span> Cyber Cafeteria & Snacks (Delivered to your desk)
+        </div>
+        <button class="modal-close" id="btnCloseCafeModal">&times;</button>
+      </div>
+      <div class="modal-body cafe-body">
+        <div class="cafe-menu-grid" id="clientCafeGrid">
+          <!-- Populated from DB -->
+        </div>
+        <div class="cafe-cart-panel">
+          <h3 class="cart-title">🛒 Order Cart</h3>
+          <div class="cart-items-list" id="clientCartList">
+            <p class="empty-text">Cart is empty, pick items from the menu</p>
+          </div>
+          <div class="cart-total-bar">
+            <span>Total:</span>
+            <span class="cart-total-val"><b id="clientCartTotal">0</b> EGP</span>
+          </div>
+          <button class="btn btn-success btn-block" id="btnSubmitClientOrder" disabled>
+            <span>🚀</span> Send Order to Cashier
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Member Login Modal -->
+  <div id="memberModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title"><span>🔑</span> Member Login</div>
+        <button class="modal-close" id="btnCloseMemberModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Phone Number or Card Code:</label>
+          <input type="text" id="memberInput" class="form-input" placeholder="e.g. 01012345678">
+        </div>
+        <div class="form-group">
+          <label>PIN Code:</label>
+          <input type="password" id="memberPin" class="form-input" placeholder="••••">
+        </div>
+        <button class="btn btn-primary btn-block" id="btnSubmitMemberLogin">Login & Start Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cashier Alert Toast Banner -->
+  <div id="alertBanner" class="alert-banner">
+    <div class="alert-icon">📢</div>
+    <div class="alert-content">
+      <div class="alert-title" id="alertTitle">Message from Lounge Admin</div>
+      <div class="alert-msg" id="alertMsg">Please keep noise levels down</div>
+    </div>
+    <button class="alert-dismiss" id="btnDismissAlert">OK</button>
+  </div>
+
+  <!-- Hidden Canvas for Remote Screen Frame Generator -->
+  <canvas id="screenCaptureCanvas" width="960" height="540" style="display:none;"></canvas>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="audio.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>

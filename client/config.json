@@ -1,0 +1,34 @@
+{
+  "serverUrl": "http://localhost:4000",
+  "pcId": "PC-01",
+  "adminUnlockPassword": "admin",
+  "autoStartOnBoot": true,
+  "kioskMode": true,
+  "preventClosing": true,
+  "installedGames": [
+    {
+      "id": "val",
+      "name": "Valorant",
+      "executable": "C:\\Riot Games\\Riot Client\\RiotClientServices.exe",
+      "args": ["--launch-product=valorant", "--launch-patchline=live"]
+    },
+    {
+      "id": "cs2",
+      "name": "Counter-Strike 2",
+      "executable": "C:\\Program Files (x86)\\Steam\\steam.exe",
+      "args": ["-applaunch", "730"]
+    },
+    {
+      "id": "lol",
+      "name": "League of Legends",
+      "executable": "C:\\Riot Games\\League of Legends\\LeagueClient.exe",
+      "args": []
+    },
+    {
+      "id": "gta5",
+      "name": "GTA V / FiveM",
+      "executable": "C:\\Program Files\\Epic Games\\GTAV\\PlayGTAV.exe",
+      "args": []
+    }
+  ]
+}

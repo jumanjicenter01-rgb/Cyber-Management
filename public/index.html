@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberPulse OS - Gaming Lounge Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <!-- ============================================================== -->
+  <!-- MAIN ADMIN APP CONTAINER                                       -->
+  <!-- ============================================================== -->
+  <div class="admin-app">
+    
+    <!-- Top Main Header -->
+    <header class="admin-header">
+      <div class="header-brand">
+        <span class="brand-logo">⚡</span>
+        <div>
+          <div class="brand-title">CYBERPULSE OS</div>
+          <div class="brand-subtitle">Esports Lounge & Central Arena Management</div>
+        </div>
+      </div>
+
+      <!-- Live Shift Stats Widget -->
+      <div class="shift-stats-bar">
+        <div class="stat-pill">
+          <span class="stat-icon">👤</span>
+          <div>
+            <span class="stat-label">Cashier:</span>
+            <span class="stat-val" id="shiftCashierName">Alex Morgan</span>
+          </div>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-icon">🎮</span>
+          <div>
+            <span class="stat-label">Active Sessions:</span>
+            <span class="stat-val highlight-cyan"><span id="activePcsCount">0</span> / <span id="totalPcsCount">9</span></span>
+          </div>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-icon">💰</span>
+          <div>
+            <span class="stat-label">Game Revenue:</span>
+            <span class="stat-val text-green"><span id="gameRevenue">0.00</span> <small style="font-size:0.75rem;">EGP</small></span>
+          </div>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-icon">🍔</span>
+          <div>
+            <span class="stat-label">Cafe Revenue:</span>
+            <span class="stat-val text-amber"><span id="cafeRevenue">0.00</span> <small style="font-size:0.75rem;">EGP</small></span>
+          </div>
+        </div>
+        <div class="stat-pill drawer-pill">
+          <span class="stat-icon">💵</span>
+          <div>
+            <span class="stat-label">Expected Drawer Cash:</span>
+            <span class="stat-val text-green font-bold"><span id="totalDrawerCash">250.00</span> <small style="font-size:0.75rem;">EGP</small></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Header Action Buttons -->
+      <div class="header-actions">
+        <!-- Theme Toggle Button -->
+        <button class="btn btn-theme-toggle" id="btnThemeToggle" title="Toggle Theme (Light / Dark)">
+          <span id="themeToggleIcon">🌙</span>
+          <span id="themeToggleText">Dark Theme</span>
+        </button>
+        <button class="btn btn-warning-soft" id="btnShiftOrdersBadge" style="white-space: nowrap;">
+          <span>🔔</span> Client Orders (<b id="incomingOrdersCount">0</b>)
+        </button>
+        <button class="btn btn-danger-soft" id="btnCloseShiftModal">
+          <span>🔒</span> Close Shift
+        </button>
+        <button class="btn btn-secondary" id="btnLockMasterDashboard" title="Lock Master Screen with Password">
+          <span>🔐</span> Lock Master
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Navigation Bar -->
+    <nav class="admin-nav">
+      <div class="nav-links">
+        <button class="nav-tab active" data-tab="pcsGridTab">
+          <span class="tab-icon">🖥️</span> PC Grid
+        </button>
+        <button class="nav-tab" data-tab="surveillanceTab">
+          <span class="tab-icon">📹</span> Live Surveillance
+          <span class="live-pulse"></span>
+        </button>
+        <button class="nav-tab" data-tab="gameHubTab">
+          <span class="tab-icon">🎮</span> Game Hub
+        </button>
+        <button class="nav-tab" data-tab="cafeteriaTab">
+          <span class="tab-icon">🍔</span> Cafeteria & POS
+        </button>
+        <button class="nav-tab" data-tab="invoicesTab">
+          <span class="tab-icon">📑</span> Invoices & Reports
+        </button>
+        <button class="nav-tab" data-tab="auditTab">
+          <span class="tab-icon">🛡️</span> Security & Audit Log
+        </button>
+        <button class="nav-tab" data-tab="settingsTab">
+          <span class="tab-icon">⚙️</span> Settings
+        </button>
+      </div>
+
+      <div class="nav-toolbar-right" style="display: flex; align-items: center; gap: 1.2rem;">
+        <div class="nav-quick-filters">
+          <span class="filter-chip active" data-filter="all">All (<span id="countAll">9</span>)</span>
+          <span class="filter-chip chip-busy" data-filter="in_session">Busy (<span id="countBusy">0</span>)</span>
+          <span class="filter-chip chip-avail" data-filter="available">Available (<span id="countAvail">9</span>)</span>
+          <span class="filter-chip chip-locked" data-filter="locked">Locked (<span id="countLocked">0</span>)</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Content Tabs Container -->
+    <main class="admin-content">
+
+      <!-- ======================================================== -->
+      <!-- TAB 1: PC GRID VIEW                                     -->
+      <!-- ======================================================== -->
+      <section id="pcsGridTab" class="tab-panel active">
+        <!-- Power & Management Quick Toolbar -->
+        <div class="power-quick-bar">
+          <div class="power-bar-title-wrap">
+            <span class="power-pulse-dot"></span>
+            <span class="power-bar-title">Power Hub:</span>
+            <span class="selected-pcs-pill" id="selectedPcsCountBadge">Selected: <b>0</b></span>
+          </div>
+          <div class="power-quick-actions">
+            <button class="btn-power-act btn-wol-all" id="btnWolSelect" title="Send Wake-on-LAN magic packet to selected PCs">
+              <span>⚡</span> WOL Select
+            </button>
+            <button class="btn-power-act btn-restart-all" id="btnRestartSelect" title="Restart selected PCs">
+              <span>🔄</span> Restart
+            </button>
+            <button class="btn-power-act btn-shutdown-all" id="btnShutdownSelect" title="Shutdown selected PCs">
+              <span>🛑</span> Shutdown Select
+            </button>
+            <button class="btn-power-act btn-idle-shutdown" id="btnShutdownIdle" title="Instantly shutdown all idle inactive PCs to conserve power">
+              <span>💤</span> Shutdown Idle
+            </button>
+            <button class="btn-power-act btn-maint-top" id="btnMaintSelect" title="Toggle Maintenance Mode for selected PC(s)">
+              <span>🔧</span> Maintenance
+            </button>
+            <button class="btn-power-act btn-snack-top" id="btnCafeOrderSelect" title="Open Cafe Order for selected PC">
+              <span>🍔</span> Cafe Order
+            </button>
+            <button class="btn-power-act btn-transfer-top" id="btnTransferSelect" title="Transfer active session for selected PC">
+              <span>🔀</span> Transfer PC
+            </button>
+          </div>
+
+          <!-- View Mode Display System -->
+          <div class="grid-view-control-wrap">
+            <label for="viewModeSelect" class="grid-view-label">
+              <span>🗔</span> View:
+            </label>
+            <select id="viewModeSelect" class="grid-view-select" title="Change PC Grid View Mode">
+              <option value="extra-large">Extra Large Icons</option>
+              <option value="large" selected>Large Icons</option>
+              <option value="medium">Medium Icons</option>
+              <option value="small">Small Icons</option>
+              <option value="list">List View</option>
+              <option value="details">Details</option>
+              <option value="tiles">Tiles</option>
+              <option value="content">Content</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pc-cards-grid" id="pcsCardsGrid">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 2: LIVE MULTI-SCREEN SURVEILLANCE WALL               -->
+      <!-- ======================================================== -->
+      <section id="surveillanceTab" class="tab-panel">
+        <div class="surveillance-header">
+          <div>
+            <h2 class="section-title">Live Surveillance Wall</h2>
+            <p class="section-desc">Real-time live multi-screen monitoring across all arena machines to detect cheating, unauthorized software, and monitor gameplay.</p>
+          </div>
+          <div class="surveillance-tools">
+            <span class="tool-badge">Live Stream Active • 10 FPS</span>
+            <button class="btn btn-secondary btn-sm" id="btnRefreshSurveillance">🔄 Refresh Feeds</button>
+          </div>
+        </div>
+
+        <div class="surveillance-grid" id="surveillanceGrid">
+          <!-- Populated dynamically with live screen thumbnails -->
+        </div>
+
+        <!-- Security Screenshots Archive -->
+        <div class="surveillance-gallery-section">
+          <div class="surveillance-header" style="margin-top: 2rem; border-top: 1px solid var(--border-subtle); padding-top: 1.5rem;">
+            <div>
+              <h3 class="section-title">📸 Security Snapshot Archive</h3>
+              <p class="section-desc">Visual historical log of screenshots captured from client PCs for security audits and anti-cheat enforcement.</p>
+            </div>
+            <span class="tool-badge" style="background:rgba(0,243,255,0.15); color:var(--neon-cyan); border-color:var(--neon-cyan);" id="screenshotsCountBadge">0 Snapshots Saved</span>
+          </div>
+          <div class="screenshots-gallery-grid" id="screenshotsGalleryGrid">
+            <p class="empty-text">No security snapshots captured yet</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB: MASTER GAME HUB & LAUNCHER CONTROL                  -->
+      <!-- ======================================================== -->
+      <section id="gameHubTab" class="tab-panel">
+        <div class="game-hub-header">
+          <div>
+            <h2 class="section-title">🎮 Master Game Hub & Launcher Library</h2>
+            <p class="section-desc">Centralized library control: add new titles, update game posters, and configure auto-launch executables across all client stations.</p>
+          </div>
+          <button class="btn btn-primary" id="btnOpenAddGameModal">
+            <span>➕</span> Add New Game to Launcher
+          </button>
+        </div>
+
+        <div class="games-management-grid" id="masterGamesGrid">
+          <!-- Populated dynamically with Master Game Cards -->
+        </div>
+      </section>
+
+
+
+      <!-- ======================================================== -->
+      <!-- TAB 4: CAFETERIA POS & LIVE ORDERS                       -->
+      <!-- ======================================================== -->
+      <section id="cafeteriaTab" class="tab-panel">
+        <div class="cafe-pos-layout">
+          <!-- Menu Products -->
+          <div class="pos-menu-section">
+            <div class="pos-categories" id="posCategoryTabs">
+              <button class="pos-cat-btn active" data-pos-cat="all">All</button>
+              <button class="pos-cat-btn" data-pos-cat="Cold Drinks">Cold Drinks 🥤</button>
+              <button class="pos-cat-btn" data-pos-cat="Hot Drinks">Hot Drinks ☕</button>
+              <button class="pos-cat-btn" data-pos-cat="Meals">Meals 🍜</button>
+              <button class="pos-cat-btn" data-pos-cat="Snacks">Snacks & Candy 🍫</button>
+            </div>
+            <div class="pos-items-grid" id="posItemsGrid"></div>
+          </div>
+
+          <!-- Direct POS Order / Billing Desk -->
+          <div class="pos-billing-panel">
+            <h3 class="panel-title">Direct POS Sale / Add to PC</h3>
+            <div class="form-group">
+              <label>Assign Order To:</label>
+              <select id="posTargetSelect" class="form-input">
+                <option value="">🛒 Direct Walk-in Sale (Takeaway)</option>
+                <!-- Populated with PCs -->
+              </select>
+            </div>
+
+            <div class="pos-cart-list" id="posCartList">
+              <p class="empty-text">Select items from menu to add to cart</p>
+            </div>
+
+            <div class="pos-cart-summary">
+              <div class="summary-line">
+                <span>Total:</span>
+                <span class="val-big"><b id="posCartTotal">0.00</b> <small style="font-size:1rem;">EGP</small></span>
+              </div>
+              <button class="btn btn-success btn-block" id="btnConfirmPosSale" disabled>
+                <span>✔️</span> Complete Sale & Collect
+              </button>
+            </div>
+
+            <!-- Incoming Client Orders Queue -->
+            <div class="client-orders-queue">
+              <h4 class="queue-title">Live Incoming Client Orders</h4>
+              <div class="queue-list" id="clientOrdersQueueList">
+                <p class="empty-text">No pending orders from client stations</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 5: INVOICES & REPORTS                                -->
+      <!-- ======================================================== -->
+      <section id="invoicesTab" class="tab-panel">
+        <div class="invoices-header">
+          <h2 class="section-title">Invoices & Closed Sessions Ledger</h2>
+          <div class="invoices-stats">
+            <span>Total Invoices: <b id="invoicesCount">0</b></span>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Invoice ID</th>
+                <th>PC Name</th>
+                <th>Customer</th>
+                <th>Duration</th>
+                <th>Gameplay</th>
+                <th>Cafeteria</th>
+                <th>Discount</th>
+                <th>Net Total</th>
+                <th>Payment</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody id="invoicesTableBody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 6: ANTI-THEFT & AUDIT LOG                            -->
+      <!-- ======================================================== -->
+      <section id="auditTab" class="tab-panel">
+        <div class="audit-header">
+          <div>
+            <h2 class="section-title">🛡️ Security & Anti-Cheat Audit Trail</h2>
+            <p class="section-desc">Immutable real-time ledger for all operational events: unlocks, lockouts, remote surveillance, payments, and process terminations.</p>
+          </div>
+        </div>
+        <div class="audit-list" id="auditLogList">
+          <!-- Populated dynamically -->
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- TAB 7: MASTER SETTINGS & DEVICE CUSTOMIZER               -->
+      <!-- ======================================================== -->
+      <section id="settingsTab" class="tab-panel">
+        <div class="settings-page-layout">
+          <!-- Settings Sidebar Navigation (Categories) -->
+          <aside class="settings-sidebar">
+            <div class="settings-sidebar-header">
+              <span class="settings-brand-icon">⚙️</span>
+              <div>
+                <h3 class="settings-sidebar-title">System Settings</h3>
+                <span class="settings-sidebar-sub">CyberPulse Esports Hub</span>
+              </div>
+            </div>
+
+            <div class="settings-nav-list">
+              <button class="settings-nav-item active" data-settings-section="secPcVisuals">
+                <span class="settings-nav-icon">🎨</span>
+                <div class="settings-nav-text">
+                  <span class="nav-title">Device Icons & Appearance</span>
+                  <span class="nav-desc">Hardware models & neon palettes</span>
+                </div>
+              </button>
+
+              <button class="settings-nav-item" data-settings-section="secPowerIdle">
+                <span class="settings-nav-icon">⚡</span>
+                <div class="settings-nav-text">
+                  <span class="nav-title">Power & Auto-Idle (WOL)</span>
+                  <span class="nav-desc">Wake-on-LAN & energy saver</span>
+                </div>
+              </button>
+
+              <button class="settings-nav-item" data-settings-section="secPricing">
+                <span class="settings-nav-icon">💰</span>
+                <div class="settings-nav-text">
+                  <span class="nav-title">Pricing & Rates</span>
+                  <span class="nav-desc">Hourly rates & zone pricing</span>
+                </div>
+              </button>
+
+              <button class="settings-nav-item" data-settings-section="secSecurity">
+                <span class="settings-nav-icon">🛡️</span>
+                <div class="settings-nav-text">
+                  <span class="nav-title">Security & Master Access</span>
+                  <span class="nav-desc">Passwords & terminal lockdown</span>
+                </div>
+              </button>
+
+              <button class="settings-nav-item" data-settings-section="secInvoices">
+                <span class="settings-nav-icon">🧾</span>
+                <div class="settings-nav-text">
+                  <span class="nav-title">Billing & Receipts</span>
+                  <span class="nav-desc">Thermal printing & receipts</span>
+                </div>
+              </button>
+                          <button class="settings-nav-item" data-settings-section="secMikrotik">
+                <span class="settings-nav-icon">🌐</span>
+                <div class="settings-nav-text">
+                  <span class="nav-title">MikroTik & Gaming VPN</span>
+                  <span class="nav-desc">RouterOS connection & VPN routing</span>
+                </div>
+              </button>
+              <button class="settings-nav-item" data-settings-section="secWordFilter">
+                <span class="settings-nav-icon">🛡️</span>
+                <div class="settings-nav-text">
+                  <span class="nav-title">Word Filter & Security Shield</span>
+                  <span class="nav-desc">Anti-cheat, exploits & content blocker</span>
+                </div>
+              </button>
+            </div>
+          </aside>
+
+          <!-- Settings Main Content Area -->
+          <div class="settings-content-pane">
+
+            <!-- ==================================================== -->
+            <!-- SECTION 1: DEVICE ICONS & NEON CUSTOMIZER            -->
+            <!-- ==================================================== -->
+            <div id="secPcVisuals" class="settings-section active">
+              <div class="settings-section-header">
+                <div>
+                  <h2 class="section-title">🎨 Device Screen Models & State Neon Visuals</h2>
+                  <p class="section-desc">Select the physical hardware model (Curved Monitor, UltraWide, RGB Tower, Laptop) and custom neon colors for each machine state.</p>
+                </div>
+                <div class="settings-actions-top">
+                  <button class="btn btn-secondary btn-sm" id="btnResetVisualSettings">
+                    <span>🔄</span> Reset Defaults
+                  </button>
+                  <button class="btn btn-primary btn-sm" id="btnSaveVisualSettings">
+                    <span>💾</span> Save Changes
+                  </button>
+                </div>
+              </div>
+
+              <!-- Quick Theme Presets -->
+              <div class="settings-card-box">
+                <div class="card-box-header">
+                  <span class="box-icon">⚡</span>
+                  <h4>Quick Cyber Theme Presets:</h4>
+                </div>
+                <div class="theme-presets-grid">
+                  <button class="btn-theme-preset active" data-preset="cyberpunk" style="--preset-c1:#00f3ff; --preset-c2:#ff0055;">
+                    <span class="preset-preview-dots"><b style="background:#00f3ff;"></b><b style="background:#ff0055;"></b></span>
+                    <span>Cyberpunk Glow</span>
+                  </button>
+                  <button class="btn-theme-preset" data-preset="emerald" style="--preset-c1:#05ffa1; --preset-c2:#00b862;">
+                    <span class="preset-preview-dots"><b style="background:#05ffa1;"></b><b style="background:#00b862;"></b></span>
+                    <span>Toxic Matrix</span>
+                  </button>
+                  <button class="btn-theme-preset" data-preset="dragon" style="--preset-c1:#ff0055; --preset-c2:#ffb800;">
+                    <span class="preset-preview-dots"><b style="background:#ff0055;"></b><b style="background:#ffb800;"></b></span>
+                    <span>Blood Dragon</span>
+                  </button>
+                  <button class="btn-theme-preset" data-preset="royal" style="--preset-c1:#ffb800; --preset-c2:#bd00ff;">
+                    <span class="preset-preview-dots"><b style="background:#ffb800;"></b><b style="background:#bd00ff;"></b></span>
+                    <span>Royal VIP Gold</span>
+                  </button>
+                  <button class="btn-theme-preset" data-preset="blizzard" style="--preset-c1:#00f3ff; --preset-c2:#ffffff;">
+                    <span class="preset-preview-dots"><b style="background:#00f3ff;"></b><b style="background:#ffffff;"></b></span>
+                    <span>Frost Blizzard</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="customizer-columns-layout">
+                <!-- Left Column: All Station States Customizer -->
+                <div class="customizer-controls-col">
+                  
+                  <div class="settings-card-box">
+                    <div class="card-box-header">
+                      <span class="box-icon">🖥️</span>
+                      <div>
+                        <h4>Station Device Hardware Models & Neon Colors:</h4>
+                        <p class="box-sub">Choose which screen model (Curved Monitor, UltraWide, RGB Tower, Laptop) and color appears on the card for each machine state.</p>
+                      </div>
+                    </div>
+
+                    <div class="state-visuals-cards-list">
+                      <!-- 1. Maintenance Mode -->
+                      <div class="state-visual-item-card" data-state-key="maintenance">
+                        <div class="state-visual-meta">
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_maintenance"></div>
+                          <div>
+                            <div class="state-visual-title"><span class="status-dot" style="background:#ff9900;"></span> Maintenance Mode Stations</div>
+                            <div class="state-visual-desc">Stations under repair, hardware cleaning, or technical maintenance</div>
+                          </div>
+                        </div>
+                        <div class="state-visual-controls">
+                          <div class="control-group">
+                            <label>Hardware Model:</label>
+                            <select class="form-input state-model-select" data-state-key="maintenance">
+                              <option value="curved_monitor">1000R Curved Monitor</option>
+                              <option value="ultrawide">UltraWide 34" Curved Display</option>
+                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
+                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
+                              <option value="flat_monitor">Flat Esports Tournament Display</option>
+                              <option value="console_rig">Console Lounge Battlestation</option>
+                            </select>
+                          </div>
+                          <div class="control-group">
+                            <label>Neon Color:</label>
+                            <div class="picker-inputs-wrap">
+                              <input type="color" class="color-swatch-input state-color-picker" data-state-key="maintenance" value="#ff9900">
+                              <input type="text" class="color-hex-input state-color-hex" data-state-key="maintenance" value="#ff9900">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 2. Idle / Inactive -->
+                      <div class="state-visual-item-card" data-state-key="idle">
+                        <div class="state-visual-meta">
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_idle"></div>
+                          <div>
+                            <div class="state-visual-title"><span class="status-dot" style="background:#a855f7;"></span> Idle / Inactive Stations</div>
+                            <div class="state-visual-desc">Turned-on PCs with no active session or player activity</div>
+                          </div>
+                        </div>
+                        <div class="state-visual-controls">
+                          <div class="control-group">
+                            <label>Hardware Model:</label>
+                            <select class="form-input state-model-select" data-state-key="idle">
+                              <option value="curved_monitor">1000R Curved Monitor</option>
+                              <option value="ultrawide">UltraWide 34" Curved Display</option>
+                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
+                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
+                              <option value="flat_monitor">Flat Esports Tournament Display</option>
+                              <option value="console_rig">Console Lounge Battlestation</option>
+                            </select>
+                          </div>
+                          <div class="control-group">
+                            <label>Neon Color:</label>
+                            <div class="picker-inputs-wrap">
+                              <input type="color" class="color-swatch-input state-color-picker" data-state-key="idle" value="#a855f7">
+                              <input type="text" class="color-hex-input state-color-hex" data-state-key="idle" value="#a855f7">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 3. Open-Time Sessions -->
+                      <div class="state-visual-item-card" data-state-key="openTime">
+                        <div class="state-visual-meta">
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_openTime"></div>
+                          <div>
+                            <div class="state-visual-title"><span class="status-dot" style="background:#00f3ff;"></span> Open-Time Sessions</div>
+                            <div class="state-visual-desc">Continuous open gaming sessions running live until cashier checkout</div>
+                          </div>
+                        </div>
+                        <div class="state-visual-controls">
+                          <div class="control-group">
+                            <label>Hardware Model:</label>
+                            <select class="form-input state-model-select" data-state-key="openTime">
+                              <option value="curved_monitor">1000R Curved Monitor</option>
+                              <option value="ultrawide">UltraWide 34" Curved Display</option>
+                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
+                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
+                              <option value="flat_monitor">Flat Esports Tournament Display</option>
+                              <option value="console_rig">Console Lounge Battlestation</option>
+                            </select>
+                          </div>
+                          <div class="control-group">
+                            <label>Neon Color:</label>
+                            <div class="picker-inputs-wrap">
+                              <input type="color" class="color-swatch-input state-color-picker" data-state-key="openTime" value="#00f3ff">
+                              <input type="text" class="color-hex-input state-color-hex" data-state-key="openTime" value="#00f3ff">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 4. Fixed-Time Prepaid Sessions -->
+                      <div class="state-visual-item-card" data-state-key="fixedTime">
+                        <div class="state-visual-meta">
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_fixedTime"></div>
+                          <div>
+                            <div class="state-visual-title"><span class="status-dot" style="background:#6366f1;"></span> Fixed-Time Prepaid Sessions</div>
+                            <div class="state-visual-desc">Sessions configured with prepaid monetary budget or fixed duration</div>
+                          </div>
+                        </div>
+                        <div class="state-visual-controls">
+                          <div class="control-group">
+                            <label>Hardware Model:</label>
+                            <select class="form-input state-model-select" data-state-key="fixedTime">
+                              <option value="curved_monitor">1000R Curved Monitor</option>
+                              <option value="ultrawide">UltraWide 34" Curved Display</option>
+                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
+                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
+                              <option value="flat_monitor">Flat Esports Tournament Display</option>
+                              <option value="console_rig">Console Lounge Battlestation</option>
+                            </select>
+                          </div>
+                          <div class="control-group">
+                            <label>Neon Color:</label>
+                            <div class="picker-inputs-wrap">
+                              <input type="color" class="color-swatch-input state-color-picker" data-state-key="fixedTime" value="#6366f1">
+                              <input type="text" class="color-hex-input state-color-hex" data-state-key="fixedTime" value="#6366f1">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 5. Member / VIP Sessions -->
+                      <div class="state-visual-item-card" data-state-key="member">
+                        <div class="state-visual-meta">
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_member"></div>
+                          <div>
+                            <div class="state-visual-title"><span class="status-dot" style="background:#ffd700;"></span> Member / VIP Account Sessions</div>
+                            <div class="state-visual-desc">Sessions active on registered member balance or VIP account tier</div>
+                          </div>
+                        </div>
+                        <div class="state-visual-controls">
+                          <div class="control-group">
+                            <label>Hardware Model:</label>
+                            <select class="form-input state-model-select" data-state-key="member">
+                              <option value="curved_monitor">1000R Curved Monitor</option>
+                              <option value="ultrawide">UltraWide 34" Curved Display</option>
+                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
+                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
+                              <option value="flat_monitor">Flat Esports Tournament Display</option>
+                              <option value="console_rig">Console Lounge Battlestation</option>
+                            </select>
+                          </div>
+                          <div class="control-group">
+                            <label>Neon Color:</label>
+                            <div class="picker-inputs-wrap">
+                              <input type="color" class="color-swatch-input state-color-picker" data-state-key="member" value="#ffd700">
+                              <input type="text" class="color-hex-input state-color-hex" data-state-key="member" value="#ffd700">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 6. Admin / Staff Sessions -->
+                      <div class="state-visual-item-card" data-state-key="admin">
+                        <div class="state-visual-meta">
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_admin"></div>
+                          <div>
+                            <div class="state-visual-title"><span class="status-dot" style="background:#10b981;"></span> Admin / Staff Sessions</div>
+                            <div class="state-visual-desc">Supervisor testing, freeplay, or administrator console sessions</div>
+                          </div>
+                        </div>
+                        <div class="state-visual-controls">
+                          <div class="control-group">
+                            <label>Hardware Model:</label>
+                            <select class="form-input state-model-select" data-state-key="admin">
+                              <option value="curved_monitor">1000R Curved Monitor</option>
+                              <option value="ultrawide">UltraWide 34" Curved Display</option>
+                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
+                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
+                              <option value="flat_monitor">Flat Esports Tournament Display</option>
+                              <option value="console_rig">Console Lounge Battlestation</option>
+                            </select>
+                          </div>
+                          <div class="control-group">
+                            <label>Neon Color:</label>
+                            <div class="picker-inputs-wrap">
+                              <input type="color" class="color-swatch-input state-color-picker" data-state-key="admin" value="#10b981">
+                              <input type="text" class="color-hex-input state-color-hex" data-state-key="admin" value="#10b981">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 7. Connection Lost Stations -->
+                      <div class="state-visual-item-card" data-state-key="disconnected">
+                        <div class="state-visual-meta">
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_disconnected"></div>
+                          <div>
+                            <div class="state-visual-title"><span class="status-dot" style="background:#ef4444;"></span> Connection Lost Stations</div>
+                            <div class="state-visual-desc">Stations with dropped network cable or lost heartbeat ping</div>
+                          </div>
+                        </div>
+                        <div class="state-visual-controls">
+                          <div class="control-group">
+                            <label>Hardware Model:</label>
+                            <select class="form-input state-model-select" data-state-key="disconnected">
+                              <option value="curved_monitor">1000R Curved Monitor</option>
+                              <option value="ultrawide">UltraWide 34" Curved Display</option>
+                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
+                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
+                              <option value="flat_monitor">Flat Esports Tournament Display</option>
+                              <option value="console_rig">Console Lounge Battlestation</option>
+                            </select>
+                          </div>
+                          <div class="control-group">
+                            <label>Neon Color:</label>
+                            <div class="picker-inputs-wrap">
+                              <input type="color" class="color-swatch-input state-color-picker" data-state-key="disconnected" value="#ef4444">
+                              <input type="text" class="color-hex-input state-color-hex" data-state-key="disconnected" value="#ef4444">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 8. Powered Off Stations -->
+                      <div class="state-visual-item-card" data-state-key="offline">
+                        <div class="state-visual-meta">
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_offline"></div>
+                          <div>
+                            <div class="state-visual-title"><span class="status-dot" style="background:#64748b;"></span> Powered Off / Offline Stations</div>
+                            <div class="state-visual-desc">Completely shut down stations (standby for Wake-on-LAN)</div>
+                          </div>
+                        </div>
+                        <div class="state-visual-controls">
+                          <div class="control-group">
+                            <label>Hardware Model:</label>
+                            <select class="form-input state-model-select" data-state-key="offline">
+                              <option value="curved_monitor">1000R Curved Monitor</option>
+                              <option value="ultrawide">UltraWide 34" Curved Display</option>
+                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
+                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
+                              <option value="flat_monitor">Flat Esports Tournament Display</option>
+                              <option value="console_rig">Console Lounge Battlestation</option>
+                            </select>
+                          </div>
+                          <div class="control-group">
+                            <label>Neon Color:</label>
+                            <div class="picker-inputs-wrap">
+                              <input type="color" class="color-swatch-input state-color-picker" data-state-key="offline" value="#475569">
+                              <input type="text" class="color-hex-input state-color-hex" data-state-key="offline" value="#475569">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 9. Low-Time Warning (< 5 Mins) -->
+                      <div class="state-visual-item-card" data-state-key="lowTime">
+                        <div class="state-visual-meta">
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_lowTime"></div>
+                          <div>
+                            <div class="state-visual-title"><span class="status-dot" style="background:#ff0055;"></span> Low-Time Warning (&lt; 5 Mins)</div>
+                            <div class="state-visual-desc">Urgent neon flashing alert when session duration has &le; 5 minutes remaining</div>
+                          </div>
+                        </div>
+                        <div class="state-visual-controls">
+                          <div class="control-group">
+                            <label>Hardware Model:</label>
+                            <select class="form-input state-model-select" data-state-key="lowTime">
+                              <option value="curved_monitor">1000R Curved Monitor</option>
+                              <option value="ultrawide">UltraWide 34" Curved Display</option>
+                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
+                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
+                              <option value="flat_monitor">Flat Esports Tournament Display</option>
+                              <option value="console_rig">Console Lounge Battlestation</option>
+                            </select>
+                          </div>
+                          <div class="control-group">
+                            <label>Neon Color:</label>
+                            <div class="picker-inputs-wrap">
+                              <input type="color" class="color-swatch-input state-color-picker" data-state-key="lowTime" value="#ff0055">
+                              <input type="text" class="color-hex-input state-color-hex" data-state-key="lowTime" value="#ff0055">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 10. Available / Ready -->
+                      <div class="state-visual-item-card" data-state-key="available">
+                        <div class="state-visual-meta">
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_available"></div>
+                          <div>
+                            <div class="state-visual-title"><span class="status-dot" style="background:#05ffa1;"></span> Available / Ready Stations</div>
+                            <div class="state-visual-desc">Clean, ready gaming station waiting for customer check-in</div>
+                          </div>
+                        </div>
+                        <div class="state-visual-controls">
+                          <div class="control-group">
+                            <label>Hardware Model:</label>
+                            <select class="form-input state-model-select" data-state-key="available">
+                              <option value="curved_monitor">1000R Curved Monitor</option>
+                              <option value="ultrawide">UltraWide 34" Curved Display</option>
+                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
+                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
+                              <option value="flat_monitor">Flat Esports Tournament Display</option>
+                              <option value="console_rig">Console Lounge Battlestation</option>
+                            </select>
+                          </div>
+                          <div class="control-group">
+                            <label>Neon Color:</label>
+                            <div class="picker-inputs-wrap">
+                              <input type="color" class="color-swatch-input state-color-picker" data-state-key="available" value="#05ffa1">
+                              <input type="text" class="color-hex-input state-color-hex" data-state-key="available" value="#05ffa1">
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  <!-- Stand RGB Chroma Effect Toggle -->
+                  <div class="settings-card-box">
+                    <div class="color-picker-item">
+                      <div class="picker-label-wrap">
+                        <span class="status-indicator-dot" style="background:linear-gradient(135deg, #ff0055, #00f3ff);"></span>
+                        <div>
+                          <span class="picker-title">Desk & Stand RGB Chroma Effect:</span>
+                          <span class="picker-desc">Animated multi-color rainbow gradient on stand legs and desk surface</span>
+                        </div>
+                      </div>
+                      <label class="switch-toggle-wrap">
+                        <input type="checkbox" id="toggleStandRgb" checked>
+                        <span class="switch-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Right Column: Live Interactive Preview -->
+                <div class="customizer-preview-col">
+                  <div class="settings-card-box sticky-preview-box">
+                    <div class="card-box-header">
+                      <span class="box-icon">👁️</span>
+                      <h4>Live Interactive Device Preview:</h4>
+                    </div>
+                    <div class="preview-mode-switch-grid">
+                      <button class="preview-mode-btn active" data-preview-status="available">🟢 Available</button>
+                      <button class="preview-mode-btn" data-preview-status="openTime">🔵 Open Time</button>
+                      <button class="preview-mode-btn" data-preview-status="fixedTime">🟣 Fixed Time</button>
+                      <button class="preview-mode-btn" data-preview-status="member">👑 Member VIP</button>
+                      <button class="preview-mode-btn" data-preview-status="admin">🛡️ Admin Staff</button>
+                      <button class="preview-mode-btn" data-preview-status="maintenance">🔧 Maintenance</button>
+                      <button class="preview-mode-btn" data-preview-status="idle">🌙 Idle</button>
+                      <button class="preview-mode-btn" data-preview-status="lowTime">⚡ Low Time</button>
+                      <button class="preview-mode-btn" data-preview-status="disconnected">⚠️ No Signal</button>
+                      <button class="preview-mode-btn" data-preview-status="offline">⚫ Offline</button>
+                    </div>
+
+                    <!-- Live Rendered Monitor Preview Target -->
+                    <div class="interactive-preview-card" id="liveInteractivePreviewCard">
+                      <!-- Rendered by admin.js preview engine -->
+                    </div>
+
+                    <div class="preview-hints">
+                      <span>💡 Change any model or color on the left to see instant live reflection!</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- ==================================================== -->
+            <!-- SECTION: WORD FILTER & SECURITY SHIELD               -->
+            <!-- ==================================================== -->
+            <div id="secWordFilter" class="settings-section">
+              <div class="settings-section-header">
+                <div>
+                  <h2 class="section-title">🛡️ Word Filter & Anti-Cheat Security Shield</h2>
+                  <p class="section-desc">Active real-time window & process scanner: intercepts unauthorized cheats, injection tools, adult sites, and network exploits.</p>
+                </div>
+                <div class="settings-actions-top">
+                  <button class="btn btn-secondary btn-sm" id="btnTestWordFilterTrigger">
+                    <span>⚡</span> Test Trigger Simulation
+                  </button>
+                  <button class="btn btn-primary btn-sm" id="btnSaveWordFilterConfig">
+                    <span>💾</span> Save Security Policy
+                  </button>
+                </div>
+              </div>
+
+              <!-- Master Shield & Automated Action Policies -->
+              <div class="settings-card-box highlight-box">
+                <div class="card-box-header" style="display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex; align-items:center; gap:0.6rem;">
+                    <span class="box-icon">⚡</span>
+                    <h4>Security Shield Master Inspection:</h4>
+                  </div>
+                  <label class="switch-toggle-wrap">
+                    <input type="checkbox" id="toggleWfMaster" checked>
+                    <span class="switch-slider"></span>
+                  </label>
+                </div>
+                <p style="color:var(--text-muted); font-size:0.86rem; margin-bottom:1.2rem;">
+                  When active, CyberPulse continuously scans client active window titles, process names, and system events against your security blacklist.
+                </p>
+
+                <h5 style="color:#fff; font-size:0.92rem; margin-bottom:0.8rem; font-weight:700;">Automated Detection & Evidence Capture:</h5>
+                <div class="wf-policies-grid" style="margin-bottom:1.2rem;">
+                  <label class="wf-policy-card">
+                    <input type="checkbox" id="wfActionAlertCashier" checked>
+                    <div class="policy-info">
+                      <span class="policy-title">🔔 Alert Cashier</span>
+                      <span class="policy-desc">Audio alarm chime and immediate live desktop alert badge</span>
+                    </div>
+                  </label>
+
+                  <label class="wf-policy-card">
+                    <input type="checkbox" id="wfActionTakeSnapshot" checked>
+                    <div class="policy-info">
+                      <span class="policy-title">📸 Automated Evidence Snapshot</span>
+                      <span class="policy-desc">Silently captures high-res screen evidence into Security Archive</span>
+                    </div>
+                  </label>
+
+                  <label class="wf-policy-card">
+                    <input type="checkbox" id="wfActionWarnClient" checked>
+                    <div class="policy-info">
+                      <span class="policy-title">⚠️ Send Warning Message to Client Screen</span>
+                      <span class="policy-desc">Dispatches customized warning banner directly onto customer display</span>
+                    </div>
+                  </label>
+                </div>
+
+                <!-- Configurable Punishment Action (Automated Penalty Policy) -->
+                <div class="wf-penalty-box" style="background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:12px; padding:1.2rem; margin-bottom:1.2rem;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem; margin-bottom:0.6rem;">
+                    <h5 style="color:#fff; font-size:0.95rem; font-weight:800; margin:0; display:flex; align-items:center; gap:0.5rem;">
+                      <span>⚖️</span> Client Violation Punishment Action (Automatic Penalty):
+                    </h5>
+                    <span class="cat-pill" style="color:var(--neon-cyan); border-color:rgba(0,243,255,0.3); font-weight:700;">Enforced on 100% of Arena PCs</span>
+                  </div>
+                  <p style="color:var(--text-muted); font-size:0.82rem; margin-bottom:1rem;">
+                    Select the exact automated enforcement action executed on the client station when a prohibited keyword or adult website is detected:
+                  </p>
+
+                  <div class="wf-penalty-options-grid">
+                    <label class="wf-penalty-card active" data-penalty="warn_only">
+                      <input type="radio" name="wfPenaltyRadio" value="warn_only" checked>
+                      <div class="penalty-icon">⚠️</div>
+                      <div class="penalty-text">
+                        <span class="penalty-title">Warning Banner Only (Dismiss & Warn)</span>
+                        <span class="penalty-desc">Displays custom warning message, records violation & captures snapshot. Customer session stays active.</span>
+                      </div>
+                    </label>
+
+                    <label class="wf-penalty-card" data-penalty="lock_session">
+                      <input type="radio" name="wfPenaltyRadio" value="lock_session">
+                      <div class="penalty-icon">🔒</div>
+                      <div class="penalty-text">
+                        <span class="penalty-title">Lock & Terminate Session</span>
+                        <span class="penalty-desc">Immediately terminates the active session, resets timer, and locks down the client station screen.</span>
+                      </div>
+                    </label>
+
+                    <label class="wf-penalty-card" data-penalty="restart_pc">
+                      <input type="radio" name="wfPenaltyRadio" value="restart_pc">
+                      <div class="penalty-icon">🔄</div>
+                      <div class="penalty-text">
+                        <span class="penalty-title">Force Restart Station (Reboot PC)</span>
+                        <span class="penalty-desc">Force-restarts the PC immediately to wipe unauthorized applications, cheats, and memory processes.</span>
+                      </div>
+                    </label>
+
+                    <label class="wf-penalty-card" data-penalty="shutdown_pc">
+                      <input type="radio" name="wfPenaltyRadio" value="shutdown_pc">
+                      <div class="penalty-icon">🛑</div>
+                      <div class="penalty-text">
+                        <span class="penalty-title">Shutdown Station (Power Off)</span>
+                        <span class="penalty-desc">Completely powers down the client computer.</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Custom Client Warning Message Editor -->
+                <div class="wf-message-box" style="background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:12px; padding:1.2rem;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem; margin-bottom:0.6rem;">
+                    <h5 style="color:#fff; font-size:0.95rem; font-weight:800; margin:0; display:flex; align-items:center; gap:0.5rem;">
+                      <span>💬</span> Custom Client Warning Message:
+                    </h5>
+                    <button class="btn btn-secondary btn-sm" id="btnResetWfMessage" style="padding:0.25rem 0.6rem; font-size:0.75rem;">
+                      Reset Default Message
+                    </button>
+                  </div>
+                  <p style="color:var(--text-muted); font-size:0.82rem; margin-bottom:0.8rem;">
+                    Customize the security notification text displayed directly on the customer's screen upon detection.
+                  </p>
+
+                  <textarea id="wfCustomWarningMessage" class="form-input" rows="3" style="font-size:0.92rem; line-height:1.5; resize:vertical;" placeholder="Enter custom warning message shown to player..."></textarea>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem; margin-top:0.7rem;">
+                    <div class="wf-tag-hints" style="font-size:0.78rem; color:var(--text-muted); display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+                      <span>Click to Insert Dynamic Tags:</span>
+                      <button type="button" class="btn btn-sm btn-secondary tag-pill-btn" onclick="window.insertWfTag('{word}')">{word} (Detected Term)</button>
+                      <button type="button" class="btn btn-sm btn-secondary tag-pill-btn" onclick="window.insertWfTag('{pc}')">{pc} (Station Name)</button>
+                      <button type="button" class="btn btn-sm btn-secondary tag-pill-btn" onclick="window.insertWfTag('{time}')">{time} (Time)</button>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnPreviewWfMessage" style="padding:0.35rem 0.8rem; font-size:0.78rem;">
+                      <span>👁️</span> Test Preview on Screen
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Add Keyword Card -->
+              <div class="settings-card-box">
+                <div class="card-box-header">
+                  <span class="box-icon">➕</span>
+                  <h4>Add Prohibited Keyword or Process Name:</h4>
+                </div>
+                <div class="wf-add-form-grid">
+                  <div class="form-group" style="margin:0;">
+                    <label>Prohibited Term / Process:</label>
+                    <input type="text" id="inputWfWord" class="form-input" placeholder="e.g. aimbot, speedhack, torrent, casino">
+                  </div>
+                  <div class="form-group" style="margin:0;">
+                    <label>Category:</label>
+                    <select id="selectWfCategory" class="form-input">
+                      <option value="Cheats & Hacks">Cheats & Hacks 🎮</option>
+                      <option value="System Exploits">System Exploits 💻</option>
+                      <option value="Adult Content">Adult Content 🔞</option>
+                      <option value="Gambling">Gambling 🎰</option>
+                      <option value="Bandwidth Abuse">Bandwidth Abuse 🚀</option>
+                      <option value="Toxic Slurs">Toxic Slurs 🚫</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin:0;">
+                    <label>Threat Severity:</label>
+                    <select id="selectWfSeverity" class="form-input">
+                      <option value="high">High Threat (Immediate Action)</option>
+                      <option value="medium" selected>Medium Threat (Warning)</option>
+                      <option value="low">Low Threat (Log Only)</option>
+                    </select>
+                  </div>
+                  <div style="display:flex; align-items:flex-end;">
+                    <button class="btn btn-primary" id="btnAddWfWord" style="height:44px; width:100%;">
+                      <span>➕</span> Add to Blacklist
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Blacklist Keywords Table -->
+              <div class="settings-card-box">
+                <div class="card-box-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem;">
+                  <div style="display:flex; align-items:center; gap:0.6rem;">
+                    <span class="box-icon">📜</span>
+                    <h4>Blacklisted Keywords Registry (<span id="wfWordsCountBadge">0</span> terms):</h4>
+                  </div>
+                  <input type="text" id="inputFilterWfList" class="form-input" placeholder="Search keywords..." style="max-width:240px; padding:0.4rem 0.8rem; font-size:0.85rem;">
+                </div>
+                <div style="background:rgba(0,243,255,0.05); border:1px solid rgba(0,243,255,0.2); border-radius:8px; padding:0.6rem 0.9rem; font-size:0.82rem; color:var(--neon-cyan); margin-bottom: 0.9rem; display:flex; align-items:center; gap:0.5rem;">
+                  <i class="fa-solid fa-globe"></i>
+                  <span><b>Global Arena Enforcement:</b> Any keyword added or enabled below is instantly and automatically enforced across <b>ALL client stations</b> simultaneously.</span>
+                </div>
+                <div class="data-table-wrap">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Prohibited Keyword / Process</th>
+                        <th>Category</th>
+                        <th>Severity</th>
+                        <th>Enforcement Scope</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="wfWordsTableBody">
+                      <!-- Populated dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Live Violations Log -->
+              <div class="settings-card-box">
+                <div class="card-box-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem;">
+                  <div style="display:flex; align-items:center; gap:0.6rem;">
+                    <span class="box-icon">🚨</span>
+                    <h4>Real-Time Security Violations Log:</h4>
+                  </div>
+                  <button class="btn btn-secondary btn-sm" id="btnClearWfViolations">
+                    <span>🗑️</span> Clear Violation History
+                  </button>
+                </div>
+                <div class="data-table-wrap">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Time</th>
+                        <th>Station</th>
+                        <th>Detected Term</th>
+                        <th>Category</th>
+                        <th>Active Window / Details</th>
+                        <th>Evidence</th>
+                      </tr>
+                    </thead>
+                    <tbody id="wfViolationsTableBody">
+                      <!-- Populated dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- ==================================================== -->
+            <!-- SECTION 2: POWER & WOL & AUTO-IDLE MANAGEMENT        -->
+            <!-- ==================================================== -->
+            <div id="secPowerIdle" class="settings-section">
+              <div class="settings-section-header">
+                <div>
+                  <h2 class="section-title">⚡ Power & Wake-on-LAN Management</h2>
+                  <p class="section-desc">Remote power management, automatic inactivity shutdown for energy saving, and hardware controls.</p>
+                </div>
+              </div>
+
+              <!-- Auto-Shutdown Settings Box -->
+              <div class="settings-card-box">
+                <div class="card-box-header">
+                  <span class="box-icon">💤</span>
+                  <h4>Smart Inactivity Auto-Shutdown (Energy Saver):</h4>
+                </div>
+                <div class="auto-idle-settings-grid">
+                  <div class="setting-toggle-row">
+                    <div>
+                      <span class="setting-row-title">Enable Automatic Shutdown for Idle PCs:</span>
+                      <p class="setting-row-desc">When a customer session ends and the PC remains idle without active gameplay, a 60-second warning is displayed before cleanly shutting down the PC to conserve power.</p>
+                    </div>
+                    <label class="switch-toggle-wrap">
+                      <input type="checkbox" id="toggleAutoShutdownIdle" checked>
+                      <span class="switch-slider"></span>
+                    </label>
+                  </div>
+
+                  <div class="setting-control-row">
+                    <label for="selectIdleMinutes" class="control-label" style="font-weight:700; color:#fff;">Idle Inactivity Timeout:</label>
+                    <select id="selectIdleMinutes" class="form-input" style="max-width: 250px;">
+                      <option value="5">5 Minutes</option>
+                      <option value="10" selected>10 Minutes (Recommended)</option>
+                      <option value="15">15 Minutes</option>
+                      <option value="30">30 Minutes</option>
+                      <option value="60">1 Hour (60 Minutes)</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" id="btnSaveIdleSettings">Save Inactivity Timer</button>
+                  </div>
+
+                  <div class="setting-actions-row">
+                    <button class="btn btn-warning-soft" id="btnSettingsShutdownIdleNow">
+                      <span>💤</span> Shutdown All Idle PCs Now
+                    </button>
+                    <button class="btn btn-success-soft" id="btnSettingsWolAll">
+                      <span>⚡</span> Wake Selected (WOL Select)
+                    </button>
+                    <button class="btn btn-secondary" id="btnSettingsRestartAll">
+                      <span>🔄</span> Restart Selected
+                    </button>
+                    <button class="btn btn-danger-soft" id="btnSettingsShutdownAll">
+                      <span>🛑</span> Shutdown Selected
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- PCs Hardware & Power Table -->
+              <div class="settings-card-box" style="margin-top: 1.5rem;">
+                <div class="card-box-header">
+                  <span class="box-icon">🖥️</span>
+                  <h4>Device Hardware & Power Registry:</h4>
+                </div>
+                <div class="table-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Device Name</th>
+                        <th>Status</th>
+                        <th>IP Address</th>
+                        <th>MAC Address (WOL)</th>
+                        <th>Idle Time</th>
+                        <th>Power Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="powerPcsTableBody">
+                      <!-- Populated dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 3: PRICING -->
+            <div id="secPricing" class="settings-section">
+              <div class="settings-section-header">
+                <div>
+                  <h2 class="section-title">💰 Pricing, Rates & Zone Packages</h2>
+                  <p class="section-desc">Configure hourly rates, membership discounts, and special pricing for VIP & Streaming arenas.</p>
+                </div>
+              </div>
+              <div class="settings-card-box">
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1rem;">
+                  <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-subtle); border-radius:12px; padding:1.2rem;">
+                    <h4 style="color:var(--neon-green); margin-bottom:0.4rem;">Standard Zone</h4>
+                    <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.8rem;">PCs 01 to 06</p>
+                    <div style="font-size:1.4rem; font-weight:900; color:#fff;">20.00 EGP <small style="font-size:0.8rem; color:var(--text-muted);">/ hr</small></div>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-subtle); border-radius:12px; padding:1.2rem;">
+                    <h4 style="color:var(--neon-cyan); margin-bottom:0.4rem;">VIP Arena</h4>
+                    <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.8rem;">VIP-01, VIP-02 (240Hz / Secretlab)</p>
+                    <div style="font-size:1.4rem; font-weight:900; color:#fff;">35.00 EGP <small style="font-size:0.8rem; color:var(--text-muted);">/ hr</small></div>
+                  </div>
+                  <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-subtle); border-radius:12px; padding:1.2rem;">
+                    <h4 style="color:var(--neon-amber); margin-bottom:0.4rem;">Streaming Suite</h4>
+                    <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.8rem;">STR-01 (Dual Monitor + Studio Mic)</p>
+                    <div style="font-size:1.4rem; font-weight:900; color:#fff;">50.00 EGP <small style="font-size:0.8rem; color:var(--text-muted);">/ hr</small></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 4: SECURITY -->
+            <div id="secSecurity" class="settings-section">
+              <div class="settings-section-header">
+                <div>
+                  <h2 class="section-title">🛡️ Security & Master Access Control</h2>
+                  <p class="section-desc">Manage Master Terminal authentication, client lockdown barriers, and staff permissions.</p>
+                </div>
+              </div>
+              <div class="settings-card-box">
+                <div style="display:flex; flex-direction:column; gap:1.2rem;">
+                  <div class="setting-toggle-row">
+                    <div>
+                      <span class="setting-row-title">Master Access Password Protection</span>
+                      <p class="setting-row-desc">Requires password authentication when opening the Master Dashboard or unlocking from LAN.</p>
+                    </div>
+                    <span class="badge badge-success">Active (Protected)</span>
+                  </div>
+                  <div class="setting-toggle-row">
+                    <div>
+                      <span class="setting-row-title">Client Lockdown & Anti-Cheat Shield</span>
+                      <p class="setting-row-desc">Blocks Task Manager, Windows Keys, USB unauthorized insertion, and unauthorized processes.</p>
+                    </div>
+                    <span class="badge badge-success">Enabled</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 5: INVOICES -->
+            <div id="secInvoices" class="settings-section">
+              <div class="settings-section-header">
+                <div>
+                  <h2 class="section-title">🧾 Billing, Receipts & POS Printing</h2>
+                  <p class="section-desc">Customize thermal receipt header, arena contact details, and automated invoice printing.</p>
+                </div>
+              </div>
+              <div class="settings-card-box">
+                <div style="display:flex; flex-direction:column; gap:1rem;">
+                  <div class="setting-control-row">
+                    <label class="control-label" style="font-weight:700; color:#fff; width:160px;">Arena / Cafe Name:</label>
+                    <input type="text" class="form-input" value="CyberPulse Gaming Arena" style="max-width:320px;" readonly>
+                  </div>
+                  <div class="setting-control-row">
+                    <label class="control-label" style="font-weight:700; color:#fff; width:160px;">Receipt Printer Type:</label>
+                    <select class="form-input" style="max-width:320px;">
+                      <option selected>Thermal 80mm ESC/POS (Recommended)</option>
+                      <option>Thermal 58mm Mini</option>
+                      <option>Standard A4 / PDF Invoice</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ==================================================== -->
+            <!-- SECTION 6: MIKROTIK & GAMING VPN ENGINE                -->
+            <!-- ==================================================== -->
+            <div id="secMikrotik" class="settings-section">
+              <div class="settings-section-header">
+                <div>
+                  <h2 class="section-title">🌐 MikroTik RouterOS & Gaming VPN Engine</h2>
+                  <p class="section-desc">Centralized RouterOS integration: connection manager, one-click VPN provisioning, and dynamic address-list gaming routes.</p>
+                </div>
+                <div class="settings-actions-top">
+                  <button class="btn btn-secondary btn-sm" id="btnTestMikrotikConn">
+                    <span>⚡</span> Test Connection
+                  </button>
+                  <button class="btn btn-primary btn-sm" id="btnSaveMikrotikSettings">
+                    <span>💾</span> Save Router Settings
+                  </button>
+                </div>
+              </div>
+
+              <div class="mikrotik-grid-layout">
+                <!-- RouterOS Connection Box -->
+                <div class="settings-card-box">
+                  <div class="card-box-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                      <span class="box-icon">🔌</span>
+                      <h4>RouterOS Connection Credentials:</h4>
+                    </div>
+                    <span class="mt-conn-status-pill disconnected" id="mtStatusPill">🔴 Disconnected • Unverified</span>
+                  </div>
+
+                  <div class="mt-form-grid">
+                    <div class="form-group">
+                      <label>Router IP / Hostname:</label>
+                      <input type="text" id="mtHost" class="form-input" value="192.168.88.1" placeholder="e.g. 192.168.88.1">
+                    </div>
+                    <div class="form-group">
+                      <label>API Port (RouterOS):</label>
+                      <input type="number" id="mtPort" class="form-input" value="8728" placeholder="8728">
+                    </div>
+                    <div class="form-group">
+                      <label>Web/REST Port:</label>
+                      <input type="number" id="mtRestPort" class="form-input" value="80" placeholder="80">
+                    </div>
+                    <div class="form-group">
+                      <label>API Username:</label>
+                      <input type="text" id="mtUsername" class="form-input" value="admin" placeholder="admin">
+                    </div>
+                    <div class="form-group">
+                      <label>API Password:</label>
+                      <input type="password" id="mtPassword" class="form-input" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                      <label>Target Address-List Name:</label>
+                      <input type="text" id="mtVpnList" class="form-input" value="GAMING-VPN" placeholder="GAMING-VPN">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1; display:flex; align-items:center; justify-content:space-between; background:rgba(0,243,255,0.04); border:1px solid var(--border-neon); border-radius:10px; padding:0.8rem 1rem;">
+                      <div>
+                        <span style="font-weight:700; color:#fff; display:block;">RouterOS Hardware Simulation Mode:</span>
+                        <span style="font-size:0.78rem; color:var(--text-muted);">Enable to simulate MikroTik RouterOS for testing when no physical router is connected to LAN</span>
+                      </div>
+                      <label class="switch-toggle-wrap">
+                        <input type="checkbox" id="mtSimulationMode">
+                        <span class="switch-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- First-Time VPN Setup on MikroTik Box -->
+                <div class="settings-card-box highlight-box">
+                  <div class="card-box-header">
+                    <span class="box-icon">🚀</span>
+                    <h4>First-Time VPN Setup on MikroTik (Router Provisioning):</h4>
+                  </div>
+                  <p style="color:var(--text-muted); font-size:0.88rem; line-height:1.5;">
+                    Automatically deploys all required routing rules to MikroTik: creates WireGuard/OpenVPN tunnel, routing table <code>to_GAMING_VPN</code>, Mangle policy for <code>address-list=GAMING-VPN</code>, and NAT masquerade.
+                  </p>
+
+                  <div style="background:rgba(255,184,0,0.08); border:1px solid rgba(255,184,0,0.3); border-radius:8px; padding:0.6rem 0.9rem; font-size:0.82rem; color:var(--neon-amber); margin: 0.8rem 0; display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span><b>Verification Mandatory:</b> An active, tested connection to RouterOS is required before provisioning VPN rules.</span>
+                  </div>
+
+                  <div class="provision-actions-bar" style="margin: 1.2rem 0; display:flex; gap:0.8rem; align-items:center; flex-wrap:wrap;">
+                    <button class="btn btn-primary" id="btnProvisionMikrotikVpn">
+                      <span>⚡</span> Provision VPN on MikroTik Now
+                    </button>
+                    <button class="btn btn-secondary" id="btnCopyMikrotikScript">
+                      <span>📋</span> View & Copy RouterOS Script
+                    </button>
+                  </div>
+
+                  <div class="provision-log-box" id="provisionLogBox" style="display:none; background:#070a14; border:1px solid var(--border-neon); border-radius:8px; padding:1rem; font-family:monospace; font-size:0.8rem; color:#05ffa1; max-height:160px; overflow-y:auto;">
+                  </div>
+                </div>
+
+                <!-- Curated Gaming VPN Servers Pool -->
+                <div class="settings-card-box full-width">
+                  <div class="card-box-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.8rem;">
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                      <span class="box-icon">🌍</span>
+                      <h4>Curated Gaming VPN Server Pool (  VPN ):</h4>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="btnOpenAddVpnServerModal">
+                      <span>➕</span> Add Custom VPN Server
+                    </button>
+                  </div>
+
+                  <div class="vpn-servers-table-wrap">
+                    <table class="data-table">
+                      <thead>
+                        <tr>
+                          <th>Location</th>
+                          <th>Server Name</th>
+                          <th>Endpoint IP</th>
+                          <th>Latency</th>
+                          <th>Status</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody id="vpnServersTableBody">
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: START SESSION                                           -->
+  <!-- ============================================================== -->
+  <div id="startSessionModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>⚡</span> Launch Session on <b id="startModalPcName">PC-01</b>
+        </div>
+        <button class="modal-close" onclick="closeModal('startSessionModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="startModalPcId">
+
+        <div class="form-group">
+          <label>Customer Name (Optional):</label>
+          <input type="text" id="startCustomerName" class="form-input" placeholder="Player nickname or member ID">
+        </div>
+
+        <div class="form-group">
+          <label>Billing Mode:</label>
+          <div class="session-type-tabs">
+            <button class="session-type-btn active" data-stype="fixed_amount">Fixed Amount (EGP)</button>
+            <button class="session-type-btn" data-stype="fixed_time">Fixed Duration</button>
+            <button class="session-type-btn" data-stype="open">Open Time</button>
+          </div>
+        </div>
+
+        <!-- Quick Amount Presets -->
+        <div id="amountPresetsSection" class="presets-section">
+          <label>Select Quick Amount:</label>
+          <div class="quick-preset-btns">
+            <button class="btn-preset" data-amount="10">10 EGP</button>
+            <button class="btn-preset active" data-amount="20">20 EGP</button>
+            <button class="btn-preset" data-amount="30">30 EGP</button>
+            <button class="btn-preset" data-amount="50">50 EGP</button>
+            <button class="btn-preset" data-amount="100">100 EGP</button>
+          </div>
+          <div class="custom-amount-row">
+            <span>Custom Amount (EGP): </span>
+            <input type="number" id="customAmountInput" class="form-input form-sm" value="20" min="5" step="5">
+          </div>
+        </div>
+
+        <!-- Quick Time Presets -->
+        <div id="timePresetsSection" class="presets-section" style="display:none;">
+          <label>Select Duration:</label>
+          <div class="quick-preset-btns">
+            <button class="btn-preset" data-minutes="30">30 Mins</button>
+            <button class="btn-preset active" data-minutes="60">1 Hour</button>
+            <button class="btn-preset" data-minutes="120">2 Hours</button>
+            <button class="btn-preset" data-minutes="180">3 Hours</button>
+          </div>
+          <div class="custom-amount-row">
+            <span>Custom Minutes:</span>
+            <input type="number" id="customMinutesInput" class="form-input form-sm" value="60" min="15" step="15">
+            <span>mins</span>
+          </div>
+        </div>
+
+        <!-- Open Time Note -->
+        <div id="openTimeNoteSection" class="presets-section" style="display:none;">
+          <div class="info-alert">
+            <span>ℹ️</span> Counter will run automatically per second until closed by cashier or player checkout.
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block btn-lg" id="btnConfirmStartSession">
+          <span>🚀</span> Confirm & Start Session Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: CHECKOUT & CLOSE SESSION                                 -->
+  <!-- ============================================================== -->
+  <div id="checkoutModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🧾</span> Checkout & Close Session on <b id="checkoutPcName">PC-01</b>
+        </div>
+        <button class="modal-close" onclick="closeModal('checkoutModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="checkoutPcId">
+
+        <div class="receipt-card">
+          <div class="receipt-row">
+            <span>Playtime (<span id="checkoutElapsed">0</span> mins):</span>
+            <span class="receipt-val"><b id="checkoutGameCost">0.00</b> EGP</span>
+          </div>
+          <div class="receipt-row">
+            <span>Cafeteria & Snacks:</span>
+            <span class="receipt-val"><b id="checkoutOrdersCost">0.00</b> EGP</span>
+          </div>
+          <div class="receipt-orders-list" id="checkoutOrdersList"></div>
+          <div class="receipt-row discount-row">
+            <span>Customer Discount:</span>
+            <input type="number" id="checkoutDiscountInput" class="form-input form-sm" value="0" min="0" step="5">
+          </div>
+          <div class="receipt-total-line">
+            <span>Total Balance Due:</span>
+            <span class="total-big"><span id="checkoutFinalTotal">0.00</span> <small style="font-size:1.1rem;">EGP</small></span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Payment Method:</label>
+          <div class="payment-tabs">
+            <button class="pay-btn active" data-pay="cash">💵 Cash</button>
+            <button class="pay-btn" data-pay="instapay">⚡ Digital Transfer</button>
+            <button class="pay-btn" data-pay="visa">💳 Card / Visa</button>
+          </div>
+        </div>
+
+        <button class="btn btn-success btn-block btn-lg" id="btnConfirmCheckout">
+          <span>✔️</span> Collect Payment & Lock PC
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: REMOTE DESKTOP & SCREEN CONTROL                         -->
+  <!-- ============================================================== -->
+  <div id="remoteControlModal" class="modal-overlay">
+    <div class="modal-box modal-fullscreen-custom">
+      <div class="modal-header remote-modal-header">
+        <div class="remote-header-info">
+          <span class="live-rec-badge">🔴 LIVE STREAM</span>
+          <div class="remote-pc-title">
+            <span id="remoteModalPcName">PC-01</span>
+            <span class="specs-pill" id="remoteModalPcSpecs">RTX 4060 • 144Hz</span>
+          </div>
+          <div class="remote-active-game">
+            <span>Current Game: <b id="remoteModalActiveGame" class="text-neon-cyan">Valorant</b></span>
+          </div>
+        </div>
+
+        <!-- Mode Toggle: View Only vs Full Control -->
+        <div class="remote-mode-toggle">
+          <button class="btn-mode active" id="btnModeViewOnly" data-mode="view_only">
+            <span>👁️</span> Surveillance Mode (View Only)
+          </button>
+          <button class="btn-mode" id="btnModeFullControl" data-mode="full_control">
+            <span>🎮</span> Remote Interactive Control
+          </button>
+        </div>
+
+        <button class="modal-close" id="btnCloseRemoteModal">&times;</button>
+      </div>
+
+      <div class="remote-modal-body">
+        <!-- Live Viewer Canvas Container -->
+        <div class="remote-viewport-container" id="remoteViewport">
+          <canvas id="remoteScreenCanvas" width="960" height="540"></canvas>
+          <div class="remote-status-watermark" id="remoteWatermark">Surveillance Mode (View Only)</div>
+        </div>
+
+        <!-- Remote Actions Sidebar / Toolbar -->
+        <div class="remote-toolbar">
+          <h4 class="toolbar-title">Remote Quick Actions</h4>
+
+          <button class="btn-remote-action" id="btnRemoteScreenshot">
+            <span>📸</span> Download Snapshot
+          </button>
+
+          <button class="btn-remote-action" id="btnRemoteSaveGallery" style="border-color: rgba(0, 243, 255, 0.4); color: var(--neon-cyan);">
+            <span>💾</span> Save to Security Archive
+          </button>
+
+          <button class="btn-remote-action text-danger" id="btnRemoteKillGame">
+            <span>🛑</span> Terminate Current Game (Kill Process)
+          </button>
+
+          <button class="btn-remote-action" id="btnRemoteSendMessage">
+            <span>💬</span> Send Toast Message to Screen
+          </button>
+
+          <button class="btn-remote-action" id="btnRemoteSendBuzzer" style="color: var(--neon-amber);">
+            <span>🚨</span> Trigger Warning Siren on PC
+          </button>
+
+          <button class="btn-remote-action text-warning" id="btnRemoteLock">
+            <span>🔒</span> Lock PC Screen Now
+          </button>
+
+          <button class="btn-remote-action" id="btnRemoteAddTime">
+            <span>➕</span> Add 30 Minutes Playtime
+          </button>
+
+          <div class="remote-latency-box">
+            <div class="stat-line"><span>Stream Latency:</span> <b class="text-green">12ms</b></div>
+            <div class="stat-line"><span>Quality:</span> <b>Full HD 1080p</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: TRANSFER SESSION                                         -->
+  <!-- ============================================================== -->
+  <div id="transferModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title"><span>🔀</span> Move Session from <b id="transferFromPcName">PC-01</b></div>
+        <button class="modal-close" onclick="closeModal('transferModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="transferFromPcId">
+        <div class="form-group">
+          <label>Select Target Available PC:</label>
+          <select id="transferToSelect" class="form-input"></select>
+        </div>
+        <div class="info-alert">
+          Elapsed playtime, cafeteria orders, and total cost will be safely migrated to the target machine immediately.
+        </div>
+        <button class="btn btn-primary btn-block" id="btnConfirmTransfer">Confirm & Transfer Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: CLOSE SHIFT                                             -->
+  <!-- ============================================================== -->
+  <div id="closeShiftModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title"><span>🔒</span> Close Shift & Handover Drawer</div>
+        <button class="modal-close" onclick="closeModal('closeShiftModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="shift-summary-box">
+          <div class="summary-line">
+            <span>Expected Cash in Drawer:</span>
+            <span class="val-big text-green"><b id="closeExpectedCash">0.00</b> EGP</span>
+          </div>
+          <div class="summary-line">
+            <span>Game Revenue:</span>
+            <span id="closeGameRev">0.00 EGP</span>
+          </div>
+          <div class="summary-line">
+            <span>Cafe Revenue:</span>
+            <span id="closeCafeRev">0.00 EGP</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Actual Cash Counted in Drawer (EGP):</label>
+          <input type="number" id="closeActualCashInput" class="form-input form-lg" placeholder="Enter counted cash in drawer">
+        </div>
+
+        <div class="form-group">
+          <label>Shift Notes & Discrepancies:</label>
+          <textarea id="closeShiftNotes" class="form-input" rows="2" placeholder="Notes, shortages, or handoff details"></textarea>
+        </div>
+
+        <button class="btn btn-danger btn-block btn-lg" id="btnConfirmCloseShift">
+          Confirm Close & Print Summary Report
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: ADD / EDIT GAME IN LAUNCHER LIBRARY                     -->
+  <!-- ============================================================== -->
+  <div id="gameModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🎮</span> <span id="gameModalHeading">Add New Game to Launcher</span>
+        </div>
+        <button class="modal-close" onclick="closeModal('gameModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="gameModalId">
+        
+        <div class="form-group">
+          <label>Game Title:</label>
+          <input type="text" id="gameTitleInput" class="form-input" placeholder="e.g. Valorant, EA FC 25, Counter-Strike 2">
+        </div>
+
+        <div class="form-group">
+          <label>Category:</label>
+          <select id="gameCategoryInput" class="form-input">
+            <option value="Shooters">Shooters / FPS</option>
+            <option value="Battle Royale">Battle Royale</option>
+            <option value="MOBA">MOBA & Strategy</option>
+            <option value="Sports">Sports & Racing</option>
+            <option value="Open World">Open World & RPG</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Developer / Studio:</label>
+          <input type="text" id="gameDeveloperInput" class="form-input" placeholder="e.g. Riot Games, Valve, Rockstar">
+        </div>
+
+        <div class="form-group">
+          <label>Poster Image URL:</label>
+          <input type="text" id="gamePosterInput" class="form-input" placeholder="https://... or choose preset below">
+          
+          <!-- Quick Poster Presets -->
+          <div class="quick-poster-presets" style="margin-top: 0.6rem; display: flex; gap: 0.4rem; flex-wrap: wrap;">
+            <button type="button" class="btn-preset-chip" onclick="setGamePosterPreset('valorant')">Valorant</button>
+            <button type="button" class="btn-preset-chip" onclick="setGamePosterPreset('cs2')">CS2</button>
+            <button type="button" class="btn-preset-chip" onclick="setGamePosterPreset('cod')">Warzone</button>
+            <button type="button" class="btn-preset-chip" onclick="setGamePosterPreset('lol')">League</button>
+            <button type="button" class="btn-preset-chip" onclick="setGamePosterPreset('fc25')">EA FC 25</button>
+            <button type="button" class="btn-preset-chip" onclick="setGamePosterPreset('gta5')">GTA V</button>
+            <button type="button" class="btn-preset-chip" onclick="setGamePosterPreset('fortnite')">Fortnite</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Executable Path on Windows (Optional):</label>
+          <input type="text" id="gameExecutableInput" class="form-input" placeholder="C:\Games\Game.exe or launch protocol">
+        </div>
+
+        <button class="btn btn-primary btn-block btn-lg" id="btnSaveGameSubmit">
+          <span>💾</span> Save & Broadcast to All PCs
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: PREVIEW SECURITY SCREENSHOT                             -->
+  <!-- ============================================================== -->
+  <div id="screenshotPreviewModal" class="modal-overlay">
+    <div class="modal-box modal-wide">
+      <div class="modal-header">
+        <div class="modal-title"><span>📸</span> <span id="previewShotTitle">Security Surveillance Snapshot</span></div>
+        <button class="modal-close" onclick="closeModal('screenshotPreviewModal')">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align: center; background: #000; padding: 1rem;">
+        <img id="previewShotImg" src="" style="max-width: 100%; max-height: 520px; border-radius: 8px; border: 1px solid var(--border-neon);">
+        <div style="margin-top: 0.8rem; display: flex; justify-content: space-between; align-items: center;">
+          <span id="previewShotMeta" class="text-muted" style="font-size: 0.85rem;"></span>
+          <button class="btn btn-primary btn-sm" id="btnDownloadPreviewShot">Download Full Resolution</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: MASTER SECURITY GATE & PASSWORD LOCK                    -->
+  <!-- ============================================================== -->
+  <div id="masterAuthModal" class="modal-overlay master-auth-overlay">
+    <div class="modal-box master-auth-box">
+      <div class="auth-gate-header">
+        <div class="auth-gate-shield">🛡️</div>
+        <h2>CYBERPULSE MASTER</h2>
+        <p class="auth-gate-subtitle">Protected Cashier Terminal. Password authentication required for system access.</p>
+      </div>
+
+      <div class="auth-gate-body">
+        <div class="master-ip-badge">
+          <span>🌐 Server LAN IP for Client Connections:</span>
+          <b id="authServerIpDisplay">127.0.0.1:4000</b>
+        </div>
+
+        <form id="masterLoginForm" onsubmit="return false;">
+          <div class="form-group" style="margin-top: 1.2rem;">
+            <label>Master Password:</label>
+            <div class="auth-input-wrap">
+              <input type="password" id="masterPasswordInput" class="form-input form-lg" placeholder="••••••••" autocomplete="current-password">
+              <button type="button" class="btn-toggle-pass" id="btnTogglePassVisibility">👁️</button>
+            </div>
+            <div id="authErrorMessage" class="auth-error-text" style="display:none;"></div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-lg" id="btnSubmitMasterLogin" style="margin-top: 1rem;">
+            <span>🔓</span> Unlock Master Dashboard
+          </button>
+        </form>
+
+        <div class="auth-hint-text">
+          <span>💡 Default Password: <b>admin</b> (Configurable in Settings)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL: VIEW MIKROTIK ROUTEROS SCRIPT -->
+  <div id="mikrotikScriptModal" class="modal-overlay">
+    <div class="modal-box modal-wide">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>📋</span> MikroTik RouterOS Setup Script
+        </div>
+        <button class="modal-close" onclick="closeModal('mikrotikScriptModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:0.8rem;">
+          You can copy and paste this complete script directly into Winbox Terminal:
+        </p>
+        <textarea id="mikrotikScriptTextarea" class="form-input" rows="11" readonly style="font-family:monospace; font-size:0.8rem; background:#050914; color:#00f3ff; width:100%; box-sizing:border-box;"></textarea>
+        <div style="margin-top:1rem; display:flex; justify-content:flex-end; gap:0.8rem;">
+          <button class="btn btn-primary" id="btnCopyScriptModal"><span>📄</span> Copy Script</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD CUSTOM VPN SERVER -->
+  <div id="addVpnServerModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>➕</span> Add Custom Gaming VPN Server
+        </div>
+        <button class="modal-close" onclick="closeModal('addVpnServerModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Server Name:</label>
+          <input type="text" id="newVpnName" class="form-input" placeholder="e.g. London Low-Ping Node">
+        </div>
+        <div class="form-group">
+          <label>Endpoint IP Address:</label>
+          <input type="text" id="newVpnIp" class="form-input" placeholder="e.g. 51.15.80.20">
+        </div>
+        <div class="form-group">
+          <label>Expected Latency / Ping:</label>
+          <input type="text" id="newVpnPing" class="form-input" placeholder="e.g. 35ms" value="25ms">
+        </div>
+        <div class="form-group">
+          <label>Location Flag (Emoji):</label>
+          <input type="text" id="newVpnFlag" class="form-input" placeholder="e.g. 🇬🇧" value="🌐">
+        </div>
+        <button class="btn btn-primary btn-block" id="btnSubmitAddVpnServer">Add to VPN Pool</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================== -->
+  <!-- MODAL: CHOOSE DEVICE ICON & HARDWARE MODEL (DOUBLE CLICK)      -->
+  <!-- ============================================================== -->
+  
+  <!-- ============================================================== -->
+  <!-- MODAL: STATE ICON GALLERY CHOOSER                              -->
+  <!-- ============================================================== -->
+  <div id="stateIconGalleryModal" class="modal-overlay">
+    <div class="modal-box modal-wide" style="max-width: 720px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🎨</span> <span id="galleryStateTitle">Select Device Icon Model</span>
+        </div>
+        <button class="modal-close" onclick="closeModal('stateIconGalleryModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="section-desc" style="margin-bottom: 1.2rem; font-size: 0.88rem; color: var(--text-muted);">
+          Click any device hardware model below to instantly assign it to this machine state:
+        </p>
+        
+        <div class="icon-gallery-grid" id="stateGalleryGrid">
+          <!-- Dynamically populated with live visual preview cards -->
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
+          <button class="btn btn-secondary btn-sm" onclick="closeModal('stateIconGalleryModal')">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="deviceIconPickerModal" class="modal-overlay">
+    <div class="modal-box modal-wide" style="max-width: 580px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🎨</span> <span id="iconPickerModalTitle">Choose Device Icon & Style</span>
+        </div>
+        <button class="modal-close" onclick="closeModal('deviceIconPickerModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="section-desc" style="margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+          Select your preferred hardware model and neon color for this device.
+        </p>
+        
+        <!-- Live Preview inside modal -->
+        <div style="background: rgba(3, 7, 18, 0.8); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem; display: flex; justify-content: center; align-items: center; min-height: 160px;" id="iconPickerLivePreview">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- 4 Hardware Models selection cards -->
+        <label style="font-weight:700; font-size:0.85rem; color:#fff; margin-bottom:0.5rem; display:block;">Select Device Model:</label>
+        <div class="icon-style-options" style="margin-bottom: 1.25rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
+          <label class="icon-style-card active" data-picker-style="curved_monitor" style="margin: 0; cursor: pointer;">
+            <input type="radio" name="pickerStyleRadio" value="curved_monitor" checked>
+            <div class="style-icon-wrap">🖥️</div>
+            <div class="style-text">
+              <span class="style-title">1000R Curved Monitor</span>
+              <span class="style-desc">V-Legs stand & ambient glow</span>
+            </div>
+          </label>
+          <label class="icon-style-card" data-picker-style="ultrawide" style="margin: 0; cursor: pointer;">
+            <input type="radio" name="pickerStyleRadio" value="ultrawide">
+            <div class="style-icon-wrap">📺</div>
+            <div class="style-text">
+              <span class="style-title">UltraWide 34" Curved</span>
+              <span class="style-desc">21:9 cinematic screen</span>
+            </div>
+          </label>
+          <label class="icon-style-card" data-picker-style="gaming_tower" style="margin: 0; cursor: pointer;">
+            <input type="radio" name="pickerStyleRadio" value="gaming_tower">
+            <div class="style-icon-wrap">🎮</div>
+            <div class="style-text">
+              <span class="style-title">RGB Gaming Tower</span>
+              <span class="style-desc">Tempered glass & ARGB fans</span>
+            </div>
+          </label>
+          <label class="icon-style-card" data-picker-style="gaming_laptop" style="margin: 0; cursor: pointer;">
+            <input type="radio" name="pickerStyleRadio" value="gaming_laptop">
+            <div class="style-icon-wrap">💻</div>
+            <div class="style-text">
+              <span class="style-title">Pro Esports Laptop</span>
+              <span class="style-desc">Slim chassis & backlit keyboard</span>
+            </div>
+          </label>
+                  <label class="icon-style-card" data-picker-style="flat_monitor" style="margin: 0; cursor: pointer;">
+            <input type="radio" name="pickerStyleRadio" value="flat_monitor">
+            <div class="style-icon-wrap">Display</div>
+            <div class="style-text">
+              <span class="style-title">Flat Tournament Display</span>
+              <span class="style-desc">Zero-bezel 16:9 circular base</span>
+            </div>
+          </label>
+          <label class="icon-style-card" data-picker-style="console_rig" style="margin: 0; cursor: pointer;">
+            <input type="radio" name="pickerStyleRadio" value="console_rig">
+            <div class="style-icon-wrap">Console</div>
+            <div class="style-text">
+              <span class="style-title">Console Lounge Rig</span>
+              <span class="style-desc">Next-gen station & gamepad</span>
+            </div>
+          </label>
+        </div>
+
+        <!-- Neon Color Selection -->
+        <label style="font-weight:700; font-size:0.85rem; color:#fff; margin-bottom:0.5rem; display:block;">Choose Neon Color:</label>
+        <div class="picker-inputs-wrap" style="margin-bottom: 1.25rem;">
+          <input type="color" id="pickerModalColorInput" class="color-swatch-input" value="#00f3ff">
+          <input type="text" id="pickerModalColorHex" class="color-hex-input" value="#00f3ff">
+        </div>
+
+        <!-- Scope Option -->
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+          <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; color:#cbd5e1; font-size:0.85rem; font-weight:600;">
+            <input type="checkbox" id="chkApplyIconToAll"> Apply this icon style and color to all stations
+          </label>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="btnSubmitIconPicker">
+          <span>💾</span> Apply & Save Icon
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="audio.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
