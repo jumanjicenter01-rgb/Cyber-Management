@@ -159,10 +159,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (themeToggleIcon) {
       if (theme === 'light') {
         themeToggleIcon.textContent = '☀️';
-        if (btnThemeToggle) btnThemeToggle.title = '☀️ المظهر النهاري (Light Mode) - انقر للتبديل إلى الوضع الليلي';
+        if (btnThemeToggle) btnThemeToggle.title = 'Light Mode - Click to switch to Dark Mode';
       } else {
         themeToggleIcon.textContent = '🌙';
-        if (btnThemeToggle) btnThemeToggle.title = '🌙 المظهر الليلي (Dark Mode) - انقر للتبديل إلى الوضع النهاري';
+        if (btnThemeToggle) btnThemeToggle.title = 'Dark Mode - Click to switch to Light Mode';
       }
     }
   }
@@ -598,11 +598,59 @@ document.addEventListener('DOMContentLoaded', () => {
     available: { model: 'curved_monitor', color: '#05ffa1', label: 'READY TO PLAY' }
   };
 
+  const AVAILABLE_ESPORTS_ICONS = [
+    { id: 'icon_gamepad', category: 'esports', title: 'Esports Controller', symbol: '🎮', desc: 'Pro wireless controller badge' },
+    { id: 'icon_joystick', category: 'esports', title: 'Arcade Joystick', symbol: '🕹️', desc: 'Classic arcade flight stick' },
+    { id: 'icon_swords', category: 'esports', title: 'Crossed Swords', symbol: '⚔️', desc: 'Battle arena & PvP combat' },
+    { id: 'icon_crown', category: 'esports', title: 'VIP Royal Crown', symbol: '👑', desc: 'Gold VIP lounge tier' },
+    { id: 'icon_shield', category: 'esports', title: 'Aegis Defense Shield', symbol: '🛡️', desc: 'Security & defense shield' },
+    { id: 'icon_lightning', category: 'esports', title: 'Cyber Pulse Flash', symbol: '⚡', desc: 'High-speed overclocked power' },
+    { id: 'icon_rocket', category: 'esports', title: 'Nitro Boost Rocket', symbol: '🚀', desc: 'Max performance speed boost' },
+    { id: 'icon_target', category: 'esports', title: 'Crosshair Scope', symbol: '🎯', desc: 'Sniper & FPS precision target' },
+    { id: 'icon_headset', category: 'esports', title: 'Gaming Headset', symbol: '🎧', desc: 'Surround sound audio rig' },
+    { id: 'icon_trophy', category: 'esports', title: 'Tournament Trophy', symbol: '🏆', desc: 'Champion esports winner' },
+    { id: 'icon_alien', category: 'esports', title: 'Space Invader', symbol: '👾', desc: 'Retro gaming alien creature' },
+    { id: 'icon_bomb', category: 'esports', title: 'Tactical Bomb', symbol: '💣', desc: 'Defuse & tactical plant match' },
+    { id: 'icon_racing', category: 'esports', title: 'Sim Racing Wheel', symbol: '🏎️', desc: 'Motorsports simulator cockpit' },
+    { id: 'icon_diamond', category: 'esports', title: 'Diamond Tier', symbol: '💎', desc: 'Premium elite master tier' },
+    { id: 'icon_fire', category: 'esports', title: 'On Fire Win Streak', symbol: '🔥', desc: 'Hot gaming win streak' },
+    { id: 'icon_wrench', category: 'system', title: 'Workshop Wrench', symbol: '🔧', desc: 'Hardware repair & maintenance' },
+    { id: 'icon_tools', category: 'system', title: 'Engineer Tools', symbol: '🛠️', desc: 'Technical workbench tuning' },
+    { id: 'icon_lock', category: 'system', title: 'Security Padlock', symbol: '🔒', desc: 'Station locked & secured' },
+    { id: 'icon_warning', category: 'system', title: 'Hazard Alert', symbol: '⚠️', desc: 'Warning & urgent inspection' },
+    { id: 'icon_sleep', category: 'system', title: 'Sleep Standby', symbol: '💤', desc: 'Low-power idle standby' },
+    { id: 'icon_offline', category: 'system', title: 'Power Terminated', symbol: '🚫', desc: 'Powered off / disabled' },
+    { id: 'icon_skull', category: 'system', title: 'Lost Signal', symbol: '💀', desc: 'Connection dropped / fatal ping' }
+  ];
+
+  function getIconSymbol(modelId) {
+    if (!modelId) return '🖥️';
+    const found = AVAILABLE_ESPORTS_ICONS.find(i => i.id === modelId);
+    if (found) return found.symbol;
+    if (typeof modelId === 'string' && modelId.startsWith('custom_')) return modelId.replace('custom_', '');
+    return '🎮';
+  }
+
   function generateHardwareSvg(model, color, pcId, label, enableStandRgb, pcState, pc, isMini = false) {
     const uid = `${pcId || 'preview'}_${Math.random().toString(36).substr(2, 5)}`;
     const pcClickAttr = (pc && pc.id) ? `onclick="event.stopPropagation(); openDeviceIconPickerModal('${pc.id}')" ondblclick="event.stopPropagation(); openDeviceIconPickerModal('${pc.id}')" title="Click to choose icon & color"` : '';
     // Screen surface is kept completely clean without text as requested
     let overlayContent = '';
+
+    if (model && (model.startsWith('icon_') || model.startsWith('custom_'))) {
+      const sym = getIconSymbol(model);
+      return `
+        <div class="real-curved-monitor-wrapper ${isMini ? 'mini-wrapper' : ''}" ${pcClickAttr}>
+          <div class="monitor-ambient-glow" style="background: radial-gradient(circle, ${color}45 0%, transparent 70%);"></div>
+          <div style="width: 100%; height: ${isMini ? '68px' : '150px'}; display: flex; align-items: center; justify-content: center; position: relative;">
+            <div style="width: ${isMini ? '48px' : '100px'}; height: ${isMini ? '48px' : '100px'}; border-radius: ${isMini ? '10px' : '18px'}; background: radial-gradient(circle at center, ${color}22 0%, #080e18 90%); border: ${isMini ? '2px' : '3px'} solid ${color}; box-shadow: 0 0 ${isMini ? '8px' : '18px'} ${color}55; display: flex; align-items: center; justify-content: center; font-size: ${isMini ? '1.6rem' : '3.2rem'}; filter: drop-shadow(0 0 10px ${color});">
+              ${sym}
+            </div>
+          </div>
+          <div class="screen-content-overlay">${overlayContent}</div>
+        </div>
+      `;
+    }
 
     if (model === 'ultrawide') {
       return `
@@ -929,7 +977,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="centered-name-header">
           <div class="header-name-row" style="display:flex; align-items:center; justify-content:center; gap:0.4rem; position:relative;">
             <div class="centered-title">${pc.name}</div>
-            <button type="button" class="btn-pc-icon-edit" onclick="event.stopPropagation(); openDeviceIconPickerModal('${pc.id}')" title="Change Device Icon & Style" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); border-radius:6px; cursor:pointer; font-size:0.75rem; padding:2px 6px; color:#fff; line-height:1; transition:all 0.2s ease;">[Edit]</button>
           </div>
           <div class="centered-sub">${pc.specs} • IP: ${pc.ip || '192.168.88.101'}</div>
           ${vpnBadgeHtml}
@@ -2133,7 +2180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const conf = stateVisualsMap[key];
         target.innerHTML = generateHardwareSvg(conf.model, conf.color, `mini_${key}`, '', false, key, null, true);
         target.style.cursor = 'pointer';
-        target.title = 'انقر مرتين لاختيار شكل وموديل الأيقونة (Double-click to choose icon)';
+        target.title = 'Double-click to choose icon and customize appearance';
         target.onclick = (e) => {
           e.stopPropagation();
           openStateIconGallery(key);
@@ -2145,6 +2192,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const itemCard = document.querySelector(`.state-visual-item-card[data-state-key="${key}"]`);
       if (itemCard) {
+        itemCard.style.cursor = 'pointer';
+        itemCard.title = 'Double-click to choose icon and customize appearance';
         itemCard.ondblclick = (e) => {
           if (e.target.closest('select') || e.target.closest('input')) return;
           e.stopPropagation();
@@ -2154,7 +2203,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const itemMeta = document.querySelector(`.state-visual-item-card[data-state-key="${key}"] .state-visual-meta`);
       if (itemMeta) {
         itemMeta.style.cursor = 'pointer';
-        itemMeta.title = 'انقر مرتين لاختيار شكل وموديل الأيقونة (Double-click to choose icon)';
+        itemMeta.title = 'Double-click to choose icon and customize appearance';
         itemMeta.onclick = (e) => {
           e.stopPropagation();
           openStateIconGallery(key);
@@ -2641,7 +2690,7 @@ document.addEventListener('DOMContentLoaded', () => {
       pill.style.background = 'rgba(5, 255, 161, 0.15)';
       pill.style.borderColor = 'var(--neon-green, #05ffa1)';
       pill.style.color = 'var(--neon-green, #05ffa1)';
-      const modelLabel = status.model || (status.simulationMode ? 'Lab Simulator (v7.14)' : 'RouterOS');
+      const modelLabel = status.model || 'RouterOS';
       pill.innerHTML = `🟢 Connected • Verified (${modelLabel})`;
     } else {
       pill.className = 'mt-conn-status-pill disconnected';
@@ -2667,7 +2716,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td><span class="badge" style="background:rgba(5,255,161,0.15); color:var(--neon-green); border:1px solid rgba(5,255,161,0.3); padding:2px 8px; border-radius:6px; font-weight:700;">${srv.ping || '25ms'}</span></td>
         <td><span style="color:var(--neon-green); font-size:0.85rem; font-weight:600;">● Active</span></td>
         <td>
-          <button class="btn btn-danger-soft btn-xs btn-delete-vpn-server" data-server-id="${srv.id}" style="padding:4px 10px; font-size:0.75rem; border-radius:6px; cursor:pointer;" title="حذف هذا السيرفر من الشبكة">
+          <button class="btn btn-danger-soft btn-xs btn-delete-vpn-server" data-server-id="${srv.id}" style="padding:4px 10px; font-size:0.75rem; border-radius:6px; cursor:pointer;" title="Delete this VPN server from the network">
             🗑️ Delete
           </button>
         </td>
@@ -2706,7 +2755,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const userEl = document.getElementById('mtUsername');
         const passEl = document.getElementById('mtPassword');
         const vpnListEl = document.getElementById('mtVpnList');
-        const simToggleEl = document.getElementById('mtSimulationMode');
 
         if (hostEl) hostEl.value = mt.host || '192.168.88.1';
         if (portEl) portEl.value = mt.port || 8728;
@@ -2714,7 +2762,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (userEl) userEl.value = mt.username || 'admin';
         if (passEl && mt.password) passEl.value = mt.password;
         if (vpnListEl) vpnListEl.value = mt.vpnList || 'GAMING-VPN';
-        if (simToggleEl) simToggleEl.checked = !!mt.simulationMode;
 
         updateMikrotikStatusUI(mt);
         renderVpnServersTable(mt.vpnServers || []);
@@ -2728,13 +2775,12 @@ document.addEventListener('DOMContentLoaded', () => {
       btnTestMikrotikConn.innerHTML = '<span>⏳</span> Testing RouterOS...';
 
       const payload = {
-        host: document.getElementById('mtHost')?.value || '192.168.88.1',
+        host: document.getElementById('mtHost')?.value?.trim() || '192.168.88.1',
         port: parseInt(document.getElementById('mtPort')?.value) || 8728,
         restPort: parseInt(document.getElementById('mtRestPort')?.value) || 80,
-        username: document.getElementById('mtUsername')?.value || 'admin',
+        username: document.getElementById('mtUsername')?.value?.trim() || 'admin',
         password: document.getElementById('mtPassword')?.value || '',
-        vpnList: document.getElementById('mtVpnList')?.value || 'GAMING-VPN',
-        simulationMode: !!document.getElementById('mtSimulationMode')?.checked
+        vpnList: document.getElementById('mtVpnList')?.value?.trim() || 'GAMING-VPN'
       };
 
       fetch('/api/mikrotik/config', {
@@ -2749,20 +2795,20 @@ document.addEventListener('DOMContentLoaded', () => {
         btnTestMikrotikConn.disabled = false;
         btnTestMikrotikConn.innerHTML = '<span>⚡</span> Test Connection';
         if (ok && data.connected) {
-          updateMikrotikStatusUI({ connected: true, model: data.model, simulationMode: payload.simulationMode });
+          updateMikrotikStatusUI({ connected: true, model: data.model });
           window.cyberAudio?.playUnlock?.();
-          alert(`✅ تم الاتصال براوتر مايكروتك بنجاح!\nالراوتر: ${data.model}\nالرسالة: ${data.message}`);
+          alert(`Connected to MikroTik RouterOS successfully!\nModel: ${data.model}\nStatus: ${data.message}`);
         } else {
           updateMikrotikStatusUI({ connected: false });
           window.cyberAudio?.playWarning?.();
-          alert(`⚠️ تعذر الاتصال بمايكروتك:\n${data.error || data.message || 'Connection failed'}\nتأكد من عنوان IP، أو قم بتفعيل وضع المحاكاة (Hardware Simulation Mode) للتجربة.`);
+          alert(`Could not connect to MikroTik router at ${payload.host}:${payload.port}.\nError: ${data.error || data.message || 'Connection refused or timed out'}\nPlease verify router IP, port, and credentials.`);
         }
       })
       .catch(err => {
         btnTestMikrotikConn.disabled = false;
         btnTestMikrotikConn.innerHTML = '<span>⚡</span> Test Connection';
         updateMikrotikStatusUI({ connected: false });
-        alert('فشل الاتصال: ' + err.message);
+        alert('Router connection test failed: ' + err.message);
       });
     });
   }
@@ -2770,13 +2816,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnSaveMikrotikSettings) {
     btnSaveMikrotikSettings.addEventListener('click', () => {
       const payload = {
-        host: document.getElementById('mtHost')?.value || '192.168.88.1',
+        host: document.getElementById('mtHost')?.value?.trim() || '192.168.88.1',
         port: parseInt(document.getElementById('mtPort')?.value) || 8728,
         restPort: parseInt(document.getElementById('mtRestPort')?.value) || 80,
-        username: document.getElementById('mtUsername')?.value || 'admin',
+        username: document.getElementById('mtUsername')?.value?.trim() || 'admin',
         password: document.getElementById('mtPassword')?.value || '',
-        vpnList: document.getElementById('mtVpnList')?.value || 'GAMING-VPN',
-        simulationMode: !!document.getElementById('mtSimulationMode')?.checked
+        vpnList: document.getElementById('mtVpnList')?.value?.trim() || 'GAMING-VPN'
       };
 
       btnSaveMikrotikSettings.disabled = true;
@@ -2795,33 +2840,13 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!state.settings) state.settings = {};
           state.settings.mikrotik = res.mikrotik;
           window.cyberAudio?.playCash?.();
-          alert('💾 تم حفظ إعدادات راوتر مايكروتك بنجاح!');
+          alert('MikroTik router configuration saved successfully.');
         }
       })
       .catch(err => {
         btnSaveMikrotikSettings.disabled = false;
         btnSaveMikrotikSettings.innerHTML = '<span>💾</span> Save Router Settings';
-        alert('حدث خطأ أثناء الحفظ: ' + err.message);
-      });
-    });
-  }
-
-  if (mtSimulationMode) {
-    mtSimulationMode.addEventListener('change', () => {
-      const isSim = mtSimulationMode.checked;
-      fetch('/api/mikrotik/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ simulationMode: isSim })
-      })
-      .then(r => r.json())
-      .then(() => fetch('/api/mikrotik/test', { method: 'POST' }))
-      .then(r => r.json())
-      .then(res => {
-        updateMikrotikStatusUI(res);
-        if (isSim) {
-          window.cyberAudio?.playUnlock?.();
-        }
+        alert('Failed to save settings: ' + err.message);
       });
     });
   }
@@ -2831,7 +2856,22 @@ document.addEventListener('DOMContentLoaded', () => {
       btnProvisionMikrotikVpn.disabled = true;
       btnProvisionMikrotikVpn.innerHTML = '<span>⏳</span> Provisioning VPN...';
 
-      fetch('/api/mikrotik/provision-vpn', { method: 'POST' })
+      const payload = {
+        host: document.getElementById('mtHost')?.value?.trim() || '192.168.88.1',
+        port: parseInt(document.getElementById('mtPort')?.value) || 8728,
+        restPort: parseInt(document.getElementById('mtRestPort')?.value) || 80,
+        username: document.getElementById('mtUsername')?.value?.trim() || 'admin',
+        password: document.getElementById('mtPassword')?.value || '',
+        vpnList: document.getElementById('mtVpnList')?.value?.trim() || 'GAMING-VPN'
+      };
+
+      fetch('/api/mikrotik/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(r => r.json())
+      .then(() => fetch('/api/mikrotik/provision-vpn', { method: 'POST' }))
         .then(r => r.json().then(data => ({ ok: r.ok, data })))
         .then(({ ok, data }) => {
           btnProvisionMikrotikVpn.disabled = false;
@@ -2845,23 +2885,23 @@ document.addEventListener('DOMContentLoaded', () => {
               `;
             }
             window.cyberAudio?.playUnlock?.();
-            alert('🚀 تم نشر قواعد Gaming VPN وتوجيه الترافيك على راوتر مايكروتك بنجاح!');
+            alert('Gaming VPN rules successfully provisioned on MikroTik RouterOS.');
           } else {
             window.cyberAudio?.playWarning?.();
-            alert('⚠️ ' + (data.error || 'فشل نشر القواعد. تأكد من اتصال الراوتر أو تفعيل وضع المحاكاة.'));
+            alert('Failed to provision VPN: ' + (data.error || 'Router connection error.'));
           }
         })
         .catch(err => {
           btnProvisionMikrotikVpn.disabled = false;
           btnProvisionMikrotikVpn.innerHTML = '<span>⚡</span> Provision VPN on MikroTik Now';
-          alert('حدث خطأ: ' + err.message);
+          alert('Error during provisioning: ' + err.message);
         });
     });
   }
 
   if (btnCopyMikrotikScript) {
     btnCopyMikrotikScript.addEventListener('click', () => {
-      const vpnList = document.getElementById('mtVpnList')?.value || 'GAMING-VPN';
+      const vpnList = document.getElementById('mtVpnList')?.value?.trim() || 'GAMING-VPN';
       const scriptText = `# ==============================================================
 # CyberPulse Gaming Lounge - MikroTik RouterOS Setup Script
 # ==============================================================
@@ -2926,9 +2966,9 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById('newVpnName').value = '';
           document.getElementById('newVpnIp').value = '';
           window.cyberAudio?.playCash?.();
-          alert(`✅ Added VPN Server "${name}" successfully!`);
+          alert(`Added VPN Server "${name}" successfully.`);
         } else {
-          alert('⚠️ ' + (data.error || 'Failed to add VPN server'));
+          alert('Failed to add VPN server: ' + (data.error || 'Validation error'));
         }
       });
     });
@@ -3057,32 +3097,101 @@ document.addEventListener('DOMContentLoaded', () => {
         if (modalIconPicker) modalIconPicker.classList.remove('active');
         renderPcsGrid();
         window.cyberAudio?.playCash?.();
-        alert('✨ Device icon and color updated successfully!');
+        alert('Device icon and color updated successfully.');
       });
     });
   }
 
 
   // -------------------------------------------------------------
-  // STATE ICON GALLERY CHOOSER CONTROLLER
+  // STATE ICON GALLERY CHOOSER CONTROLLER (MULTI-CATEGORY & EMOJIS)
   // -------------------------------------------------------------
   const AVAILABLE_HARDWARE_MODELS = [
-    { id: 'curved_monitor', title: '1000R Curved Gaming Monitor', desc: 'Curved OLED screen with ambient underglow & V-Legs' },
-    { id: 'ultrawide', title: 'UltraWide 34" Curved Display', desc: 'Cinematic 21:9 curved screen with wide desktop base' },
-    { id: 'gaming_tower', title: 'RGB Glass Gaming Tower Case', desc: 'Tempered glass chassis with ARGB cooling fans' },
-    { id: 'gaming_laptop', title: 'Pro Esports Gaming Laptop', desc: 'Slim esports laptop with illuminated RGB keyboard' },
-    { id: 'flat_monitor', title: 'Flat Esports Tournament Display', desc: 'Zero-bezel 16:9 tournament monitor with circular base' },
-    { id: 'console_rig', title: 'Console Lounge Battlestation', desc: 'Next-gen gaming console with dual wireless gamepad' }
+    { id: 'curved_monitor', category: 'hardware', title: '1000R Curved Gaming Monitor', desc: 'Curved OLED screen with ambient underglow & V-Legs', symbol: '🖥️' },
+    { id: 'ultrawide', category: 'hardware', title: 'UltraWide 34" Curved Display', desc: 'Cinematic 21:9 curved screen with wide desktop base', symbol: '📺' },
+    { id: 'gaming_tower', category: 'hardware', title: 'RGB Glass Gaming Tower Case', desc: 'Tempered glass chassis with ARGB cooling fans', symbol: '🎮' },
+    { id: 'gaming_laptop', category: 'hardware', title: 'Pro Esports Gaming Laptop', desc: 'Slim esports laptop with illuminated RGB keyboard', symbol: '💻' },
+    { id: 'flat_monitor', category: 'hardware', title: 'Flat Esports Tournament Display', desc: 'Zero-bezel 16:9 tournament monitor with circular base', symbol: '🖥️' },
+    { id: 'console_rig', category: 'hardware', title: 'Console Lounge Battlestation', desc: 'Next-gen gaming console with dual wireless gamepad', symbol: '🕹️' }
   ];
 
   let currentGalleryStateKey = null;
+  let currentGalleryActiveModel = 'curved_monitor';
+  let currentGalleryActiveColor = '#00f3ff';
+  let currentGalleryCategoryFilter = 'all';
+
+  function updateGalleryLivePreviewBox() {
+    const previewWrap = document.getElementById('galleryLivePreviewWrap');
+    const titleEl = document.getElementById('gallerySelectedTitle');
+    const descEl = document.getElementById('gallerySelectedDesc');
+
+    if (previewWrap) {
+      previewWrap.innerHTML = generateHardwareSvg(currentGalleryActiveModel, currentGalleryActiveColor, 'gal_preview', '', false, currentGalleryStateKey, null, true);
+    }
+
+    const allItems = [...AVAILABLE_HARDWARE_MODELS, ...AVAILABLE_ESPORTS_ICONS];
+    const found = allItems.find(i => i.id === currentGalleryActiveModel);
+    if (found) {
+      if (titleEl) titleEl.textContent = found.title;
+      if (descEl) descEl.textContent = found.desc;
+    } else if (currentGalleryActiveModel && currentGalleryActiveModel.startsWith('custom_')) {
+      if (titleEl) titleEl.textContent = `Custom Symbol (${currentGalleryActiveModel.replace('custom_', '')})`;
+      if (descEl) descEl.textContent = 'Custom player-defined symbol with ambient neon glow';
+    }
+  }
+
+  function renderGalleryGrid() {
+    const grid = document.getElementById('stateGalleryGrid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+    const allItems = [...AVAILABLE_HARDWARE_MODELS, ...AVAILABLE_ESPORTS_ICONS];
+    const filtered = allItems.filter(item => {
+      if (currentGalleryCategoryFilter === 'all') return true;
+      return item.category === currentGalleryCategoryFilter;
+    });
+
+    filtered.forEach(m => {
+      const card = document.createElement('div');
+      const isSelected = m.id === currentGalleryActiveModel;
+      card.className = `gallery-model-card ${isSelected ? 'active' : ''}`;
+      card.style.cursor = 'pointer';
+      card.title = 'Double-click to select immediately';
+
+      card.innerHTML = `
+        <div class="gallery-card-preview" style="height: 100px; display: flex; align-items: center; justify-content: center;">
+          ${generateHardwareSvg(m.id, currentGalleryActiveColor, `gal_${m.id}`, '', false, currentGalleryStateKey, null, true)}
+        </div>
+        <div class="gallery-card-info" style="margin-top: 0.5rem; text-align: center;">
+          <div class="gallery-card-title" style="font-size: 0.88rem; font-weight: 700; color: #fff;">${m.title}</div>
+          <div class="gallery-card-desc" style="font-size: 0.74rem; color: var(--text-muted);">${m.desc}</div>
+        </div>
+        <div class="gallery-select-badge" style="margin-top: 0.5rem;">${isSelected ? '✓ SELECTED' : 'SELECT'}</div>
+      `;
+
+      card.addEventListener('click', () => {
+        currentGalleryActiveModel = m.id;
+        updateGalleryLivePreviewBox();
+        renderGalleryGrid();
+      });
+
+      card.addEventListener('dblclick', () => {
+        currentGalleryActiveModel = m.id;
+        selectModelForState(currentGalleryStateKey, m.id, currentGalleryActiveColor);
+      });
+
+      grid.appendChild(card);
+    });
+  }
 
   window.openStateIconGallery = function(stateKey) {
     currentGalleryStateKey = stateKey;
     const stateVisualsMap = (currentVisuals && currentVisuals.stateVisuals) || defaultStateVisuals;
     const stateConf = stateVisualsMap[stateKey] || defaultStateVisuals[stateKey] || defaultStateVisuals.available;
-    const activeColor = stateConf.color || '#00f3ff';
-    const activeModel = stateConf.model || 'curved_monitor';
+    
+    currentGalleryActiveColor = stateConf.color || '#00f3ff';
+    currentGalleryActiveModel = stateConf.model || 'curved_monitor';
+    currentGalleryCategoryFilter = 'all';
 
     const titleEl = document.getElementById('galleryStateTitle');
     if (titleEl) {
@@ -3101,31 +3210,17 @@ document.addEventListener('DOMContentLoaded', () => {
       titleEl.textContent = `Choose Icon for: ${stateLabels[stateKey] || stateKey}`;
     }
 
-    const grid = document.getElementById('stateGalleryGrid');
-    if (grid) {
-      grid.innerHTML = '';
-      AVAILABLE_HARDWARE_MODELS.forEach(m => {
-        const card = document.createElement('div');
-        const isSelected = m.id === activeModel;
-        card.className = `gallery-model-card ${isSelected ? 'active' : ''}`;
-        card.innerHTML = `
-          <div class="gallery-card-preview">
-            ${generateHardwareSvg(m.id, activeColor, `gal_${m.id}`, '', false, stateKey, null, false)}
-          </div>
-          <div class="gallery-card-info">
-            <div class="gallery-card-title">${m.title}</div>
-            <div class="gallery-card-desc">${m.desc}</div>
-          </div>
-          <div class="gallery-select-badge">${isSelected ? '✓ SELECTED' : 'SELECT'}</div>
-        `;
+    const colorPicker = document.getElementById('galleryColorPicker');
+    const colorHex = document.getElementById('galleryColorHex');
+    if (colorPicker) colorPicker.value = currentGalleryActiveColor;
+    if (colorHex) colorHex.value = currentGalleryActiveColor;
 
-        card.addEventListener('click', () => {
-          selectModelForState(stateKey, m.id);
-        });
+    document.querySelectorAll('.gallery-tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tabFilter === 'all');
+    });
 
-        grid.appendChild(card);
-      });
-    }
+    updateGalleryLivePreviewBox();
+    renderGalleryGrid();
 
     const modal = document.getElementById('stateIconGalleryModal');
     if (modal) {
@@ -3134,16 +3229,90 @@ document.addEventListener('DOMContentLoaded', () => {
     window.cyberAudio?.playClick?.();
   };
 
-  function selectModelForState(stateKey, modelId) {
+  // Gallery tabs filter listener
+  document.querySelectorAll('.gallery-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.gallery-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentGalleryCategoryFilter = btn.dataset.tabFilter || 'all';
+      renderGalleryGrid();
+    });
+  });
+
+  // Gallery live color input
+  const galleryColorPicker = document.getElementById('galleryColorPicker');
+  const galleryColorHex = document.getElementById('galleryColorHex');
+  if (galleryColorPicker && galleryColorHex) {
+    galleryColorPicker.addEventListener('input', () => {
+      galleryColorHex.value = galleryColorPicker.value;
+      currentGalleryActiveColor = galleryColorPicker.value;
+      updateGalleryLivePreviewBox();
+      renderGalleryGrid();
+    });
+    galleryColorHex.addEventListener('input', () => {
+      if (/^#[0-9A-Fa-f]{6}$/.test(galleryColorHex.value)) {
+        galleryColorPicker.value = galleryColorHex.value;
+        currentGalleryActiveColor = galleryColorHex.value;
+        updateGalleryLivePreviewBox();
+        renderGalleryGrid();
+      }
+    });
+  }
+
+  // Custom symbol input
+  const btnApplyCustomSymbol = document.getElementById('btnApplyCustomSymbol');
+  const galleryCustomSymbolInput = document.getElementById('galleryCustomSymbolInput');
+  if (btnApplyCustomSymbol && galleryCustomSymbolInput) {
+    btnApplyCustomSymbol.addEventListener('click', () => {
+      const sym = galleryCustomSymbolInput.value.trim();
+      if (!sym) return;
+      currentGalleryActiveModel = `custom_${sym}`;
+      updateGalleryLivePreviewBox();
+      renderGalleryGrid();
+      window.cyberAudio?.playClick?.();
+    });
+  }
+
+  // Confirm selection button
+  const btnConfirmGallerySelection = document.getElementById('btnConfirmGallerySelection');
+  if (btnConfirmGallerySelection) {
+    btnConfirmGallerySelection.addEventListener('click', () => {
+      selectModelForState(currentGalleryStateKey, currentGalleryActiveModel, currentGalleryActiveColor);
+    });
+  }
+
+  function selectModelForState(stateKey, modelId, newColor) {
     if (!currentVisuals.stateVisuals) currentVisuals.stateVisuals = {};
     if (!currentVisuals.stateVisuals[stateKey]) {
       currentVisuals.stateVisuals[stateKey] = {};
     }
     currentVisuals.stateVisuals[stateKey].model = modelId;
+    if (newColor) {
+      currentVisuals.stateVisuals[stateKey].color = newColor;
+    }
 
     // Update select dropdown in settings row
     const sel = document.querySelector(`.state-model-select[data-state-key="${stateKey}"]`);
-    if (sel) sel.value = modelId;
+    if (sel) {
+      let optExists = Array.from(sel.options).some(o => o.value === modelId);
+      if (!optExists) {
+        const newOpt = document.createElement('option');
+        newOpt.value = modelId;
+        const allItems = [...AVAILABLE_HARDWARE_MODELS, ...AVAILABLE_ESPORTS_ICONS];
+        const found = allItems.find(i => i.id === modelId);
+        newOpt.textContent = found ? `${found.symbol} ${found.title}` : (modelId.startsWith('custom_') ? modelId.replace('custom_', '') : modelId);
+        sel.appendChild(newOpt);
+      }
+      sel.value = modelId;
+    }
+
+    // Update color picker in settings row
+    if (newColor) {
+      const picker = document.querySelector(`.state-color-picker[data-state-key="${stateKey}"]`);
+      const hexInput = document.querySelector(`.state-color-hex[data-state-key="${stateKey}"]`);
+      if (picker) picker.value = newColor;
+      if (hexInput) hexInput.value = newColor;
+    }
 
     // Persist immediately to localStorage and server
     localStorage.setItem('cyber_custom_visuals', JSON.stringify(currentVisuals));

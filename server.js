@@ -286,7 +286,6 @@ let db = {
       username: 'admin',
       password: '',
       connected: false,
-      simulationMode: false,
       lastVerified: null,
       useRestApi: true,
       vpnList: 'GAMING-VPN',
@@ -1102,60 +1101,82 @@ function checkMikrotikConnection(host, port, timeout = 1500) {
 async function verifyMikrotikRouter(mt) {
   if (!mt || !mt.host) return { connected: false, error: 'MikroTik host IP is missing' };
 
-  // If simulation / lab mode is enabled or host is simulation/demo
-  if (mt.simulationMode || mt.host === 'demo' || mt.host === 'simulation') {
-    mt.connected = true;
-    mt.lastVerified = new Date().toISOString();
-    return {
-      connected: true,
-      simulation: true,
-      model: 'MikroTik RouterOS Lab Simulator (v7.14)',
-      routerOsVersion: 'RouterOS v7.14.3 (simulation)',
-      host: mt.host,
-      message: 'Connected to MikroTik RouterOS Simulation Engine'
-    };
+  // Real connection check - probe RouterOS API port first (default 8728)
+  const apiCheck = await checkMikrotikConnection(mt.host, mt.port || 8728, 2000);
+  
+  // Also check Web/REST port if configured (default 80 or 443)
+  let restCheck = { connected: false };
+  if (mt.restPort) {
+    restCheck = await checkMikrotikConnection(mt.host, mt.restPort, 2000);
   }
 
-  // Check RouterOS API port first (default 8728)
-  const apiCheck = await checkMikrotikConnection(mt.host, mt.port || 8728, 1500);
+  // If REST is reachable and username is provided, query RouterOS system resource
+  if (restCheck.connected && mt.username) {
+    try {
+      const authHeader = 'Basic ' + Buffer.from(`${mt.username}:${mt.password || ''}`).toString('base64');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const res = await fetch(`http://${mt.host}:${mt.restPort || 80}/rest/system/resource`, {
+        headers: { 'Authorization': authHeader },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const sysInfo = await res.json();
+        mt.connected = true;
+        mt.lastVerified = new Date().toISOString();
+        const boardName = sysInfo['board-name'] || sysInfo.platform || 'MikroTik RouterOS';
+        const version = sysInfo.version || 'v7';
+        return {
+          connected: true,
+          model: boardName,
+          routerOsVersion: version,
+          host: mt.host,
+          port: mt.port || 8728,
+          uptime: sysInfo.uptime,
+          cpuLoad: sysInfo['cpu-load'],
+          message: `Connected to ${boardName} (RouterOS ${version})`
+        };
+      }
+    } catch (e) {
+      // REST auth/data query failed, continue with socket check result
+    }
+  }
+
   if (apiCheck.connected) {
     mt.connected = true;
     mt.lastVerified = new Date().toISOString();
     return {
       connected: true,
-      model: 'MikroTik Cloud Core Router / RB5009',
-      routerOsVersion: 'RouterOS v7.14+ (Verified)',
+      model: 'MikroTik RouterOS (API Port 8728)',
+      routerOsVersion: 'RouterOS v7 (API Verified)',
       host: mt.host,
       port: mt.port || 8728,
-      message: `Verified live connection to RouterOS API at ${mt.host}:${mt.port || 8728}`
+      message: `Verified live connection to RouterOS at ${mt.host}:${mt.port || 8728}`
     };
   }
 
-  // Fallback check Web/REST port (default 80 or 443)
-  if (mt.restPort) {
-    const restCheck = await checkMikrotikConnection(mt.host, mt.restPort, 1200);
-    if (restCheck.connected) {
-      mt.connected = true;
-      mt.lastVerified = new Date().toISOString();
-      return {
-        connected: true,
-        model: 'MikroTik Cloud Core Router / RB5009',
-        routerOsVersion: 'RouterOS v7 (Verified via REST/WebFig)',
-        host: mt.host,
-        port: mt.restPort,
-        message: `Verified live connection to RouterOS Web/REST at ${mt.host}:${mt.restPort}`
-      };
-    }
+  if (restCheck.connected) {
+    mt.connected = true;
+    mt.lastVerified = new Date().toISOString();
+    return {
+      connected: true,
+      model: 'MikroTik RouterOS (WebFig/REST)',
+      routerOsVersion: 'RouterOS v7 (WebFig Verified)',
+      host: mt.host,
+      port: mt.restPort,
+      message: `Verified live connection to RouterOS at ${mt.host}:${mt.restPort}`
+    };
   }
 
-  // Connection failed
+  // Connection failed - strictly mark disconnected
   mt.connected = false;
-  mt.lastError = apiCheck.error;
+  mt.lastError = apiCheck.error || 'Connection timed out';
   return {
     connected: false,
     host: mt.host,
     port: mt.port || 8728,
-    error: apiCheck.error || 'Connection timed out or refused',
+    error: apiCheck.error || 'Connection timed out or host unreachable',
     message: `Cannot connect to MikroTik router at ${mt.host}:${mt.port || 8728}`
   };
 }
@@ -1287,7 +1308,7 @@ app.post('/api/mikrotik/vpn/toggle', (req, res) => {
 
   if (targetState) {
     const mt = db.settings.mikrotik;
-    if (mt && !mt.connected && !mt.simulationMode && mt.host !== 'demo') {
+    if (mt && !mt.connected) {
       return res.status(400).json({
         success: false,
         error: 'Cannot activate VPN: MikroTik RouterOS is not connected. Please verify router connection in Settings > MikroTik first.'
@@ -1491,7 +1512,7 @@ function checkWordFilter(text, pcId, image) {
         });
       }
 
-      // Action 2: Execute Selected Penalty / Punishment (العقاب)
+      // Action 2: Execute Selected Penalty / Punishment
       const penalty = wf.penaltyAction || 'warn_only';
       violation.penaltyExecuted = penalty;
 

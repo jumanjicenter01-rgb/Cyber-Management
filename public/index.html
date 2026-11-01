@@ -42,49 +42,49 @@
             <span class="stat-val highlight-cyan"><span id="activePcsCount">0</span> / <span id="totalPcsCount">9</span></span>
           </div>
         </div>
-        <div class="stat-pill stat-money-pill" id="pillGameRevenue" title="انقر لإظهار أو إخفاء المبالغ">
+        <div class="stat-pill stat-money-pill" id="pillGameRevenue" title="Click to reveal / hide revenue amounts">
           <span class="stat-icon">💰</span>
           <div>
             <span class="stat-label">Game Revenue:</span>
             <span class="stat-val text-green" id="gameRevenueContainer"><span id="gameRevenue">••••</span> <small style="font-size:0.75rem;">EGP</small></span>
           </div>
-          <span class="revenue-eye-badge" id="eyeIconGameRev" title="إظهار / إخفاء المبالغ">🔒</span>
+          <span class="revenue-eye-badge" id="eyeIconGameRev" title="Click to reveal / hide amounts">🔒</span>
         </div>
-        <div class="stat-pill stat-money-pill" id="pillCafeRevenue" title="انقر لإظهار أو إخفاء المبالغ">
+        <div class="stat-pill stat-money-pill" id="pillCafeRevenue" title="Click to reveal / hide revenue amounts">
           <span class="stat-icon">🍔</span>
           <div>
             <span class="stat-label">Cafe Revenue:</span>
             <span class="stat-val text-amber" id="cafeRevenueContainer"><span id="cafeRevenue">••••</span> <small style="font-size:0.75rem;">EGP</small></span>
           </div>
-          <span class="revenue-eye-badge" id="eyeIconCafeRev" title="إظهار / إخفاء المبالغ">🔒</span>
+          <span class="revenue-eye-badge" id="eyeIconCafeRev" title="Click to reveal / hide amounts">🔒</span>
         </div>
-        <div class="stat-pill drawer-pill stat-money-pill" id="pillDrawerCash" title="انقر لإظهار أو إخفاء المبالغ">
+        <div class="stat-pill drawer-pill stat-money-pill" id="pillDrawerCash" title="Click to reveal / hide revenue amounts">
           <span class="stat-icon">💵</span>
           <div>
             <span class="stat-label">Expected Drawer Cash:</span>
             <span class="stat-val text-green font-bold" id="drawerCashContainer"><span id="totalDrawerCash">••••</span> <small style="font-size:0.75rem;">EGP</small></span>
           </div>
-          <span class="revenue-eye-badge" id="eyeIconDrawerCash" title="إظهار / إخفاء المبالغ">🔒</span>
+          <span class="revenue-eye-badge" id="eyeIconDrawerCash" title="Click to reveal / hide amounts">🔒</span>
         </div>
       </div>
 
-      <!-- Header Action Buttons (Pure Icon Only with Rich Explanatory Tooltips) -->
+      <!-- Header Action Buttons (Icon Only with English Tooltips) -->
       <div class="header-actions">
         <!-- Theme Toggle Button -->
-        <button class="btn btn-icon-only btn-theme-toggle" id="btnThemeToggle" title="🌙 المظهر (Theme) - انقر للتبديل بين الوضع الليلي والنهاري (Dark / Light Mode)">
+        <button class="btn btn-icon-only btn-theme-toggle" id="btnThemeToggle" title="Toggle Theme (Dark / Light Mode)">
           <span id="themeToggleIcon">🌙</span>
         </button>
         <!-- Client Orders Button with Notification Counter -->
-        <button class="btn btn-icon-only btn-warning-soft" id="btnShiftOrdersBadge" title="🔔 طلبات الكافيتريا (Client Orders) - انقر لعرض وإدارة طلبات الأجهزة المباشرة">
+        <button class="btn btn-icon-only btn-warning-soft" id="btnShiftOrdersBadge" title="Client Cafe Orders Queue">
           <span>🔔</span>
           <span class="btn-badge-counter" id="incomingOrdersCount">0</span>
         </button>
         <!-- Close Shift Button -->
-        <button class="btn btn-icon-only btn-danger-soft" id="btnCloseShiftModal" title="🔒 تقفيل الوردية (Close Shift) - إغلاق الوردية الحالية وطباعة كشف الحساب والدرج">
+        <button class="btn btn-icon-only btn-danger-soft" id="btnCloseShiftModal" title="Close & Reconcile Active Shift">
           <span>🔒</span>
         </button>
         <!-- Lock Master Screen Button -->
-        <button class="btn btn-icon-only btn-secondary" id="btnLockMasterDashboard" title="🔐 قفل اللوحة (Lock Master) - قفل لوحة الأدمن بكلمة المرور لمنع التلاعب">
+        <button class="btn btn-icon-only btn-secondary" id="btnLockMasterDashboard" title="Lock Master Screen">
           <span>🔐</span>
         </button>
       </div>
@@ -483,9 +483,9 @@
 
                     <div class="state-visuals-cards-list">
                       <!-- 1. Maintenance Mode -->
-                      <div class="state-visual-item-card" data-state-key="maintenance">
+                      <div class="state-visual-item-card" data-state-key="maintenance" ondblclick="window.openStateIconGallery('maintenance')" title="Double-click to choose icon & style" style="cursor:pointer;">
                         <div class="state-visual-meta">
-                          <div class="mini-hardware-preview-box" id="miniHwPreview_maintenance"></div>
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_maintenance" onclick="window.openStateIconGallery('maintenance')" ondblclick="window.openStateIconGallery('maintenance')" title="Double-click to choose icon" style="cursor:pointer;"></div>
                           <div>
                             <div class="state-visual-title"><span class="status-dot" style="background:#ff9900;"></span> Maintenance Mode Stations</div>
                             <div class="state-visual-desc">Stations under repair, hardware cleaning, or technical maintenance</div>
@@ -493,14 +493,42 @@
                         </div>
                         <div class="state-visual-controls">
                           <div class="control-group">
-                            <label>Hardware Model:</label>
+                            <label>Hardware Model / Icon:</label>
                             <select class="form-input state-model-select" data-state-key="maintenance">
-                              <option value="curved_monitor">1000R Curved Monitor</option>
-                              <option value="ultrawide">UltraWide 34" Curved Display</option>
-                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
-                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
-                              <option value="flat_monitor">Flat Esports Tournament Display</option>
-                              <option value="console_rig">Console Lounge Battlestation</option>
+                              <optgroup label="Hardware Rigs">
+                                <option value="curved_monitor">🖥️ 1000R Curved Monitor</option>
+                                <option value="ultrawide">📺 UltraWide 34" Curved Display</option>
+                                <option value="gaming_tower">🎮 RGB Glass Gaming Tower</option>
+                                <option value="gaming_laptop">💻 Pro Esports Gaming Laptop</option>
+                                <option value="flat_monitor">🖥️ Flat Esports Tournament Display</option>
+                                <option value="console_rig">🕹️ Console Lounge Battlestation</option>
+                              </optgroup>
+                              <optgroup label="Esports & Gaming Icons">
+                                <option value="icon_gamepad">🎮 Esports Controller</option>
+                                <option value="icon_joystick">🕹️ Arcade Joystick</option>
+                                <option value="icon_swords">⚔️ Crossed Swords</option>
+                                <option value="icon_crown">👑 VIP Royal Crown</option>
+                                <option value="icon_shield">🛡️ Aegis Defense Shield</option>
+                                <option value="icon_lightning">⚡ Cyber Pulse Flash</option>
+                                <option value="icon_rocket">🚀 Nitro Boost Rocket</option>
+                                <option value="icon_target">🎯 Crosshair Scope</option>
+                                <option value="icon_headset">🎧 Gaming Headset</option>
+                                <option value="icon_trophy">🏆 Tournament Trophy</option>
+                                <option value="icon_alien">👾 Space Invader</option>
+                                <option value="icon_bomb">💣 Tactical Bomb</option>
+                                <option value="icon_racing">🏎️ Sim Racing Wheel</option>
+                                <option value="icon_diamond">💎 Diamond Tier</option>
+                                <option value="icon_fire">🔥 On Fire Win Streak</option>
+                              </optgroup>
+                              <optgroup label="Status & System Badges">
+                                <option value="icon_wrench">🔧 Workshop Wrench</option>
+                                <option value="icon_tools">🛠️ Engineer Tools</option>
+                                <option value="icon_lock">🔒 Security Padlock</option>
+                                <option value="icon_warning">⚠️ Hazard Alert</option>
+                                <option value="icon_sleep">💤 Sleep Standby</option>
+                                <option value="icon_offline">🚫 Power Terminated</option>
+                                <option value="icon_skull">💀 Lost Signal</option>
+                              </optgroup>
                             </select>
                           </div>
                           <div class="control-group">
@@ -514,9 +542,9 @@
                       </div>
 
                       <!-- 2. Idle / Inactive -->
-                      <div class="state-visual-item-card" data-state-key="idle">
+                      <div class="state-visual-item-card" data-state-key="idle" ondblclick="window.openStateIconGallery('idle')" title="Double-click to choose icon & style" style="cursor:pointer;">
                         <div class="state-visual-meta">
-                          <div class="mini-hardware-preview-box" id="miniHwPreview_idle"></div>
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_idle" onclick="window.openStateIconGallery('idle')" ondblclick="window.openStateIconGallery('idle')" title="Double-click to choose icon" style="cursor:pointer;"></div>
                           <div>
                             <div class="state-visual-title"><span class="status-dot" style="background:#a855f7;"></span> Idle / Inactive Stations</div>
                             <div class="state-visual-desc">Turned-on PCs with no active session or player activity</div>
@@ -524,14 +552,42 @@
                         </div>
                         <div class="state-visual-controls">
                           <div class="control-group">
-                            <label>Hardware Model:</label>
+                            <label>Hardware Model / Icon:</label>
                             <select class="form-input state-model-select" data-state-key="idle">
-                              <option value="curved_monitor">1000R Curved Monitor</option>
-                              <option value="ultrawide">UltraWide 34" Curved Display</option>
-                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
-                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
-                              <option value="flat_monitor">Flat Esports Tournament Display</option>
-                              <option value="console_rig">Console Lounge Battlestation</option>
+                              <optgroup label="Hardware Rigs">
+                                <option value="curved_monitor">🖥️ 1000R Curved Monitor</option>
+                                <option value="ultrawide">📺 UltraWide 34" Curved Display</option>
+                                <option value="gaming_tower">🎮 RGB Glass Gaming Tower</option>
+                                <option value="gaming_laptop">💻 Pro Esports Gaming Laptop</option>
+                                <option value="flat_monitor">🖥️ Flat Esports Tournament Display</option>
+                                <option value="console_rig">🕹️ Console Lounge Battlestation</option>
+                              </optgroup>
+                              <optgroup label="Esports & Gaming Icons">
+                                <option value="icon_gamepad">🎮 Esports Controller</option>
+                                <option value="icon_joystick">🕹️ Arcade Joystick</option>
+                                <option value="icon_swords">⚔️ Crossed Swords</option>
+                                <option value="icon_crown">👑 VIP Royal Crown</option>
+                                <option value="icon_shield">🛡️ Aegis Defense Shield</option>
+                                <option value="icon_lightning">⚡ Cyber Pulse Flash</option>
+                                <option value="icon_rocket">🚀 Nitro Boost Rocket</option>
+                                <option value="icon_target">🎯 Crosshair Scope</option>
+                                <option value="icon_headset">🎧 Gaming Headset</option>
+                                <option value="icon_trophy">🏆 Tournament Trophy</option>
+                                <option value="icon_alien">👾 Space Invader</option>
+                                <option value="icon_bomb">💣 Tactical Bomb</option>
+                                <option value="icon_racing">🏎️ Sim Racing Wheel</option>
+                                <option value="icon_diamond">💎 Diamond Tier</option>
+                                <option value="icon_fire">🔥 On Fire Win Streak</option>
+                              </optgroup>
+                              <optgroup label="Status & System Badges">
+                                <option value="icon_wrench">🔧 Workshop Wrench</option>
+                                <option value="icon_tools">🛠️ Engineer Tools</option>
+                                <option value="icon_lock">🔒 Security Padlock</option>
+                                <option value="icon_warning">⚠️ Hazard Alert</option>
+                                <option value="icon_sleep">💤 Sleep Standby</option>
+                                <option value="icon_offline">🚫 Power Terminated</option>
+                                <option value="icon_skull">💀 Lost Signal</option>
+                              </optgroup>
                             </select>
                           </div>
                           <div class="control-group">
@@ -545,9 +601,9 @@
                       </div>
 
                       <!-- 3. Open-Time Sessions -->
-                      <div class="state-visual-item-card" data-state-key="openTime">
+                      <div class="state-visual-item-card" data-state-key="openTime" ondblclick="window.openStateIconGallery('openTime')" title="Double-click to choose icon & style" style="cursor:pointer;">
                         <div class="state-visual-meta">
-                          <div class="mini-hardware-preview-box" id="miniHwPreview_openTime"></div>
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_openTime" onclick="window.openStateIconGallery('openTime')" ondblclick="window.openStateIconGallery('openTime')" title="Double-click to choose icon" style="cursor:pointer;"></div>
                           <div>
                             <div class="state-visual-title"><span class="status-dot" style="background:#00f3ff;"></span> Open-Time Sessions</div>
                             <div class="state-visual-desc">Continuous open gaming sessions running live until cashier checkout</div>
@@ -555,14 +611,42 @@
                         </div>
                         <div class="state-visual-controls">
                           <div class="control-group">
-                            <label>Hardware Model:</label>
+                            <label>Hardware Model / Icon:</label>
                             <select class="form-input state-model-select" data-state-key="openTime">
-                              <option value="curved_monitor">1000R Curved Monitor</option>
-                              <option value="ultrawide">UltraWide 34" Curved Display</option>
-                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
-                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
-                              <option value="flat_monitor">Flat Esports Tournament Display</option>
-                              <option value="console_rig">Console Lounge Battlestation</option>
+                              <optgroup label="Hardware Rigs">
+                                <option value="curved_monitor">🖥️ 1000R Curved Monitor</option>
+                                <option value="ultrawide">📺 UltraWide 34" Curved Display</option>
+                                <option value="gaming_tower">🎮 RGB Glass Gaming Tower</option>
+                                <option value="gaming_laptop">💻 Pro Esports Gaming Laptop</option>
+                                <option value="flat_monitor">🖥️ Flat Esports Tournament Display</option>
+                                <option value="console_rig">🕹️ Console Lounge Battlestation</option>
+                              </optgroup>
+                              <optgroup label="Esports & Gaming Icons">
+                                <option value="icon_gamepad">🎮 Esports Controller</option>
+                                <option value="icon_joystick">🕹️ Arcade Joystick</option>
+                                <option value="icon_swords">⚔️ Crossed Swords</option>
+                                <option value="icon_crown">👑 VIP Royal Crown</option>
+                                <option value="icon_shield">🛡️ Aegis Defense Shield</option>
+                                <option value="icon_lightning">⚡ Cyber Pulse Flash</option>
+                                <option value="icon_rocket">🚀 Nitro Boost Rocket</option>
+                                <option value="icon_target">🎯 Crosshair Scope</option>
+                                <option value="icon_headset">🎧 Gaming Headset</option>
+                                <option value="icon_trophy">🏆 Tournament Trophy</option>
+                                <option value="icon_alien">👾 Space Invader</option>
+                                <option value="icon_bomb">💣 Tactical Bomb</option>
+                                <option value="icon_racing">🏎️ Sim Racing Wheel</option>
+                                <option value="icon_diamond">💎 Diamond Tier</option>
+                                <option value="icon_fire">🔥 On Fire Win Streak</option>
+                              </optgroup>
+                              <optgroup label="Status & System Badges">
+                                <option value="icon_wrench">🔧 Workshop Wrench</option>
+                                <option value="icon_tools">🛠️ Engineer Tools</option>
+                                <option value="icon_lock">🔒 Security Padlock</option>
+                                <option value="icon_warning">⚠️ Hazard Alert</option>
+                                <option value="icon_sleep">💤 Sleep Standby</option>
+                                <option value="icon_offline">🚫 Power Terminated</option>
+                                <option value="icon_skull">💀 Lost Signal</option>
+                              </optgroup>
                             </select>
                           </div>
                           <div class="control-group">
@@ -576,9 +660,9 @@
                       </div>
 
                       <!-- 4. Fixed-Time Prepaid Sessions -->
-                      <div class="state-visual-item-card" data-state-key="fixedTime">
+                      <div class="state-visual-item-card" data-state-key="fixedTime" ondblclick="window.openStateIconGallery('fixedTime')" title="Double-click to choose icon & style" style="cursor:pointer;">
                         <div class="state-visual-meta">
-                          <div class="mini-hardware-preview-box" id="miniHwPreview_fixedTime"></div>
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_fixedTime" onclick="window.openStateIconGallery('fixedTime')" ondblclick="window.openStateIconGallery('fixedTime')" title="Double-click to choose icon" style="cursor:pointer;"></div>
                           <div>
                             <div class="state-visual-title"><span class="status-dot" style="background:#6366f1;"></span> Fixed-Time Prepaid Sessions</div>
                             <div class="state-visual-desc">Sessions configured with prepaid monetary budget or fixed duration</div>
@@ -586,14 +670,42 @@
                         </div>
                         <div class="state-visual-controls">
                           <div class="control-group">
-                            <label>Hardware Model:</label>
+                            <label>Hardware Model / Icon:</label>
                             <select class="form-input state-model-select" data-state-key="fixedTime">
-                              <option value="curved_monitor">1000R Curved Monitor</option>
-                              <option value="ultrawide">UltraWide 34" Curved Display</option>
-                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
-                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
-                              <option value="flat_monitor">Flat Esports Tournament Display</option>
-                              <option value="console_rig">Console Lounge Battlestation</option>
+                              <optgroup label="Hardware Rigs">
+                                <option value="curved_monitor">🖥️ 1000R Curved Monitor</option>
+                                <option value="ultrawide">📺 UltraWide 34" Curved Display</option>
+                                <option value="gaming_tower">🎮 RGB Glass Gaming Tower</option>
+                                <option value="gaming_laptop">💻 Pro Esports Gaming Laptop</option>
+                                <option value="flat_monitor">🖥️ Flat Esports Tournament Display</option>
+                                <option value="console_rig">🕹️ Console Lounge Battlestation</option>
+                              </optgroup>
+                              <optgroup label="Esports & Gaming Icons">
+                                <option value="icon_gamepad">🎮 Esports Controller</option>
+                                <option value="icon_joystick">🕹️ Arcade Joystick</option>
+                                <option value="icon_swords">⚔️ Crossed Swords</option>
+                                <option value="icon_crown">👑 VIP Royal Crown</option>
+                                <option value="icon_shield">🛡️ Aegis Defense Shield</option>
+                                <option value="icon_lightning">⚡ Cyber Pulse Flash</option>
+                                <option value="icon_rocket">🚀 Nitro Boost Rocket</option>
+                                <option value="icon_target">🎯 Crosshair Scope</option>
+                                <option value="icon_headset">🎧 Gaming Headset</option>
+                                <option value="icon_trophy">🏆 Tournament Trophy</option>
+                                <option value="icon_alien">👾 Space Invader</option>
+                                <option value="icon_bomb">💣 Tactical Bomb</option>
+                                <option value="icon_racing">🏎️ Sim Racing Wheel</option>
+                                <option value="icon_diamond">💎 Diamond Tier</option>
+                                <option value="icon_fire">🔥 On Fire Win Streak</option>
+                              </optgroup>
+                              <optgroup label="Status & System Badges">
+                                <option value="icon_wrench">🔧 Workshop Wrench</option>
+                                <option value="icon_tools">🛠️ Engineer Tools</option>
+                                <option value="icon_lock">🔒 Security Padlock</option>
+                                <option value="icon_warning">⚠️ Hazard Alert</option>
+                                <option value="icon_sleep">💤 Sleep Standby</option>
+                                <option value="icon_offline">🚫 Power Terminated</option>
+                                <option value="icon_skull">💀 Lost Signal</option>
+                              </optgroup>
                             </select>
                           </div>
                           <div class="control-group">
@@ -607,9 +719,9 @@
                       </div>
 
                       <!-- 5. Member / VIP Sessions -->
-                      <div class="state-visual-item-card" data-state-key="member">
+                      <div class="state-visual-item-card" data-state-key="member" ondblclick="window.openStateIconGallery('member')" title="Double-click to choose icon & style" style="cursor:pointer;">
                         <div class="state-visual-meta">
-                          <div class="mini-hardware-preview-box" id="miniHwPreview_member"></div>
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_member" onclick="window.openStateIconGallery('member')" ondblclick="window.openStateIconGallery('member')" title="Double-click to choose icon" style="cursor:pointer;"></div>
                           <div>
                             <div class="state-visual-title"><span class="status-dot" style="background:#ffd700;"></span> Member / VIP Account Sessions</div>
                             <div class="state-visual-desc">Sessions active on registered member balance or VIP account tier</div>
@@ -617,14 +729,42 @@
                         </div>
                         <div class="state-visual-controls">
                           <div class="control-group">
-                            <label>Hardware Model:</label>
+                            <label>Hardware Model / Icon:</label>
                             <select class="form-input state-model-select" data-state-key="member">
-                              <option value="curved_monitor">1000R Curved Monitor</option>
-                              <option value="ultrawide">UltraWide 34" Curved Display</option>
-                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
-                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
-                              <option value="flat_monitor">Flat Esports Tournament Display</option>
-                              <option value="console_rig">Console Lounge Battlestation</option>
+                              <optgroup label="Hardware Rigs">
+                                <option value="curved_monitor">🖥️ 1000R Curved Monitor</option>
+                                <option value="ultrawide">📺 UltraWide 34" Curved Display</option>
+                                <option value="gaming_tower">🎮 RGB Glass Gaming Tower</option>
+                                <option value="gaming_laptop">💻 Pro Esports Gaming Laptop</option>
+                                <option value="flat_monitor">🖥️ Flat Esports Tournament Display</option>
+                                <option value="console_rig">🕹️ Console Lounge Battlestation</option>
+                              </optgroup>
+                              <optgroup label="Esports & Gaming Icons">
+                                <option value="icon_gamepad">🎮 Esports Controller</option>
+                                <option value="icon_joystick">🕹️ Arcade Joystick</option>
+                                <option value="icon_swords">⚔️ Crossed Swords</option>
+                                <option value="icon_crown">👑 VIP Royal Crown</option>
+                                <option value="icon_shield">🛡️ Aegis Defense Shield</option>
+                                <option value="icon_lightning">⚡ Cyber Pulse Flash</option>
+                                <option value="icon_rocket">🚀 Nitro Boost Rocket</option>
+                                <option value="icon_target">🎯 Crosshair Scope</option>
+                                <option value="icon_headset">🎧 Gaming Headset</option>
+                                <option value="icon_trophy">🏆 Tournament Trophy</option>
+                                <option value="icon_alien">👾 Space Invader</option>
+                                <option value="icon_bomb">💣 Tactical Bomb</option>
+                                <option value="icon_racing">🏎️ Sim Racing Wheel</option>
+                                <option value="icon_diamond">💎 Diamond Tier</option>
+                                <option value="icon_fire">🔥 On Fire Win Streak</option>
+                              </optgroup>
+                              <optgroup label="Status & System Badges">
+                                <option value="icon_wrench">🔧 Workshop Wrench</option>
+                                <option value="icon_tools">🛠️ Engineer Tools</option>
+                                <option value="icon_lock">🔒 Security Padlock</option>
+                                <option value="icon_warning">⚠️ Hazard Alert</option>
+                                <option value="icon_sleep">💤 Sleep Standby</option>
+                                <option value="icon_offline">🚫 Power Terminated</option>
+                                <option value="icon_skull">💀 Lost Signal</option>
+                              </optgroup>
                             </select>
                           </div>
                           <div class="control-group">
@@ -638,9 +778,9 @@
                       </div>
 
                       <!-- 6. Admin / Staff Sessions -->
-                      <div class="state-visual-item-card" data-state-key="admin">
+                      <div class="state-visual-item-card" data-state-key="admin" ondblclick="window.openStateIconGallery('admin')" title="Double-click to choose icon & style" style="cursor:pointer;">
                         <div class="state-visual-meta">
-                          <div class="mini-hardware-preview-box" id="miniHwPreview_admin"></div>
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_admin" onclick="window.openStateIconGallery('admin')" ondblclick="window.openStateIconGallery('admin')" title="Double-click to choose icon" style="cursor:pointer;"></div>
                           <div>
                             <div class="state-visual-title"><span class="status-dot" style="background:#10b981;"></span> Admin / Staff Sessions</div>
                             <div class="state-visual-desc">Supervisor testing, freeplay, or administrator console sessions</div>
@@ -648,14 +788,42 @@
                         </div>
                         <div class="state-visual-controls">
                           <div class="control-group">
-                            <label>Hardware Model:</label>
+                            <label>Hardware Model / Icon:</label>
                             <select class="form-input state-model-select" data-state-key="admin">
-                              <option value="curved_monitor">1000R Curved Monitor</option>
-                              <option value="ultrawide">UltraWide 34" Curved Display</option>
-                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
-                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
-                              <option value="flat_monitor">Flat Esports Tournament Display</option>
-                              <option value="console_rig">Console Lounge Battlestation</option>
+                              <optgroup label="Hardware Rigs">
+                                <option value="curved_monitor">🖥️ 1000R Curved Monitor</option>
+                                <option value="ultrawide">📺 UltraWide 34" Curved Display</option>
+                                <option value="gaming_tower">🎮 RGB Glass Gaming Tower</option>
+                                <option value="gaming_laptop">💻 Pro Esports Gaming Laptop</option>
+                                <option value="flat_monitor">🖥️ Flat Esports Tournament Display</option>
+                                <option value="console_rig">🕹️ Console Lounge Battlestation</option>
+                              </optgroup>
+                              <optgroup label="Esports & Gaming Icons">
+                                <option value="icon_gamepad">🎮 Esports Controller</option>
+                                <option value="icon_joystick">🕹️ Arcade Joystick</option>
+                                <option value="icon_swords">⚔️ Crossed Swords</option>
+                                <option value="icon_crown">👑 VIP Royal Crown</option>
+                                <option value="icon_shield">🛡️ Aegis Defense Shield</option>
+                                <option value="icon_lightning">⚡ Cyber Pulse Flash</option>
+                                <option value="icon_rocket">🚀 Nitro Boost Rocket</option>
+                                <option value="icon_target">🎯 Crosshair Scope</option>
+                                <option value="icon_headset">🎧 Gaming Headset</option>
+                                <option value="icon_trophy">🏆 Tournament Trophy</option>
+                                <option value="icon_alien">👾 Space Invader</option>
+                                <option value="icon_bomb">💣 Tactical Bomb</option>
+                                <option value="icon_racing">🏎️ Sim Racing Wheel</option>
+                                <option value="icon_diamond">💎 Diamond Tier</option>
+                                <option value="icon_fire">🔥 On Fire Win Streak</option>
+                              </optgroup>
+                              <optgroup label="Status & System Badges">
+                                <option value="icon_wrench">🔧 Workshop Wrench</option>
+                                <option value="icon_tools">🛠️ Engineer Tools</option>
+                                <option value="icon_lock">🔒 Security Padlock</option>
+                                <option value="icon_warning">⚠️ Hazard Alert</option>
+                                <option value="icon_sleep">💤 Sleep Standby</option>
+                                <option value="icon_offline">🚫 Power Terminated</option>
+                                <option value="icon_skull">💀 Lost Signal</option>
+                              </optgroup>
                             </select>
                           </div>
                           <div class="control-group">
@@ -669,9 +837,9 @@
                       </div>
 
                       <!-- 7. Connection Lost Stations -->
-                      <div class="state-visual-item-card" data-state-key="disconnected">
+                      <div class="state-visual-item-card" data-state-key="disconnected" ondblclick="window.openStateIconGallery('disconnected')" title="Double-click to choose icon & style" style="cursor:pointer;">
                         <div class="state-visual-meta">
-                          <div class="mini-hardware-preview-box" id="miniHwPreview_disconnected"></div>
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_disconnected" onclick="window.openStateIconGallery('disconnected')" ondblclick="window.openStateIconGallery('disconnected')" title="Double-click to choose icon" style="cursor:pointer;"></div>
                           <div>
                             <div class="state-visual-title"><span class="status-dot" style="background:#ef4444;"></span> Connection Lost Stations</div>
                             <div class="state-visual-desc">Stations with dropped network cable or lost heartbeat ping</div>
@@ -679,14 +847,42 @@
                         </div>
                         <div class="state-visual-controls">
                           <div class="control-group">
-                            <label>Hardware Model:</label>
+                            <label>Hardware Model / Icon:</label>
                             <select class="form-input state-model-select" data-state-key="disconnected">
-                              <option value="curved_monitor">1000R Curved Monitor</option>
-                              <option value="ultrawide">UltraWide 34" Curved Display</option>
-                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
-                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
-                              <option value="flat_monitor">Flat Esports Tournament Display</option>
-                              <option value="console_rig">Console Lounge Battlestation</option>
+                              <optgroup label="Hardware Rigs">
+                                <option value="curved_monitor">🖥️ 1000R Curved Monitor</option>
+                                <option value="ultrawide">📺 UltraWide 34" Curved Display</option>
+                                <option value="gaming_tower">🎮 RGB Glass Gaming Tower</option>
+                                <option value="gaming_laptop">💻 Pro Esports Gaming Laptop</option>
+                                <option value="flat_monitor">🖥️ Flat Esports Tournament Display</option>
+                                <option value="console_rig">🕹️ Console Lounge Battlestation</option>
+                              </optgroup>
+                              <optgroup label="Esports & Gaming Icons">
+                                <option value="icon_gamepad">🎮 Esports Controller</option>
+                                <option value="icon_joystick">🕹️ Arcade Joystick</option>
+                                <option value="icon_swords">⚔️ Crossed Swords</option>
+                                <option value="icon_crown">👑 VIP Royal Crown</option>
+                                <option value="icon_shield">🛡️ Aegis Defense Shield</option>
+                                <option value="icon_lightning">⚡ Cyber Pulse Flash</option>
+                                <option value="icon_rocket">🚀 Nitro Boost Rocket</option>
+                                <option value="icon_target">🎯 Crosshair Scope</option>
+                                <option value="icon_headset">🎧 Gaming Headset</option>
+                                <option value="icon_trophy">🏆 Tournament Trophy</option>
+                                <option value="icon_alien">👾 Space Invader</option>
+                                <option value="icon_bomb">💣 Tactical Bomb</option>
+                                <option value="icon_racing">🏎️ Sim Racing Wheel</option>
+                                <option value="icon_diamond">💎 Diamond Tier</option>
+                                <option value="icon_fire">🔥 On Fire Win Streak</option>
+                              </optgroup>
+                              <optgroup label="Status & System Badges">
+                                <option value="icon_wrench">🔧 Workshop Wrench</option>
+                                <option value="icon_tools">🛠️ Engineer Tools</option>
+                                <option value="icon_lock">🔒 Security Padlock</option>
+                                <option value="icon_warning">⚠️ Hazard Alert</option>
+                                <option value="icon_sleep">💤 Sleep Standby</option>
+                                <option value="icon_offline">🚫 Power Terminated</option>
+                                <option value="icon_skull">💀 Lost Signal</option>
+                              </optgroup>
                             </select>
                           </div>
                           <div class="control-group">
@@ -700,9 +896,9 @@
                       </div>
 
                       <!-- 8. Powered Off Stations -->
-                      <div class="state-visual-item-card" data-state-key="offline">
+                      <div class="state-visual-item-card" data-state-key="offline" ondblclick="window.openStateIconGallery('offline')" title="Double-click to choose icon & style" style="cursor:pointer;">
                         <div class="state-visual-meta">
-                          <div class="mini-hardware-preview-box" id="miniHwPreview_offline"></div>
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_offline" onclick="window.openStateIconGallery('offline')" ondblclick="window.openStateIconGallery('offline')" title="Double-click to choose icon" style="cursor:pointer;"></div>
                           <div>
                             <div class="state-visual-title"><span class="status-dot" style="background:#64748b;"></span> Powered Off / Offline Stations</div>
                             <div class="state-visual-desc">Completely shut down stations (standby for Wake-on-LAN)</div>
@@ -710,14 +906,42 @@
                         </div>
                         <div class="state-visual-controls">
                           <div class="control-group">
-                            <label>Hardware Model:</label>
+                            <label>Hardware Model / Icon:</label>
                             <select class="form-input state-model-select" data-state-key="offline">
-                              <option value="curved_monitor">1000R Curved Monitor</option>
-                              <option value="ultrawide">UltraWide 34" Curved Display</option>
-                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
-                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
-                              <option value="flat_monitor">Flat Esports Tournament Display</option>
-                              <option value="console_rig">Console Lounge Battlestation</option>
+                              <optgroup label="Hardware Rigs">
+                                <option value="curved_monitor">🖥️ 1000R Curved Monitor</option>
+                                <option value="ultrawide">📺 UltraWide 34" Curved Display</option>
+                                <option value="gaming_tower">🎮 RGB Glass Gaming Tower</option>
+                                <option value="gaming_laptop">💻 Pro Esports Gaming Laptop</option>
+                                <option value="flat_monitor">🖥️ Flat Esports Tournament Display</option>
+                                <option value="console_rig">🕹️ Console Lounge Battlestation</option>
+                              </optgroup>
+                              <optgroup label="Esports & Gaming Icons">
+                                <option value="icon_gamepad">🎮 Esports Controller</option>
+                                <option value="icon_joystick">🕹️ Arcade Joystick</option>
+                                <option value="icon_swords">⚔️ Crossed Swords</option>
+                                <option value="icon_crown">👑 VIP Royal Crown</option>
+                                <option value="icon_shield">🛡️ Aegis Defense Shield</option>
+                                <option value="icon_lightning">⚡ Cyber Pulse Flash</option>
+                                <option value="icon_rocket">🚀 Nitro Boost Rocket</option>
+                                <option value="icon_target">🎯 Crosshair Scope</option>
+                                <option value="icon_headset">🎧 Gaming Headset</option>
+                                <option value="icon_trophy">🏆 Tournament Trophy</option>
+                                <option value="icon_alien">👾 Space Invader</option>
+                                <option value="icon_bomb">💣 Tactical Bomb</option>
+                                <option value="icon_racing">🏎️ Sim Racing Wheel</option>
+                                <option value="icon_diamond">💎 Diamond Tier</option>
+                                <option value="icon_fire">🔥 On Fire Win Streak</option>
+                              </optgroup>
+                              <optgroup label="Status & System Badges">
+                                <option value="icon_wrench">🔧 Workshop Wrench</option>
+                                <option value="icon_tools">🛠️ Engineer Tools</option>
+                                <option value="icon_lock">🔒 Security Padlock</option>
+                                <option value="icon_warning">⚠️ Hazard Alert</option>
+                                <option value="icon_sleep">💤 Sleep Standby</option>
+                                <option value="icon_offline">🚫 Power Terminated</option>
+                                <option value="icon_skull">💀 Lost Signal</option>
+                              </optgroup>
                             </select>
                           </div>
                           <div class="control-group">
@@ -731,9 +955,9 @@
                       </div>
 
                       <!-- 9. Low-Time Warning (< 5 Mins) -->
-                      <div class="state-visual-item-card" data-state-key="lowTime">
+                      <div class="state-visual-item-card" data-state-key="lowTime" ondblclick="window.openStateIconGallery('lowTime')" title="Double-click to choose icon & style" style="cursor:pointer;">
                         <div class="state-visual-meta">
-                          <div class="mini-hardware-preview-box" id="miniHwPreview_lowTime"></div>
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_lowTime" onclick="window.openStateIconGallery('lowTime')" ondblclick="window.openStateIconGallery('lowTime')" title="Double-click to choose icon" style="cursor:pointer;"></div>
                           <div>
                             <div class="state-visual-title"><span class="status-dot" style="background:#ff0055;"></span> Low-Time Warning (&lt; 5 Mins)</div>
                             <div class="state-visual-desc">Urgent neon flashing alert when session duration has &le; 5 minutes remaining</div>
@@ -741,14 +965,42 @@
                         </div>
                         <div class="state-visual-controls">
                           <div class="control-group">
-                            <label>Hardware Model:</label>
+                            <label>Hardware Model / Icon:</label>
                             <select class="form-input state-model-select" data-state-key="lowTime">
-                              <option value="curved_monitor">1000R Curved Monitor</option>
-                              <option value="ultrawide">UltraWide 34" Curved Display</option>
-                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
-                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
-                              <option value="flat_monitor">Flat Esports Tournament Display</option>
-                              <option value="console_rig">Console Lounge Battlestation</option>
+                              <optgroup label="Hardware Rigs">
+                                <option value="curved_monitor">🖥️ 1000R Curved Monitor</option>
+                                <option value="ultrawide">📺 UltraWide 34" Curved Display</option>
+                                <option value="gaming_tower">🎮 RGB Glass Gaming Tower</option>
+                                <option value="gaming_laptop">💻 Pro Esports Gaming Laptop</option>
+                                <option value="flat_monitor">🖥️ Flat Esports Tournament Display</option>
+                                <option value="console_rig">🕹️ Console Lounge Battlestation</option>
+                              </optgroup>
+                              <optgroup label="Esports & Gaming Icons">
+                                <option value="icon_gamepad">🎮 Esports Controller</option>
+                                <option value="icon_joystick">🕹️ Arcade Joystick</option>
+                                <option value="icon_swords">⚔️ Crossed Swords</option>
+                                <option value="icon_crown">👑 VIP Royal Crown</option>
+                                <option value="icon_shield">🛡️ Aegis Defense Shield</option>
+                                <option value="icon_lightning">⚡ Cyber Pulse Flash</option>
+                                <option value="icon_rocket">🚀 Nitro Boost Rocket</option>
+                                <option value="icon_target">🎯 Crosshair Scope</option>
+                                <option value="icon_headset">🎧 Gaming Headset</option>
+                                <option value="icon_trophy">🏆 Tournament Trophy</option>
+                                <option value="icon_alien">👾 Space Invader</option>
+                                <option value="icon_bomb">💣 Tactical Bomb</option>
+                                <option value="icon_racing">🏎️ Sim Racing Wheel</option>
+                                <option value="icon_diamond">💎 Diamond Tier</option>
+                                <option value="icon_fire">🔥 On Fire Win Streak</option>
+                              </optgroup>
+                              <optgroup label="Status & System Badges">
+                                <option value="icon_wrench">🔧 Workshop Wrench</option>
+                                <option value="icon_tools">🛠️ Engineer Tools</option>
+                                <option value="icon_lock">🔒 Security Padlock</option>
+                                <option value="icon_warning">⚠️ Hazard Alert</option>
+                                <option value="icon_sleep">💤 Sleep Standby</option>
+                                <option value="icon_offline">🚫 Power Terminated</option>
+                                <option value="icon_skull">💀 Lost Signal</option>
+                              </optgroup>
                             </select>
                           </div>
                           <div class="control-group">
@@ -762,9 +1014,9 @@
                       </div>
 
                       <!-- 10. Available / Ready -->
-                      <div class="state-visual-item-card" data-state-key="available">
+                      <div class="state-visual-item-card" data-state-key="available" ondblclick="window.openStateIconGallery('available')" title="Double-click to choose icon & style" style="cursor:pointer;">
                         <div class="state-visual-meta">
-                          <div class="mini-hardware-preview-box" id="miniHwPreview_available"></div>
+                          <div class="mini-hardware-preview-box" id="miniHwPreview_available" onclick="window.openStateIconGallery('available')" ondblclick="window.openStateIconGallery('available')" title="Double-click to choose icon" style="cursor:pointer;"></div>
                           <div>
                             <div class="state-visual-title"><span class="status-dot" style="background:#05ffa1;"></span> Available / Ready Stations</div>
                             <div class="state-visual-desc">Clean, ready gaming station waiting for customer check-in</div>
@@ -772,14 +1024,42 @@
                         </div>
                         <div class="state-visual-controls">
                           <div class="control-group">
-                            <label>Hardware Model:</label>
+                            <label>Hardware Model / Icon:</label>
                             <select class="form-input state-model-select" data-state-key="available">
-                              <option value="curved_monitor">1000R Curved Monitor</option>
-                              <option value="ultrawide">UltraWide 34" Curved Display</option>
-                              <option value="gaming_tower">RGB Glass Gaming Tower</option>
-                              <option value="gaming_laptop">Pro Esports Gaming Laptop</option>
-                              <option value="flat_monitor">Flat Esports Tournament Display</option>
-                              <option value="console_rig">Console Lounge Battlestation</option>
+                              <optgroup label="Hardware Rigs">
+                                <option value="curved_monitor">🖥️ 1000R Curved Monitor</option>
+                                <option value="ultrawide">📺 UltraWide 34" Curved Display</option>
+                                <option value="gaming_tower">🎮 RGB Glass Gaming Tower</option>
+                                <option value="gaming_laptop">💻 Pro Esports Gaming Laptop</option>
+                                <option value="flat_monitor">🖥️ Flat Esports Tournament Display</option>
+                                <option value="console_rig">🕹️ Console Lounge Battlestation</option>
+                              </optgroup>
+                              <optgroup label="Esports & Gaming Icons">
+                                <option value="icon_gamepad">🎮 Esports Controller</option>
+                                <option value="icon_joystick">🕹️ Arcade Joystick</option>
+                                <option value="icon_swords">⚔️ Crossed Swords</option>
+                                <option value="icon_crown">👑 VIP Royal Crown</option>
+                                <option value="icon_shield">🛡️ Aegis Defense Shield</option>
+                                <option value="icon_lightning">⚡ Cyber Pulse Flash</option>
+                                <option value="icon_rocket">🚀 Nitro Boost Rocket</option>
+                                <option value="icon_target">🎯 Crosshair Scope</option>
+                                <option value="icon_headset">🎧 Gaming Headset</option>
+                                <option value="icon_trophy">🏆 Tournament Trophy</option>
+                                <option value="icon_alien">👾 Space Invader</option>
+                                <option value="icon_bomb">💣 Tactical Bomb</option>
+                                <option value="icon_racing">🏎️ Sim Racing Wheel</option>
+                                <option value="icon_diamond">💎 Diamond Tier</option>
+                                <option value="icon_fire">🔥 On Fire Win Streak</option>
+                              </optgroup>
+                              <optgroup label="Status & System Badges">
+                                <option value="icon_wrench">🔧 Workshop Wrench</option>
+                                <option value="icon_tools">🛠️ Engineer Tools</option>
+                                <option value="icon_lock">🔒 Security Padlock</option>
+                                <option value="icon_warning">⚠️ Hazard Alert</option>
+                                <option value="icon_sleep">💤 Sleep Standby</option>
+                                <option value="icon_offline">🚫 Power Terminated</option>
+                                <option value="icon_skull">💀 Lost Signal</option>
+                              </optgroup>
                             </select>
                           </div>
                           <div class="control-group">
@@ -1312,15 +1592,12 @@
                       <label>Target Address-List Name:</label>
                       <input type="text" id="mtVpnList" class="form-input" value="GAMING-VPN" placeholder="GAMING-VPN">
                     </div>
-                    <div class="form-group" style="grid-column: 1 / -1; display:flex; align-items:center; justify-content:space-between; background:rgba(0,243,255,0.04); border:1px solid var(--border-neon); border-radius:10px; padding:0.8rem 1rem;">
+                    <div class="form-group" style="grid-column: 1 / -1; display:flex; align-items:center; justify-content:space-between; background:rgba(0,243,255,0.03); border:1px solid var(--border-subtle); border-radius:10px; padding:0.8rem 1rem;">
                       <div>
-                        <span style="font-weight:700; color:#fff; display:block;">RouterOS Hardware Simulation Mode:</span>
-                        <span style="font-size:0.78rem; color:var(--text-muted);">Enable to simulate MikroTik RouterOS for testing when no physical router is connected to LAN</span>
+                        <span style="font-weight:700; color:#fff; display:block; font-size:0.88rem;">Live RouterOS Network Validation:</span>
+                        <span style="font-size:0.78rem; color:var(--text-muted);">Real-time socket verification against RouterOS API (8728) and REST API (80/443). Status updates strictly from hardware response.</span>
                       </div>
-                      <label class="switch-toggle-wrap">
-                        <input type="checkbox" id="mtSimulationMode">
-                        <span class="switch-slider"></span>
-                      </label>
+                      <span class="badge" style="background:rgba(0,243,255,0.1); color:var(--neon-cyan); border:1px solid rgba(0,243,255,0.3); padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem;">LIVE PROBE</span>
                     </div>
                   </div>
                 </div>
@@ -1790,12 +2067,12 @@
         <button class="modal-close" id="btnCloseRevenueAuth" style="position: absolute; right: 1.2rem; top: 1.2rem; background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
       </div>
       <div class="modal-body" style="padding: 1.6rem 2rem 2rem;">
-        <h3 style="font-family: var(--font-cyber); font-size: 1.2rem; color: #fff; margin-bottom: 0.4rem; letter-spacing: 1px;">خزينة الإيرادات والمالية</h3>
-        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.4rem;">أدخل كلمة مرور الأدمن لإظهار أرقام الإيرادات والخزينة</p>
+        <h3 style="font-family: var(--font-cyber); font-size: 1.2rem; color: #fff; margin-bottom: 0.4rem; letter-spacing: 1px;">Financial & Revenue Vault</h3>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.4rem;">Enter master administrator password to reveal financial numbers</p>
         
         <form id="revenueAuthForm" onsubmit="return false;">
           <div class="form-group" style="text-align: left; margin-bottom: 1.2rem;">
-            <label style="font-size: 0.8rem; color: var(--text-muted); display:block; margin-bottom:0.4rem;">Master Password / كلمة المرور:</label>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display:block; margin-bottom:0.4rem;">Master Password:</label>
             <div class="auth-input-wrap" style="position: relative; display: flex; align-items: center;">
               <input type="password" id="revenuePasswordInput" class="form-input form-lg" placeholder="••••••••" autocomplete="current-password" style="width: 100%; padding-right: 44px; text-align: center; font-size: 1.15rem; letter-spacing: 2px;">
               <button type="button" class="btn-toggle-pass" id="btnToggleRevenuePassVisibility" style="position: absolute; right: 12px; background: none; border: none; cursor: pointer; font-size: 1.1rem; color: var(--text-muted);">👁️</button>
@@ -1804,9 +2081,9 @@
           </div>
           
           <div style="display: flex; gap: 0.8rem; margin-top: 1.5rem;">
-            <button type="button" class="btn btn-secondary" id="btnCancelRevenueAuth" style="flex: 1; padding: 0.7rem;">إلغاء</button>
+            <button type="button" class="btn btn-secondary" id="btnCancelRevenueAuth" style="flex: 1; padding: 0.7rem;">Cancel</button>
             <button type="submit" class="btn btn-primary" id="btnSubmitRevenueAuth" style="flex: 2; padding: 0.7rem; font-weight: 700;">
-              <span>👁️</span> إظهار المبالغ
+              <span>👁️</span> Reveal Amounts
             </button>
           </div>
         </form>
@@ -1874,24 +2151,65 @@
   <!-- MODAL: STATE ICON GALLERY CHOOSER                              -->
   <!-- ============================================================== -->
   <div id="stateIconGalleryModal" class="modal-overlay">
-    <div class="modal-box modal-wide" style="max-width: 720px;">
+    <div class="modal-box modal-wide" style="max-width: 820px; max-height: 90vh; display: flex; flex-direction: column;">
       <div class="modal-header">
         <div class="modal-title">
-          <span>🎨</span> <span id="galleryStateTitle">Select Device Icon Model</span>
+          <span>🎨</span> <span id="galleryStateTitle">Choose Device Icon & Style</span>
         </div>
         <button class="modal-close" onclick="closeModal('stateIconGalleryModal')">&times;</button>
       </div>
-      <div class="modal-body">
-        <p class="section-desc" style="margin-bottom: 1.2rem; font-size: 0.88rem; color: var(--text-muted);">
-          Click any device hardware model below to instantly assign it to this machine state:
-        </p>
+      <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 1.25rem 1.5rem;">
         
-        <div class="icon-gallery-grid" id="stateGalleryGrid">
+        <!-- Live reflection box inside modal -->
+        <div style="background: radial-gradient(circle at center, rgba(15,23,42,0.95) 0%, rgba(3,7,18,0.98) 100%); border: 1px solid var(--border-neon); border-radius: 14px; padding: 1rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 1.2rem;">
+            <div id="galleryLivePreviewWrap" style="width: 110px; height: 80px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
+              <!-- Rendered preview -->
+            </div>
+            <div>
+              <div id="gallerySelectedTitle" style="font-weight: 800; font-size: 1rem; color: #fff;">1000R Curved Monitor</div>
+              <div id="gallerySelectedDesc" style="font-size: 0.78rem; color: var(--text-muted);">Curved OLED screen with ambient underglow & V-Legs</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.8rem;">
+            <div>
+              <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Neon Glow Color:</label>
+              <div class="picker-inputs-wrap">
+                <input type="color" id="galleryColorPicker" class="color-swatch-input" value="#00f3ff">
+                <input type="text" id="galleryColorHex" class="color-hex-input" value="#00f3ff" style="width: 80px;">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category filter tabs -->
+        <div class="gallery-category-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-sm btn-secondary gallery-tab-btn active" data-tab-filter="all">All Icons & Models</button>
+          <button type="button" class="btn btn-sm btn-secondary gallery-tab-btn" data-tab-filter="hardware">🖥️ Hardware Rigs (6)</button>
+          <button type="button" class="btn btn-sm btn-secondary gallery-tab-btn" data-tab-filter="esports">🎮 Esports & Gaming (15)</button>
+          <button type="button" class="btn btn-sm btn-secondary gallery-tab-btn" data-tab-filter="system">⚡ Status & Badges (7)</button>
+        </div>
+
+        <!-- Custom Emoji or Icon Input Box -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 240px;">
+            <span style="font-size: 1.1rem;">✍️</span>
+            <span style="font-size: 0.82rem; color: #fff; font-weight: 600;">Custom Symbol or Emoji:</span>
+            <input type="text" id="galleryCustomSymbolInput" class="form-input" placeholder="e.g. 🐉, 💎, 🎲, 🔥" style="max-width: 140px; text-align: center; font-size: 1.1rem; padding: 4px 8px;">
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnApplyCustomSymbol">Set Custom Symbol</button>
+        </div>
+        
+        <div class="icon-gallery-grid" id="stateGalleryGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0.8rem; max-height: 380px; overflow-y: auto; padding-right: 4px;">
           <!-- Dynamically populated with live visual preview cards -->
         </div>
 
-        <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
-          <button class="btn btn-secondary btn-sm" onclick="closeModal('stateIconGalleryModal')">Close</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Double-click any card or click Apply to confirm.</div>
+          <div style="display: flex; gap: 0.6rem;">
+            <button class="btn btn-secondary btn-sm" onclick="closeModal('stateIconGalleryModal')">Cancel</button>
+            <button class="btn btn-primary btn-sm" id="btnConfirmGallerySelection">Apply Icon to State</button>
+          </div>
         </div>
       </div>
     </div>
