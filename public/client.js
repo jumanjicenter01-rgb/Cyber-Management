@@ -96,6 +96,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Master Admin Remote Client Update: Close, pull newest version & relaunch
+  socket.on('client_remote_update', (data) => {
+    console.log('⚡ MASTER REMOTE UPDATE RECEIVED:', data);
+
+    let overlay = document.getElementById('masterUpdateOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'masterUpdateOverlay';
+      overlay.style.cssText = `
+        position: fixed; inset: 0; background: #060913; z-index: 99999999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        color: #00f3ff; font-family: 'Outfit', 'Cairo', sans-serif; text-align: center; padding: 24px;
+      `;
+      overlay.innerHTML = `
+        <div style="font-size: 56px; margin-bottom: 20px; animation: spin 1.2s infinite linear;">🔄</div>
+        <h1 style="font-size: 30px; font-weight: 900; margin-bottom: 12px; color: #fff; letter-spacing: 1px;">
+          UPDATING CYBER CLIENT FROM MASTER
+        </h1>
+        <p style="color: #94a3b8; font-size: 15px; max-width: 520px; margin-bottom: 28px; line-height: 1.6;">
+          Master Cashier deployed a new update. Closing old client, loading newest features, and restarting station...
+        </p>
+        <div style="width: 320px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 999px; overflow: hidden; position: relative;">
+          <div style="position: absolute; top:0; left:0; height:100%; width: 50%; background: linear-gradient(90deg, #00f3ff, #a855f7); border-radius: 999px; animation: cyberProgress 1.4s infinite ease-in-out;"></div>
+        </div>
+        <style>
+          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+          @keyframes cyberProgress { 0% { left: -50%; width: 30%; } 50% { width: 70%; } 100% { left: 100%; width: 30%; } }
+        </style>
+      `;
+      document.body.appendChild(overlay);
+    }
+
+    if (window.cyberAudio && window.cyberAudio.playClick) {
+      window.cyberAudio.playClick();
+    }
+
+    // Cache-busting reload to pull newest HTML, JS, CSS and server handlers
+    setTimeout(() => {
+      try {
+        const url = new URL(window.location.href);
+        if (pcId) url.searchParams.set('pc', pcId);
+        url.searchParams.set('v', Date.now());
+        window.location.href = url.toString();
+      } catch (err) {
+        window.location.reload();
+      }
+    }, 1200);
+  });
+
   socket.on('disconnect', () => {
     console.warn('Server connection paused. Session running in offline resilience mode.');
     // Keep session alive locally without kicking the client or interrupting the game

@@ -1082,6 +1082,9 @@ document.addEventListener('DOMContentLoaded', () => {
               <button class="screen-hover-act-btn btn-hover-zoom" onclick="event.stopPropagation(); openRemoteModal('${pc.id}')" title="Full Remote Desktop & Interactive Control">
                 <span>🔍 Zoom & Control</span>
               </button>
+              <button class="screen-hover-act-btn btn-hover-update" onclick="event.stopPropagation(); triggerRemoteClientUpdate('${pc.id}')" title="Update Client: Auto-Close, Pull Newest Version & Relaunch" style="background: rgba(0, 243, 255, 0.2); border-color: #00f3ff; color: #00f3ff;">
+                <span>🔄 Update</span>
+              </button>
               <button class="screen-hover-act-btn btn-hover-shot" onclick="event.stopPropagation(); saveQuickCardSnapshot('${pc.id}')" title="Take Instant Snapshot & Save to Archive">
                 <span>📸 Quick Snapshot</span>
               </button>
@@ -2866,6 +2869,44 @@ document.addEventListener('DOMContentLoaded', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ pcIds: [pcId] })
         }).then(r => r.json()).then(res => alert(res.message || 'Restart command dispatched'));
+      }
+    });
+  }
+
+  // Remote Client Update Controller (Master triggers client to close, reload newest code & restart)
+  window.triggerRemoteClientUpdate = function(pcId) {
+    const pc = state.pcs.find(p => p.id === pcId);
+    const label = pcId === 'all' ? 'ALL online stations' : `station [${pc ? pc.name : pcId}]`;
+    if (!confirm(`Are you sure you want to remotely update and relaunch the client on ${label}?\n\nThis will close the old client, download the newest files & features from the server, and reopen the station automatically.`)) return;
+
+    socket.emit('admin_client_update', { pcId });
+    window.cyberAudio?.playClick?.();
+    showToast('🔄 Client Update Sent', `Signal dispatched to ${label}. The client will close, pull newest version, and reopen.`);
+  };
+
+  const ctxActUpdateClient = document.getElementById('ctxActUpdateClient');
+  if (ctxActUpdateClient) {
+    ctxActUpdateClient.addEventListener('click', () => {
+      const pcId = activeContextMenuPcId;
+      hidePcContextMenu();
+      if (pcId) triggerRemoteClientUpdate(pcId);
+    });
+  }
+
+  const btnUpdateClientSelect = document.getElementById('btnUpdateClientSelect');
+  if (btnUpdateClientSelect) {
+    btnUpdateClientSelect.addEventListener('click', () => {
+      if (selectedPcs.size === 0) {
+        if (confirm('No specific PC selected. Do you want to remotely update ALL online stations across the arena?')) {
+          triggerRemoteClientUpdate('all');
+        }
+        return;
+      }
+      const pcIds = Array.from(selectedPcs);
+      if (confirm(`Remotely update and relaunch client on ${pcIds.length} selected stations?`)) {
+        pcIds.forEach(id => socket.emit('admin_client_update', { pcId: id }));
+        window.cyberAudio?.playClick?.();
+        showToast('🔄 Updates Dispatched', `Update signals sent to ${pcIds.length} selected stations.`);
       }
     });
   }

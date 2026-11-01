@@ -3316,6 +3316,28 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Master Admin Remote Client Update (Closes old client, pulls newest version & relaunches automatically)
+  socket.on('admin_client_update', (data) => {
+    const { pcId } = data || {};
+    const serverIp = getLocalIpAddress();
+    const updatePayload = {
+      timestamp: Date.now(),
+      serverIp,
+      version: Date.now(),
+      message: 'Master Desk deployed client update. Station restarting with latest version...'
+    };
+
+    if (!pcId || pcId === 'all') {
+      io.emit('client_remote_update', updatePayload);
+      addAudit('Master Client Update', 'All online stations instructed to pull newest version and restart', 'info');
+      io.to('admins').emit('client_update_status', { pcId: 'all', status: 'dispatched' });
+    } else {
+      io.to(`pc_${pcId}`).emit('client_remote_update', { ...updatePayload, pcId });
+      addAudit('Master Client Update', `Station ${pcId} instructed to pull newest version and restart`, 'info');
+      io.to('admins').emit('client_update_status', { pcId, status: 'dispatched' });
+    }
+  });
+
   
 // =============================================================
 // WORD FILTER & SECURITY SHIELD ENGINE

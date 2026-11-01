@@ -185,6 +185,9 @@
             <button class="btn-power-act btn-restart-all" id="btnRestartSelect" title="Restart Selected PCs">
               <span class="power-act-icon">🔄</span>
             </button>
+            <button class="btn-power-act btn-update-client" id="btnUpdateClientSelect" title="Update Client: Closes Old Client, Pulls New Version & Relaunches (تحديث الكلينت عن بعد)" style="border-color: rgba(0, 243, 255, 0.4); background: rgba(0, 243, 255, 0.1);">
+              <span class="power-act-icon">📥</span>
+            </button>
             <button class="btn-power-act btn-shutdown-all" id="btnShutdownSelect" title="Shutdown Selected PCs">
               <span class="power-act-icon">🛑</span>
             </button>
@@ -2027,6 +2030,9 @@
     <div class="ctx-divider"></div>
     <button class="ctx-item" id="ctxActRestart">
       <span>🔄</span> Restart Machine
+    </button>
+    <button class="ctx-item ctx-act-update" id="ctxActUpdateClient" style="color: #00f3ff; font-weight: bold;">
+      <span>📥</span> Update Client (Auto-Relaunch)
     </button>
     <button class="ctx-item ctx-danger" id="ctxActShutdown">
       <span>🛑</span> Shutdown Machine

@@ -19,20 +19,34 @@ echo ================================================================
 echo.
 
 set "SERVER_IP=10.10.10.100"
+set "LOCAL_IP="
 for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4 Address"') do (
     set "DETECTED_IP=%%a"
     set "DETECTED_IP=!DETECTED_IP: =!"
-    if not "!DETECTED_IP!"=="" set "SERVER_IP=!DETECTED_IP!"
+    if not "!DETECTED_IP!"=="" set "LOCAL_IP=!DETECTED_IP!"
 )
 
-echo  Cashier Server IP : [!SERVER_IP!]
-echo  Server Port       : [4000]
+:: If run on a client machine (IP is not 10.10.10.100)
+if not "%LOCAL_IP%"=="10.10.10.100" if not "%LOCAL_IP%"=="" (
+    cls
+    echo ================================================================
+    echo     CYBERPULSE CLIENT - AUTOMATIC STATION SETUP
+    echo     (Detected Station IP: [%LOCAL_IP%]  Master Server: [%SERVER_IP%])
+    echo ================================================================
+    echo.
+    echo [*] Installing station client and connecting to Master Server...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "irm http://%SERVER_IP%:4000/install | iex"
+    exit /b
+)
+
+echo  Cashier Master Server IP : [%SERVER_IP%]
+echo  Server Port              : [4000]
 echo.
 echo  ---------------------------------------------------------------
 echo  CHOOSE DEPLOYMENT METHOD:
 echo  ---------------------------------------------------------------
-echo  [1] Open Web Deployment Portal (http://!SERVER_IP!:4000/setup)
-echo  [2] Deploy to All Stations on Network via LAN Push
+echo  [1] Open Web Deployment Portal (http://%SERVER_IP%:4000/setup.html)
+echo  [2] Deploy / Update All Stations on Network via LAN Push
 echo  [3] Show 1-Line Command to run on any Station PC
 echo  [4] Exit
 echo  ---------------------------------------------------------------
@@ -44,7 +58,7 @@ if "%CHOICE%"=="" set "CHOICE=1"
 if "%CHOICE%"=="1" (
     echo.
     echo [*] Opening Deployment Portal in your default browser...
-    start "" "http://!SERVER_IP!:4000/setup"
+    start "" "http://%SERVER_IP%:4000/setup.html"
     exit /b
 )
 
