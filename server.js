@@ -1534,22 +1534,22 @@ async function executeMikrotikProvisioning(mt) {
     results.push(`NAT masquerade rule already active on RouterOS`);
   }
 
-  // 3. Address list header entry
+  // 3. Ensure router IP is never in the VPN list (strictly target selected PCs only)
   const aCheck = await runRouterOsApi(mt.host, port, username, password, [
     '/ip/firewall/address-list/print',
     '?list=' + vpnList,
     '?address=' + mt.host
   ]);
-  if (!aCheck.some(s => s[0] === '!re')) {
-    await runRouterOsApi(mt.host, port, username, password, [
-      '/ip/firewall/address-list/add',
-      '=list=' + vpnList,
-      '=address=' + mt.host,
-      '=comment=CyberPulse Gaming VPN Gateway'
-    ]);
-    results.push(`Initialized address-list ${vpnList} on RouterOS`);
-  } else {
-    results.push(`Address-list ${vpnList} active on RouterOS`);
+  for (const sent of aCheck) {
+    const idWord = sent.find(w => w.startsWith('=.id='));
+    if (idWord) {
+      const entryId = idWord.replace('=.id=', '');
+      await runRouterOsApi(mt.host, port, username, password, [
+        '/ip/firewall/address-list/remove',
+        '=.id=' + entryId
+      ]);
+      results.push(`Verified router gateway ${mt.host} is excluded from VPN (VPN strictly applies to selected PCs only)`);
+    }
   }
 
   // 4. Log to RouterOS system log
