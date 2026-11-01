@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeRemotePcId = null;
   let activeRemoteMode = 'view_only'; // 'view_only' | 'full_control'
   let remoteScreenImg = new Image();
-  let selectedStartSessionType = 'fixed_amount';
+  let selectedStartSessionType = 'open';
   let posCart = [];
   let currentViewMode = localStorage.getItem('cyber_view_mode') || 'large';
 
@@ -424,15 +424,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Socket Live Listeners
   socket.on('tick_update', (pcsData) => {
+    let reRenderNeeded = false;
     pcsData.forEach(pData => {
       const pc = state.pcs.find(p => p.id === pData.id);
       if (pc) {
+        if (pc.status !== pData.status) {
+          reRenderNeeded = true;
+        }
         pc.status = pData.status;
         pc.session = pData.session;
         pc.currentGame = pData.currentGame;
         updatePcCardLive(pc);
       }
     });
+    if (reRenderNeeded) {
+      renderPcsGrid();
+    }
     updateShiftSummary();
   });
 
@@ -594,6 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
     admin: { model: 'gaming_tower', color: '#10b981', label: 'ADMIN / STAFF', badgeIcon: '🛡️' },
     disconnected: { model: 'curved_monitor', color: '#ef4444', label: 'NO SIGNAL', badgeIcon: '⚠️' },
     offline: { model: 'curved_monitor', color: '#475569', label: 'POWERED OFF', badgeIcon: '⚫' },
+    locked: { model: 'curved_monitor', color: '#ff0055', label: 'LOCKED', badgeIcon: '🔒' },
     lowTime: { model: 'curved_monitor', color: '#ff0055', label: 'EXPIRING TIME', badgeIcon: '🔥' },
     available: { model: 'curved_monitor', color: '#05ffa1', label: 'READY TO PLAY', badgeIcon: '⚡' }
   };
@@ -633,9 +641,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function generateHardwareSvg(model, color, pcId, label, enableStandRgb, pcState, pc, isMini = false) {
     const uid = `${pcId || 'preview'}_${Math.random().toString(36).substr(2, 5)}`;
-    // Icon customization is strictly restricted to Settings -> Device Icons & Appearance
     const pcClickAttr = '';
     let overlayContent = '';
+
+    if (!isMini && pc) {
+      if (pc.status === 'in_session' && pc.session) {
+        const isSessionOpen = pc.session.type === 'open';
+        const timerStr = isSessionOpen 
+          ? formatTime(pc.session.elapsedSeconds || 0)
+          : formatTime(pc.session.remainingSeconds || 0);
+
+        overlayContent = `
+          <div class="screen-live-badge ${isSessionOpen ? 'badge-pulse-cyan' : 'badge-pulse-green'}">
+            <span class="live-dot"></span> ${isSessionOpen ? 'OPEN PLAY' : 'FIXED TIME'}
+          </div>
+          <div class="screen-live-timer" id="curved_timer_${pc.id}">${timerStr}</div>
+          <div class="screen-live-player">👤 ${pc.session.customerName || 'Guest'}</div>
+        `;
+      } else if (pc.status === 'locked') {
+        overlayContent = `
+          <div class="screen-live-lock">🔒</div>
+          <div class="screen-live-status-txt" style="color:var(--neon-pink); font-family:var(--font-cyber); font-weight:800; font-size:0.8rem; letter-spacing:1px; margin-top:3px;">LOCKED</div>
+        `;
+      } else if (pc.status === 'maintenance' || pc.isMaintenance) {
+        overlayContent = `
+          <div style="font-size:1.5rem; filter:drop-shadow(0 0 8px #ff9900);">🔧</div>
+          <div class="screen-live-status-txt" style="color:#ff9900; font-family:var(--font-cyber); font-weight:800; font-size:0.8rem; letter-spacing:1px; margin-top:3px;">MAINTENANCE</div>
+        `;
+      } else if (pc.status === 'offline') {
+        overlayContent = `
+          <div style="font-size:1.3rem; opacity:0.6;">⚫</div>
+          <div class="screen-live-status-txt" style="color:#64748b; font-family:var(--font-cyber); font-weight:700; font-size:0.75rem; letter-spacing:1px; margin-top:3px;">OFFLINE</div>
+        `;
+      } else {
+        overlayContent = `
+          <div class="screen-avail-badge">
+            <span class="live-dot" style="background:#05ffa1; box-shadow:0 0 6px #05ffa1;"></span> READY
+          </div>
+          <div class="screen-avail-rate" style="color:#fff; font-family:var(--font-cyber); font-size:0.85rem; font-weight:700; margin-top:4px;">
+            ${pc.ratePerHour || 20} <small style="font-size:0.65rem; color:#05ffa1;">EGP/h</small>
+          </div>
+        `;
+      }
+    }
 
     if (model && (model.startsWith('icon_') || model.startsWith('custom_'))) {
       const sym = getIconSymbol(model);
@@ -879,20 +927,26 @@ document.addEventListener('DOMContentLoaded', () => {
         pcState = 'maintenance';
       } else if (pc.status === 'offline') {
         pcState = 'offline';
-      } else if (!pc.isOnline) {
-        pcState = 'disconnected';
-      } else if (pc.status === 'in_session' && pc.session && pc.session.type !== 'open' && pc.session.remainingSeconds !== undefined && pc.session.remainingSeconds > 0 && pc.session.remainingSeconds <= 300) {
-        pcState = 'lowTime';
-      } else if (pc.isAdminSession || (pc.session && (pc.session.isAdmin || pc.session.customerName === 'Admin' || pc.session.customerName === 'Staff'))) {
-        pcState = 'admin';
-      } else if (pc.session && (pc.session.isMember || pc.session.memberId || (pc.session.customerName && (pc.session.customerName.toLowerCase().includes('member') || pc.session.customerName.toLowerCase().includes('vip'))))) {
-        pcState = 'member';
-      } else if (pc.status === 'in_session' && pc.session && pc.session.type === 'open') {
-        pcState = 'openTime';
+      } else if (pc.status === 'locked') {
+        pcState = 'locked';
       } else if (pc.status === 'in_session') {
-        pcState = 'fixedTime';
+        if (pc.session && pc.session.type !== 'open' && pc.session.remainingSeconds !== undefined && pc.session.remainingSeconds > 0 && pc.session.remainingSeconds <= 300) {
+          pcState = 'lowTime';
+        } else if (pc.isAdminSession || (pc.session && (pc.session.isAdmin || pc.session.customerName === 'Admin' || pc.session.customerName === 'Staff'))) {
+          pcState = 'admin';
+        } else if (pc.session && (pc.session.isMember || pc.session.memberId || (pc.session.customerName && (pc.session.customerName.toLowerCase().includes('member') || pc.session.customerName.toLowerCase().includes('vip'))))) {
+          pcState = 'member';
+        } else if (pc.session && pc.session.type === 'open') {
+          pcState = 'openTime';
+        } else {
+          pcState = 'fixedTime';
+        }
       } else if (pc.isIdle || (pc.isOnline && pc.lastActive && (Date.now() - pc.lastActive > 10 * 60 * 1000))) {
         pcState = 'idle';
+      } else if (pc.status === 'available') {
+        pcState = 'available';
+      } else if (!pc.isOnline || pc.status === 'disconnected') {
+        pcState = 'disconnected';
       }
 
       const stateVisualsMap = (currentVisuals && currentVisuals.stateVisuals) || defaultStateVisuals;
@@ -952,8 +1006,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pc.status === 'in_session') {
           openRemoteModal(pc.id);
         } else {
-          openStartSessionModal(pc.id);
+          openStartSessionModal(pc.id, 'open');
         }
+      });
+
+      card.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        handleCardSelect(pc.id, e);
+        showPcContextMenu(pc.id, e.clientX, e.clientY);
       });
 
       pcsCardsGrid.appendChild(card);
@@ -971,7 +1031,7 @@ document.addEventListener('DOMContentLoaded', () => {
         : formatTime(pc.session.remainingSeconds);
 
       if (timerEl) {
-        timerEl.textContent = timeVal;
+        timerEl.textContent = `⏱️ ${timeVal}`;
         if (pc.session.type !== 'open' && pc.session.remainingSeconds <= 60) {
           timerEl.className = 'pc-timer-display timer-danger';
         }
@@ -1316,16 +1376,67 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------------------------------------------
   // START SESSION MODAL & LOGIC
   // -------------------------------------------------------------
-  window.openStartSessionModal = function(pcId) {
+  window.openStartSessionModal = function(pcId, defaultType = 'open') {
     const pc = state.pcs.find(p => p.id === pcId);
     if (!pc) return;
 
-    window.cyberAudio.playClick();
+    if (pc.status === 'in_session') {
+      openCheckoutModal(pc.id);
+      return;
+    }
+
+    if (window.cyberAudio && window.cyberAudio.playClick) {
+      window.cyberAudio.playClick();
+    }
     document.getElementById('startModalPcId').value = pc.id;
     document.getElementById('startModalPcName').textContent = pc.name;
     document.getElementById('startCustomerName').value = '';
 
+    selectedStartSessionType = defaultType;
+    document.querySelectorAll('.session-type-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.stype === defaultType);
+    });
+    document.getElementById('amountPresetsSection').style.display = defaultType === 'fixed_amount' ? 'block' : 'none';
+    document.getElementById('timePresetsSection').style.display = defaultType === 'fixed_time' ? 'block' : 'none';
+    document.getElementById('openTimeNoteSection').style.display = defaultType === 'open' ? 'block' : 'none';
+
     openModal('startSessionModal');
+  };
+
+  window.quickStartOpenTime = function(pcId) {
+    const pc = state.pcs.find(p => p.id === pcId);
+    if (!pc) return;
+    if (pc.status === 'in_session') {
+      openCheckoutModal(pc.id);
+      return;
+    }
+
+    fetch('/api/session/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pcId: pc.id,
+        type: 'open',
+        customerName: 'Guest Player'
+      })
+    }).then(r => r.json()).then(res => {
+      if (res.success) {
+        if (window.cyberAudio && window.cyberAudio.playUnlock) {
+          window.cyberAudio.playUnlock();
+        }
+        const localPc = state.pcs.find(p => p.id === pc.id);
+        if (localPc) {
+          localPc.status = res.pc.status;
+          localPc.session = res.pc.session;
+          renderPcsGrid();
+        }
+        fetchState();
+      } else {
+        alert(res.error || 'Failed to start open time session');
+      }
+    }).catch(err => {
+      alert('Network error while starting open time: ' + err.message);
+    });
   };
 
   // Switch session type tabs
@@ -1361,28 +1472,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('btnConfirmStartSession').addEventListener('click', () => {
     const pcId = document.getElementById('startModalPcId').value;
-    const customerName = document.getElementById('startCustomerName').value;
+    const customerName = document.getElementById('startCustomerName').value.trim() || 'Guest Player';
     const amount = document.getElementById('customAmountInput').value;
     const durationMinutes = document.getElementById('customMinutesInput').value;
+    const sessionType = selectedStartSessionType || 'open';
 
     fetch('/api/session/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         pcId,
-        type: selectedStartSessionType,
-        amount: parseFloat(amount),
-        durationMinutes: parseInt(durationMinutes),
+        type: sessionType,
+        amount: parseFloat(amount) || 20,
+        durationMinutes: parseInt(durationMinutes) || 60,
         customerName
       })
     }).then(r => r.json()).then(res => {
       if (res.success) {
-        window.cyberAudio.playUnlock();
+        if (window.cyberAudio && window.cyberAudio.playUnlock) {
+          window.cyberAudio.playUnlock();
+        }
         closeModal('startSessionModal');
+        const localPc = state.pcs.find(p => p.id === pcId);
+        if (localPc) {
+          localPc.status = res.pc.status;
+          localPc.session = res.pc.session;
+          renderPcsGrid();
+        }
         fetchState();
       } else {
         alert(res.error || 'Error occurred while starting session');
       }
+    }).catch(err => {
+      alert('Network error while starting session: ' + err.message);
     });
   });
 
@@ -1962,10 +2084,176 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnStartSelect) {
     btnStartSelect.addEventListener('click', () => {
       if (selectedPcs.size === 0) {
+        const firstAvail = state.pcs.find(p => p.status === 'available');
+        if (firstAvail) {
+          selectedPcs.clear();
+          selectedPcs.add(firstAvail.id);
+          updateSelectedPcsUI();
+          openStartSessionModal(firstAvail.id, 'open');
+          return;
+        }
         return alert('Please select a PC to start a session!');
       }
       const firstId = Array.from(selectedPcs)[0];
-      openStartSessionModal(firstId);
+      openStartSessionModal(firstId, 'open');
+    });
+  }
+
+  // -------------------------------------------------------------
+  // DESKTOP CONTEXT MENU CONTROLLER
+  // -------------------------------------------------------------
+  const pcContextMenu = document.getElementById('pcContextMenu');
+  let activeContextMenuPcId = null;
+
+  function showPcContextMenu(pcId, x, y) {
+    const pc = state.pcs.find(p => p.id === pcId);
+    if (!pc || !pcContextMenu) return;
+
+    activeContextMenuPcId = pcId;
+    const nameEl = document.getElementById('ctxPcName');
+    const ipEl = document.getElementById('ctxPcIp');
+    if (nameEl) nameEl.textContent = pc.name;
+    if (ipEl) ipEl.textContent = pc.ip || '10.10.10.101';
+
+    const ctxActOpen = document.getElementById('ctxActOpenTime');
+    const ctxActCust = document.getElementById('ctxActCustomSession');
+    const ctxActCheck = document.getElementById('ctxActCheckout');
+
+    if (pc.status === 'in_session') {
+      if (ctxActOpen) ctxActOpen.style.display = 'none';
+      if (ctxActCust) ctxActCust.style.display = 'none';
+      if (ctxActCheck) ctxActCheck.style.display = 'flex';
+    } else {
+      if (ctxActOpen) ctxActOpen.style.display = 'flex';
+      if (ctxActCust) ctxActCust.style.display = 'flex';
+      if (ctxActCheck) ctxActCheck.style.display = 'none';
+    }
+
+    pcContextMenu.style.display = 'flex';
+    const menuWidth = 230;
+    const menuHeight = 350;
+    const posX = (x + menuWidth > window.innerWidth) ? (window.innerWidth - menuWidth - 10) : x;
+    const posY = (y + menuHeight > window.innerHeight) ? (window.innerHeight - menuHeight - 10) : y;
+    pcContextMenu.style.left = `${posX}px`;
+    pcContextMenu.style.top = `${posY}px`;
+  }
+
+  function hidePcContextMenu() {
+    if (pcContextMenu) {
+      pcContextMenu.style.display = 'none';
+    }
+    activeContextMenuPcId = null;
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#pcContextMenu')) {
+      hidePcContextMenu();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hidePcContextMenu();
+  });
+
+  const ctxActOpenTime = document.getElementById('ctxActOpenTime');
+  if (ctxActOpenTime) {
+    ctxActOpenTime.addEventListener('click', () => {
+      const pcId = activeContextMenuPcId;
+      hidePcContextMenu();
+      if (pcId) quickStartOpenTime(pcId);
+    });
+  }
+
+  const ctxActCustomSession = document.getElementById('ctxActCustomSession');
+  if (ctxActCustomSession) {
+    ctxActCustomSession.addEventListener('click', () => {
+      const pcId = activeContextMenuPcId;
+      hidePcContextMenu();
+      if (pcId) openStartSessionModal(pcId, 'fixed_time');
+    });
+  }
+
+  const ctxActCheckout = document.getElementById('ctxActCheckout');
+  if (ctxActCheckout) {
+    ctxActCheckout.addEventListener('click', () => {
+      const pcId = activeContextMenuPcId;
+      hidePcContextMenu();
+      if (pcId) openCheckoutModal(pcId);
+    });
+  }
+
+  const ctxActVpn = document.getElementById('ctxActVpn');
+  if (ctxActVpn) {
+    ctxActVpn.addEventListener('click', () => {
+      const pcId = activeContextMenuPcId;
+      hidePcContextMenu();
+      if (pcId) togglePcVPN(pcId);
+    });
+  }
+
+  const ctxActScreen = document.getElementById('ctxActScreen');
+  if (ctxActScreen) {
+    ctxActScreen.addEventListener('click', () => {
+      const pcId = activeContextMenuPcId;
+      hidePcContextMenu();
+      if (pcId) openRemoteModal(pcId);
+    });
+  }
+
+  const ctxActLock = document.getElementById('ctxActLock');
+  if (ctxActLock) {
+    ctxActLock.addEventListener('click', () => {
+      const pcId = activeContextMenuPcId;
+      hidePcContextMenu();
+      if (pcId) toggleLockPc(pcId);
+    });
+  }
+
+  const ctxActCafe = document.getElementById('ctxActCafe');
+  if (ctxActCafe) {
+    ctxActCafe.addEventListener('click', () => {
+      const pcId = activeContextMenuPcId;
+      hidePcContextMenu();
+      if (pcId) {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        const cafeTabBtn = document.querySelector('[data-tab="cafeteriaTab"]');
+        if (cafeTabBtn) cafeTabBtn.classList.add('active');
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        const cafeTab = document.getElementById('cafeteriaTab');
+        if (cafeTab) cafeTab.classList.add('active');
+        const posTargetSelect = document.getElementById('posTargetSelect');
+        if (posTargetSelect) posTargetSelect.value = pcId;
+      }
+    });
+  }
+
+  const ctxActRestart = document.getElementById('ctxActRestart');
+  if (ctxActRestart) {
+    ctxActRestart.addEventListener('click', () => {
+      const pcId = activeContextMenuPcId;
+      hidePcContextMenu();
+      if (pcId && confirm(`Restart PC ${pcId}?`)) {
+        fetch('/api/power/restart-select', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pcIds: [pcId] })
+        }).then(r => r.json()).then(res => alert(res.message || 'Restart command dispatched'));
+      }
+    });
+  }
+
+  const ctxActShutdown = document.getElementById('ctxActShutdown');
+  if (ctxActShutdown) {
+    ctxActShutdown.addEventListener('click', () => {
+      const pcId = activeContextMenuPcId;
+      hidePcContextMenu();
+      if (pcId && confirm(`Shutdown PC ${pcId}?`)) {
+        fetch('/api/power/shutdown-select', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pcIds: [pcId] })
+        }).then(r => r.json()).then(res => alert(res.message || 'Shutdown command dispatched'));
+      }
     });
   }
 
@@ -2176,7 +2464,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed.stateVisuals) {
-        currentVisuals.stateVisuals = Object.assign({}, defaultStateVisuals, parsed.stateVisuals);
+        Object.keys(defaultStateVisuals).forEach(k => {
+          if (parsed.stateVisuals[k]) {
+            currentVisuals.stateVisuals[k] = Object.assign({}, defaultStateVisuals[k], parsed.stateVisuals[k]);
+          }
+        });
       }
       if (typeof parsed.enableStandRgb === 'boolean') {
         currentVisuals.enableStandRgb = parsed.enableStandRgb;
@@ -2284,6 +2576,7 @@ document.addEventListener('DOMContentLoaded', () => {
       sel.onchange = () => {
         if (!currentVisuals.stateVisuals[key]) currentVisuals.stateVisuals[key] = {};
         currentVisuals.stateVisuals[key].badgeIcon = sel.value;
+        localStorage.setItem('cyber_custom_visuals', JSON.stringify(currentVisuals));
         renderPcsGrid();
       };
     });

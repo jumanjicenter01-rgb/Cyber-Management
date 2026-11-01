@@ -1685,6 +1685,46 @@
   </div>
 
   <!-- ============================================================== -->
+  <!-- CONTEXT MENU: PC ACTIONS                                        -->
+  <!-- ============================================================== -->
+  <div id="pcContextMenu" class="pc-context-menu" style="display:none;">
+    <div class="ctx-header">
+      <span class="ctx-pc-name" id="ctxPcName">PC 01</span>
+      <span class="ctx-pc-ip" id="ctxPcIp">10.10.10.101</span>
+    </div>
+    <div class="ctx-divider"></div>
+    <button class="ctx-item ctx-act-open" id="ctxActOpenTime">
+      <span>▶️</span> Quick Start: Open Time
+    </button>
+    <button class="ctx-item ctx-act-custom" id="ctxActCustomSession">
+      <span>⏱️</span> Custom Session (Duration / Amount)...
+    </button>
+    <button class="ctx-item ctx-act-checkout" id="ctxActCheckout">
+      <span>🧾</span> Checkout & Close Session
+    </button>
+    <div class="ctx-divider"></div>
+    <button class="ctx-item" id="ctxActVpn">
+      <span>🛡️</span> Toggle Gaming VPN
+    </button>
+    <button class="ctx-item" id="ctxActScreen">
+      <span>👁️</span> Remote Screen Stream
+    </button>
+    <button class="ctx-item" id="ctxActLock">
+      <span>🔒</span> Lock / Unlock Terminal
+    </button>
+    <button class="ctx-item" id="ctxActCafe">
+      <span>🍔</span> Add Cafe / Snack Order
+    </button>
+    <div class="ctx-divider"></div>
+    <button class="ctx-item" id="ctxActRestart">
+      <span>🔄</span> Restart Machine
+    </button>
+    <button class="ctx-item ctx-danger" id="ctxActShutdown">
+      <span>🛑</span> Shutdown Machine
+    </button>
+  </div>
+
+  <!-- ============================================================== -->
   <!-- MODAL: START SESSION                                           -->
   <!-- ============================================================== -->
   <div id="startSessionModal" class="modal-overlay">
@@ -1706,14 +1746,21 @@
         <div class="form-group">
           <label>Billing Mode:</label>
           <div class="session-type-tabs">
-            <button class="session-type-btn active" data-stype="fixed_amount">Fixed Amount (EGP)</button>
-            <button class="session-type-btn" data-stype="fixed_time">Fixed Duration</button>
-            <button class="session-type-btn" data-stype="open">Open Time</button>
+            <button class="session-type-btn active" data-stype="open">🟢 Open Time (Continuous)</button>
+            <button class="session-type-btn" data-stype="fixed_time">⏱️ Fixed Duration</button>
+            <button class="session-type-btn" data-stype="fixed_amount">💰 Fixed Amount (EGP)</button>
           </div>
         </div>
 
-        <!-- Quick Amount Presets -->
-        <div id="amountPresetsSection" class="presets-section">
+        <!-- Open Time Note (Default visible) -->
+        <div id="openTimeNoteSection" class="presets-section" style="display:block;">
+          <div class="info-alert">
+            <span>ℹ️</span> Counter will run automatically per second until closed by cashier or player checkout.
+          </div>
+        </div>
+
+        <!-- Quick Amount Presets (Default hidden) -->
+        <div id="amountPresetsSection" class="presets-section" style="display:none;">
           <label>Select Quick Amount:</label>
           <div class="quick-preset-btns">
             <button class="btn-preset" data-amount="10">10 EGP</button>
@@ -1728,7 +1775,7 @@
           </div>
         </div>
 
-        <!-- Quick Time Presets -->
+        <!-- Quick Time Presets (Default hidden) -->
         <div id="timePresetsSection" class="presets-section" style="display:none;">
           <label>Select Duration:</label>
           <div class="quick-preset-btns">
@@ -1741,13 +1788,6 @@
             <span>Custom Minutes:</span>
             <input type="number" id="customMinutesInput" class="form-input form-sm" value="60" min="15" step="15">
             <span>mins</span>
-          </div>
-        </div>
-
-        <!-- Open Time Note -->
-        <div id="openTimeNoteSection" class="presets-section" style="display:none;">
-          <div class="info-alert">
-            <span>ℹ️</span> Counter will run automatically per second until closed by cashier or player checkout.
           </div>
         </div>
 

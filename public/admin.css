@@ -640,6 +640,74 @@ body {
   line-height: 1.1;
 }
 
+.screen-live-badge {
+  font-family: var(--font-cyber);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 3px;
+}
+
+.screen-live-badge.badge-pulse-cyan {
+  background: rgba(0, 243, 255, 0.2);
+  color: var(--neon-cyan);
+  border: 1px solid rgba(0, 243, 255, 0.4);
+}
+
+.screen-live-badge.badge-pulse-green {
+  background: rgba(5, 255, 161, 0.2);
+  color: var(--neon-green);
+  border: 1px solid rgba(5, 255, 161, 0.4);
+}
+
+.screen-live-badge .live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+  animation: pulseDot 1.2s infinite alternate;
+}
+
+@keyframes pulseDot {
+  from { opacity: 0.4; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1.15); }
+}
+
+.screen-live-player {
+  font-size: 0.72rem;
+  color: #fff;
+  font-weight: 600;
+  opacity: 0.95;
+  margin-top: 3px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+.screen-avail-badge {
+  font-family: var(--font-cyber);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--neon-green);
+  text-shadow: 0 0 10px var(--neon-green);
+  letter-spacing: 1.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.screen-avail-rate {
+  font-family: var(--font-cyber);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-top: 4px;
+}
+
 .screen-live-game {
   font-size: 0.75rem;
   color: #fff;
@@ -652,6 +720,85 @@ body {
   font-size: 1.8rem;
   filter: drop-shadow(0 0 12px var(--neon-pink));
   animation: pulseNeonPink 1.5s infinite;
+}
+
+/* Custom Cyber Context Menu */
+.pc-context-menu {
+  position: fixed;
+  z-index: 99999;
+  background: rgba(10, 16, 28, 0.97);
+  border: 1px solid rgba(0, 243, 255, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85), 0 0 20px rgba(0, 243, 255, 0.25);
+  border-radius: 12px;
+  backdrop-filter: blur(16px);
+  min-width: 230px;
+  padding: 0.45rem 0;
+  display: flex;
+  flex-direction: column;
+  animation: fadeInCtx 0.15s ease-out;
+}
+
+@keyframes fadeInCtx {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.ctx-header {
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ctx-pc-name {
+  font-family: var(--font-cyber);
+  font-weight: 800;
+  color: var(--neon-cyan);
+  font-size: 0.95rem;
+}
+
+.ctx-pc-ip {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.ctx-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0.35rem 0;
+}
+
+.ctx-item {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  padding: 0.55rem 1rem;
+  font-family: var(--font-main);
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.ctx-item:hover {
+  background: rgba(0, 243, 255, 0.15);
+  color: #fff;
+  padding-left: 1.2rem;
+}
+
+.ctx-item.ctx-act-open:hover {
+  background: rgba(5, 255, 161, 0.2);
+  color: var(--neon-green);
+}
+
+.ctx-item.ctx-danger:hover {
+  background: rgba(255, 0, 85, 0.2);
+  color: var(--neon-pink);
 }
 
 /* Theme Toggle Button Styling */
