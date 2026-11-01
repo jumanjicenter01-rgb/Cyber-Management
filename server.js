@@ -2324,7 +2324,32 @@ app.post('/api/wordfilter/test-trigger', (req, res) => {
   res.json({ success: true, message: `Simulated trigger tested on ${targetPcId} with text: "${text}"` });
 });
 
-// Client sends Live Screen Frame / Thumbnail to Admin
+// Client reported security violation (offline shield or direct)
+  socket.on('client_reported_violation', (data) => {
+    if (!data || !data.pcId || !data.violation) return;
+    const pc = db.pcs.find(p => p.id === data.pcId);
+    const pcName = pc ? pc.name : data.pcId;
+    const v = data.violation;
+    const item = {
+      id: 'viol_' + Date.now() + '_' + Math.floor(Math.random() * 100),
+      pcId: data.pcId,
+      pcName,
+      word: v.word,
+      category: v.category || 'Security',
+      activeWindow: v.detectedText,
+      time: v.timestamp || new Date().toLocaleTimeString('en-US'),
+      penaltyExecuted: v.penalty
+    };
+    if (db.settings.wordFilter) {
+      if (!db.settings.wordFilter.violations) db.settings.wordFilter.violations = [];
+      db.settings.wordFilter.violations.unshift(item);
+    }
+    addAudit('Word Filter Violation (Offline Shield)', `Detected prohibited content "${v.word}" on ${pcName} (${v.detectedText}) -> Action: ${v.penalty}`, 'warning');
+    io.to('admins').emit('word_filter_alert', item);
+    saveData();
+  });
+
+  // Client sends Live Screen Frame / Thumbnail to Admin
   socket.on('screen_frame', (data) => {
     db.screenSnapshots[data.pcId] = {
       image: data.image,

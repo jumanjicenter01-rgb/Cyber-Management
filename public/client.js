@@ -68,6 +68,12 @@ document.addEventListener('DOMContentLoaded', () => {
         expired: !!pcState.session.expired
       });
     }
+
+    // Flush any security violations recorded offline during server maintenance
+    while (offlineViolations.length > 0) {
+      const v = offlineViolations.shift();
+      socket.emit('client_reported_violation', { pcId, violation: v });
+    }
   });
 
   socket.on('disconnect', () => {
@@ -107,6 +113,61 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(updateClock, 1000);
   updateClock();
 
+  // Local Security & Word Filter Offline Shield
+  let localWordFilter = null;
+  const offlineViolations = [];
+  const localFilterCooldowns = new Map();
+
+  function checkClientWordFilter(text) {
+    if (!text || !localWordFilter || !localWordFilter.enabled) return;
+    const lower = String(text).toLowerCase();
+    const words = localWordFilter.words || [];
+    const now = Date.now();
+
+    for (const w of words) {
+      if (!w.enabled) continue;
+      const target = (w.word || '').toLowerCase().trim();
+      if (!target) continue;
+
+      if (lower.includes(target)) {
+        const lastTrigger = localFilterCooldowns.get(target) || 0;
+        if (now - lastTrigger < 30000) continue;
+        localFilterCooldowns.set(target, now);
+
+        const customMsg = localWordFilter.customWarningMessage || 'Prohibited content detected by Cyber Security.';
+        const penalty = localWordFilter.penaltyAction || 'warn_only';
+
+        const violation = {
+          word: w.word,
+          category: w.category || 'Security',
+          detectedText: text,
+          timestamp: new Date().toLocaleTimeString('ar-EG'),
+          penalty
+        };
+
+        if (penalty === 'lock_session') {
+          if (pcState) {
+            pcState.status = 'locked';
+            if (pcState.session) pcState.session.expired = true;
+            updatePcUI(pcState);
+          }
+          if (window.cyberAudio) window.cyberAudio.playWarning();
+          showAlertBanner('Security Violation - Session Locked', `${customMsg} (${w.word})`);
+        } else {
+          if (window.cyberAudio) window.cyberAudio.playWarning();
+          showAlertBanner('Security Warning', `${customMsg} (${w.word})`);
+        }
+
+        if (socket && socket.connected) {
+          socket.emit('client_reported_violation', { pcId, violation });
+        } else {
+          offlineViolations.push(violation);
+        }
+        break;
+      }
+    }
+  }
+
   // Fetch initial state from server
   fetch('/api/state')
     .then(r => r.json())
@@ -114,6 +175,10 @@ document.addEventListener('DOMContentLoaded', () => {
       allGames = data.games || [];
       renderGames(allGames);
       renderCafeteriaMenu(data.menu || []);
+
+      if (data.settings && data.settings.wordFilter) {
+        localWordFilter = data.settings.wordFilter;
+      }
 
       if (data.settings && data.settings.branding && data.settings.branding.shopName) {
         document.querySelectorAll('.brand-title').forEach(el => el.textContent = data.settings.branding.shopName);
@@ -127,6 +192,14 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePcUI(pc);
       }
     });
+
+  socket.on('word_filter_sync', (wf) => {
+    if (wf) localWordFilter = wf;
+  });
+
+  socket.on('wordfilter_updated', (wf) => {
+    if (wf) localWordFilter = wf;
+  });
 
   socket.on('branding_updated', (branding) => {
     if (branding && branding.shopName) {
@@ -315,13 +388,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Always render frame to screenCaptureCanvas
     renderScreenFrame();
     
-    // Broadcast snapshot
-    const frameData = screenCaptureCanvas.toDataURL('image/jpeg', 0.6);
-    socket.emit('screen_frame', {
-      pcId,
-      image: frameData,
-      activeWindow: activeGame ? activeGame.title : (pcState && pcState.status === 'in_session' ? 'Game Launcher' : 'Locked Screen')
-    });
+    // Broadcast snapshot & execute client-side word filter inspection
+    const activeWin = activeGame ? activeGame.title : (pcState && pcState.status === 'in_session' ? 'Game Launcher' : 'Locked Screen');
+    checkClientWordFilter(activeWin);
+
+    if (socket && socket.connected) {
+      const frameData = screenCaptureCanvas.toDataURL('image/jpeg', 0.6);
+      socket.emit('screen_frame', {
+        pcId,
+        image: frameData,
+        activeWindow: activeWin
+      });
+    }
   }, 300);
 
   function renderScreenFrame() {
