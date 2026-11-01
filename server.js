@@ -9,6 +9,7 @@ const dgram = require('dgram');
 const net = require('net');
 const crypto = require('crypto');
 const { exec } = require('child_process');
+const QRCode = require('qrcode');
 
 const app = express();
 const server = http.createServer(app);
@@ -117,6 +118,7 @@ let db = {
   },
   invoices: [],
   auditLog: [],
+  vouchers: [], // Hotspot WiFi vouchers { id, code, gigabytes, quotaBytes, speedProfile, price, validityDays, createdAt, expiresAt, status, bytesIn, bytesOut }
   screenSnapshots: {}, // pcId -> base64 frame
   screenshots: [], // Gallery of captured screenshots { id, pcId, timestamp, timeFormatted, image, note }
   settings: {
@@ -348,7 +350,8 @@ function saveData() {
       shift: db.shift,
       settings: db.settings,
       invoices: (db.invoices || []).slice(0, 100),
-      auditLog: (db.auditLog || []).slice(0, 100)
+      auditLog: (db.auditLog || []).slice(0, 100),
+      vouchers: (db.vouchers || []).slice(0, 500)
     };
     fs.writeFileSync(DATA_FILE, JSON.stringify(exportData, null, 2), 'utf8');
   } catch (err) {
@@ -375,6 +378,20 @@ function loadData() {
       if (parsed.settings) db.settings = { ...db.settings, ...parsed.settings };
       if (parsed.invoices) db.invoices = parsed.invoices;
       if (parsed.auditLog) db.auditLog = parsed.auditLog;
+      if (parsed.vouchers && Array.isArray(parsed.vouchers)) db.vouchers = parsed.vouchers;
+      else if (!db.vouchers) db.vouchers = [];
+
+      // Ensure hotspot settings defaults
+      if (!db.settings.hotspot) {
+        db.settings.hotspot = {
+          enabled: true,
+          pricePerGb: 5,
+          defaultProfile: 'profile_4m',
+          defaultValidityDays: 30,
+          wifiSsid: 'CyberPulse_Gaming_WiFi',
+          hotspotLoginUrl: 'http://10.10.10.1/login'
+        };
+      }
       console.log('✔ Successfully recovered cyber database state from cyber_data.json');
     }
   } catch (err) {
@@ -572,7 +589,8 @@ app.get('/api/state', (req, res) => {
     settings: db.settings,
     invoices: db.invoices.slice(0, 50),
     auditLog: db.auditLog.slice(0, 50),
-    screenshots: db.screenshots.slice(0, 50)
+    screenshots: db.screenshots.slice(0, 50),
+    vouchers: (db.vouchers || []).slice(0, 100)
   });
 });
 
@@ -2429,6 +2447,431 @@ app.delete('/api/mikrotik/servers/:id', (req, res) => {
     addAudit('VPN Server Removed', `Removed ${removed[0].name} from VPN pool`);
   }
   res.json({ success: true, servers: db.settings.mikrotik.vpnServers });
+});
+
+// -------------------------------------------------------------
+// MIKROTIK HOTSPOT & WIFI VOUCHERS ENGINE
+// -------------------------------------------------------------
+
+const HOTSPOT_PROFILES = [
+  { name: 'profile_2m', rateLimit: '2M/2M', label: '2 Mbps (Economy)' },
+  { name: 'profile_4m', rateLimit: '4M/4M', label: '4 Mbps (Standard)' },
+  { name: 'profile_8m', rateLimit: '8M/8M', label: '8 Mbps (Gaming)' },
+  { name: 'profile_10m', rateLimit: '10M/10M', label: '10 Mbps (Ultra)' }
+];
+
+function generateMikrotikHotspotScript(mt) {
+  return `# ========================================================
+# CyberPulse OS - MikroTik Hotspot User Profiles Provisioning
+# 100% Shared-Users: 1 • Auto Removal on Limit & 30-Day Uptime
+# ========================================================
+
+/ip hotspot user profile
+add name="profile_2m" rate-limit="2M/2M" shared-users=1 idle-timeout=none keepalive-timeout=2m status-autorefresh=1m add-mac-cookie=true mac-cookie-timeout=3d on-logout=":if (\\$cause = \\"traffic-limit\\" or \\$cause = \\"uptime-limit\\") do={ /ip hotspot user remove [find name=\\$user] }"
+add name="profile_4m" rate-limit="4M/4M" shared-users=1 idle-timeout=none keepalive-timeout=2m status-autorefresh=1m add-mac-cookie=true mac-cookie-timeout=3d on-logout=":if (\\$cause = \\"traffic-limit\\" or \\$cause = \\"uptime-limit\\") do={ /ip hotspot user remove [find name=\\$user] }"
+add name="profile_8m" rate-limit="8M/8M" shared-users=1 idle-timeout=none keepalive-timeout=2m status-autorefresh=1m add-mac-cookie=true mac-cookie-timeout=3d on-logout=":if (\\$cause = \\"traffic-limit\\" or \\$cause = \\"uptime-limit\\") do={ /ip hotspot user remove [find name=\\$user] }"
+add name="profile_10m" rate-limit="10M/10M" shared-users=1 idle-timeout=none keepalive-timeout=2m status-autorefresh=1m add-mac-cookie=true mac-cookie-timeout=3d on-logout=":if (\\$cause = \\"traffic-limit\\" or \\$cause = \\"uptime-limit\\") do={ /ip hotspot user remove [find name=\\$user] }"
+
+# Periodic auto-cleanup scheduler for expired or depleted vouchers (every 1 hour)
+/system scheduler
+add name="cyberpulse_voucher_cleaner" interval=1h start-time=startup on-event="/ip hotspot user remove [find (uptime > 4w2d) or (limit-bytes-total > 0 and (bytes-in + bytes-out) >= limit-bytes-total)]"
+`;
+}
+
+async function provisionMikrotikHotspotProfiles(mt) {
+  if (!mt || !mt.host) throw new Error('عنوان راوتر المايكروتك غير مسجل في الإعدادات');
+
+  const printRes = await runRouterOsApi(
+    mt.host,
+    mt.port || 8728,
+    mt.username || 'admin',
+    mt.password || '',
+    ['/ip/hotspot/user/profile/print'],
+    4000
+  );
+
+  const existingMap = new Map();
+  for (const sent of printRes) {
+    let id = null;
+    let name = null;
+    for (const w of sent) {
+      if (w.startsWith('=.id=')) id = w.replace('=.id=', '');
+      if (w.startsWith('=name=')) name = w.replace('=name=', '');
+    }
+    if (id && name) existingMap.set(name, id);
+  }
+
+  const results = [];
+  const onLogout = ':if ($cause = "traffic-limit" or $cause = "uptime-limit") do={ /ip hotspot user remove [find name=$user] }';
+
+  for (const prof of HOTSPOT_PROFILES) {
+    if (existingMap.has(prof.name)) {
+      const existingId = existingMap.get(prof.name);
+      await runRouterOsApi(
+        mt.host,
+        mt.port || 8728,
+        mt.username || 'admin',
+        mt.password || '',
+        [
+          '/ip/hotspot/user/profile/set',
+          '=.id=' + existingId,
+          '=rate-limit=' + prof.rateLimit,
+          '=shared-users=1',
+          '=idle-timeout=none',
+          '=keepalive-timeout=2m',
+          '=status-autorefresh=1m',
+          '=add-mac-cookie=true',
+          '=mac-cookie-timeout=3d',
+          '=on-logout=' + onLogout
+        ]
+      );
+      results.push({ name: prof.name, action: 'updated', rateLimit: prof.rateLimit });
+    } else {
+      await runRouterOsApi(
+        mt.host,
+        mt.port || 8728,
+        mt.username || 'admin',
+        mt.password || '',
+        [
+          '/ip/hotspot/user/profile/add',
+          '=name=' + prof.name,
+          '=rate-limit=' + prof.rateLimit,
+          '=shared-users=1',
+          '=idle-timeout=none',
+          '=keepalive-timeout=2m',
+          '=status-autorefresh=1m',
+          '=add-mac-cookie=true',
+          '=mac-cookie-timeout=3d',
+          '=on-logout=' + onLogout
+        ]
+      );
+      results.push({ name: prof.name, action: 'created', rateLimit: prof.rateLimit });
+    }
+  }
+
+  // Ensure scheduler exists
+  try {
+    const schedPrint = await runRouterOsApi(
+      mt.host,
+      mt.port || 8728,
+      mt.username || 'admin',
+      mt.password || '',
+      ['/system/scheduler/print', '?name=cyberpulse_voucher_cleaner']
+    );
+    let schedId = null;
+    for (const sent of schedPrint) {
+      const idW = sent.find(w => w.startsWith('=.id='));
+      if (idW) schedId = idW.replace('=.id=', '');
+    }
+    const cleanCmd = '/ip hotspot user remove [find (uptime > 4w2d) or (limit-bytes-total > 0 and (bytes-in + bytes-out) >= limit-bytes-total)]';
+    if (!schedId) {
+      await runRouterOsApi(
+        mt.host,
+        mt.port || 8728,
+        mt.username || 'admin',
+        mt.password || '',
+        [
+          '/system/scheduler/add',
+          '=name=cyberpulse_voucher_cleaner',
+          '=interval=1h',
+          '=start-time=startup',
+          '=on-event=' + cleanCmd
+        ]
+      );
+    }
+  } catch (schedErr) {}
+
+  return results;
+}
+
+function generateUniqueVoucherPin(existingCodes) {
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    if (!existingCodes.has(code)) return code;
+  }
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function issueHotspotVoucher({ gigabytes, speedProfile, price, customerName, addToDrawer }) {
+  const mt = (db.settings && db.settings.mikrotik) || {};
+  const hotspotSettings = (db.settings && db.settings.hotspot) || {
+    pricePerGb: 5,
+    defaultProfile: 'profile_4m',
+    defaultValidityDays: 30,
+    wifiSsid: 'CyberPulse_Gaming_WiFi',
+    hotspotLoginUrl: 'http://10.10.10.1/login'
+  };
+
+  const gb = Math.max(0.5, parseFloat(gigabytes) || 1);
+  const profile = speedProfile || hotspotSettings.defaultProfile || 'profile_4m';
+  const unitPrice = parseFloat(price !== undefined ? price : (gb * (hotspotSettings.pricePerGb || 5)));
+  const limitBytes = Math.round(gb * 1024 * 1024 * 1024);
+  const validityDays = hotspotSettings.defaultValidityDays || 30;
+
+  const existingCodes = new Set((db.vouchers || []).map(v => v.code));
+  const pin = generateUniqueVoucherPin(existingCodes);
+
+  // Send to MikroTik Hotspot via API
+  if (mt.host) {
+    try {
+      await runRouterOsApi(
+        mt.host,
+        mt.port || 8728,
+        mt.username || 'admin',
+        mt.password || '',
+        [
+          '/ip/hotspot/user/add',
+          '=name=' + pin,
+          '=password=' + pin,
+          '=profile=' + profile,
+          '=limit-bytes-total=' + limitBytes.toString(),
+          '=limit-uptime=' + validityDays + 'd',
+          '=comment=' + `CyberPulse-باقة ${gb} جيجا (${gb} GB)-سعر: ${unitPrice} ج`
+        ]
+      );
+    } catch (mtErr) {
+      console.error('MikroTik Hotspot Add User Error:', mtErr.message);
+      throw new Error(`تعذر إنشاء الكارت على راوتر المايكروتك: ${mtErr.message}`);
+    }
+  }
+
+  // Generate QR Code with crisp high contrast for instant camera scan & thermal print
+  const loginUrl = `${hotspotSettings.hotspotLoginUrl || 'http://10.10.10.1/login'}?username=${pin}&password=${pin}`;
+  let qrDataUrl = '';
+  try {
+    qrDataUrl = await QRCode.toDataURL(loginUrl, {
+      width: 260,
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#ffffff'
+      }
+    });
+  } catch (qrErr) {
+    console.error('QR code generation error:', qrErr);
+  }
+
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + validityDays * 24 * 60 * 60 * 1000);
+
+  const voucher = {
+    id: 'VOUCHER-' + pin,
+    code: pin,
+    password: pin,
+    gigabytes: gb,
+    quotaBytes: limitBytes,
+    limitBytesTotal: limitBytes,
+    speedProfile: profile,
+    price: unitPrice,
+    validityDays,
+    createdAt: now.toISOString(),
+    expiresAt: expiresAt.toISOString(),
+    status: 'active',
+    customerName: customerName || 'WiFi Guest',
+    qrDataUrl,
+    qrCodeDataUrl: qrDataUrl,
+    loginUrl,
+    wifiSsid: hotspotSettings.wifiSsid || 'CyberPulse_Gaming_WiFi',
+    ssid: hotspotSettings.wifiSsid || 'CyberPulse_Gaming_WiFi',
+    bytesIn: 0,
+    bytesOut: 0,
+    totalBytesUsed: 0,
+    uptime: '0s',
+    sharedUsers: 1
+  };
+
+  if (!db.vouchers) db.vouchers = [];
+  db.vouchers.unshift(voucher);
+
+  // Optional: Add to Drawer Cash & Shift
+  if (addToDrawer) {
+    if (!db.shift) db.shift = {};
+    db.shift.totalCafeRevenue = (db.shift.totalCafeRevenue || 0) + unitPrice;
+    
+    const inv = {
+      id: 'INV-WIFI-' + pin,
+      pcName: 'WiFi Voucher',
+      customerName: customerName || 'WiFi Guest',
+      durationMinutes: 0,
+      gameCost: 0,
+      ordersCost: unitPrice,
+      discount: 0,
+      totalAmount: unitPrice,
+      paymentMethod: 'Cash',
+      endTime: now.toISOString(),
+      items: [{ name: `كارت واي فاي ${gb} جيجا (${profile})`, price: unitPrice, quantity: 1 }]
+    };
+    if (!db.invoices) db.invoices = [];
+    db.invoices.unshift(inv);
+  }
+
+  saveData();
+  addAudit('WiFi Voucher Issued', `Issued ${gb}GB voucher [${pin}] (${profile}) for ${unitPrice} EGP`, 'success');
+
+  io.emit('voucher_created', voucher);
+  if (addToDrawer) io.emit('shift_updated', db.shift);
+
+  return voucher;
+}
+
+async function syncMikrotikVouchersLive() {
+  const mt = (db.settings && db.settings.mikrotik) || {};
+  if (!mt.host) return (db.vouchers || []);
+
+  try {
+    const printRes = await runRouterOsApi(
+      mt.host,
+      mt.port || 8728,
+      mt.username || 'admin',
+      mt.password || '',
+      ['/ip/hotspot/user/print'],
+      4000
+    );
+
+    const mtUsersMap = new Map();
+    for (const sent of printRes) {
+      const u = {};
+      for (const w of sent) {
+        if (w.startsWith('=')) {
+          const eqIdx = w.indexOf('=', 1);
+          if (eqIdx !== -1) {
+            const k = w.substring(1, eqIdx);
+            const v = w.substring(eqIdx + 1);
+            u[k] = v;
+          }
+        }
+      }
+      if (u.name) mtUsersMap.set(u.name, u);
+    }
+
+    const nowTime = Date.now();
+    let changed = false;
+
+    for (const v of (db.vouchers || [])) {
+      if (mtUsersMap.has(v.code)) {
+        const mu = mtUsersMap.get(v.code);
+        const bIn = parseInt(mu['bytes-in'] || 0);
+        const bOut = parseInt(mu['bytes-out'] || 0);
+        const totalUsed = bIn + bOut;
+        v.bytesIn = bIn;
+        v.bytesOut = bOut;
+        v.totalBytesUsed = totalUsed;
+        v.uptime = mu.uptime || '0s';
+
+        // Check if depleted
+        if (v.quotaBytes > 0 && totalUsed >= v.quotaBytes) {
+          v.status = 'depleted';
+          changed = true;
+          if (mu['.id']) {
+            runRouterOsApi(mt.host, mt.port || 8728, mt.username || 'admin', mt.password || '', [
+              '/ip/hotspot/user/remove', '=.id=' + mu['.id']
+            ]).catch(() => {});
+          }
+        } else if (new Date(v.expiresAt).getTime() < nowTime) {
+          v.status = 'expired';
+          changed = true;
+          if (mu['.id']) {
+            runRouterOsApi(mt.host, mt.port || 8728, mt.username || 'admin', mt.password || '', [
+              '/ip/hotspot/user/remove', '=.id=' + mu['.id']
+            ]).catch(() => {});
+          }
+        } else if (totalUsed > 0) {
+          v.status = 'used';
+        }
+      } else {
+        if (v.status === 'active') {
+          v.status = 'expired';
+          changed = true;
+        }
+      }
+    }
+
+    if (changed) saveData();
+  } catch (err) {}
+
+  return (db.vouchers || []);
+}
+
+// Background voucher cleanup every 3 minutes
+setInterval(syncMikrotikVouchersLive, 3 * 60 * 1000);
+
+// Hotspot API Routes
+app.post('/api/mikrotik/hotspot/profiles/provision', async (req, res) => {
+  const mt = (db.settings && db.settings.mikrotik) || {};
+  try {
+    const results = await provisionMikrotikHotspotProfiles(mt);
+    addAudit('Hotspot Profiles Provisioned', 'Provisioned 2M, 4M, 8M, 10M speed profiles in MikroTik Hotspot', 'success');
+    res.json({ success: true, results, message: 'تم تسطيب وتثبيت بروفايلات السرعة الأربعة بنجاح في راوتر المايكروتك!' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/mikrotik/hotspot/profiles/script', (req, res) => {
+  const mt = (db.settings && db.settings.mikrotik) || {};
+  const script = generateMikrotikHotspotScript(mt);
+  res.json({ success: true, script });
+});
+
+app.post('/api/mikrotik/hotspot/voucher/issue', async (req, res) => {
+  try {
+    const voucher = await issueHotspotVoucher(req.body);
+    res.json({ success: true, voucher });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/mikrotik/hotspot/vouchers', async (req, res) => {
+  try {
+    const vouchers = await syncMikrotikVouchersLive();
+    res.json({ success: true, vouchers });
+  } catch (err) {
+    res.json({ success: true, vouchers: db.vouchers || [] });
+  }
+});
+
+app.delete('/api/mikrotik/hotspot/voucher/:code', async (req, res) => {
+  const code = req.params.code;
+  const mt = (db.settings && db.settings.mikrotik) || {};
+  try {
+    if (mt.host) {
+      const pRes = await runRouterOsApi(mt.host, mt.port || 8728, mt.username || 'admin', mt.password || '', [
+        '/ip/hotspot/user/print', '?name=' + code
+      ]);
+      for (const sent of pRes) {
+        const idW = sent.find(w => w.startsWith('=.id='));
+        if (idW) {
+          const entryId = idW.replace('=.id=', '');
+          await runRouterOsApi(mt.host, mt.port || 8728, mt.username || 'admin', mt.password || '', [
+            '/ip/hotspot/user/remove', '=.id=' + entryId
+          ]);
+        }
+      }
+    }
+  } catch (e) {}
+
+  if (db.vouchers) {
+    db.vouchers = db.vouchers.filter(v => v.code !== code);
+    saveData();
+  }
+  addAudit('WiFi Voucher Deleted', `Deleted voucher [${code}] from MikroTik & database`, 'info');
+  io.emit('voucher_deleted', { code });
+  res.json({ success: true, code });
+});
+
+app.post('/api/mikrotik/hotspot/settings', (req, res) => {
+  if (!db.settings.hotspot) db.settings.hotspot = {};
+  const { pricePerGb, defaultProfile, defaultValidityDays, wifiSsid, hotspotLoginUrl } = req.body;
+  if (pricePerGb !== undefined) db.settings.hotspot.pricePerGb = Math.max(1, parseFloat(pricePerGb) || 5);
+  if (defaultProfile) db.settings.hotspot.defaultProfile = defaultProfile.trim();
+  if (defaultValidityDays) db.settings.hotspot.defaultValidityDays = parseInt(defaultValidityDays) || 30;
+  if (wifiSsid) db.settings.hotspot.wifiSsid = wifiSsid.trim();
+  if (hotspotLoginUrl) db.settings.hotspot.hotspotLoginUrl = hotspotLoginUrl.trim();
+
+  saveData();
+  addAudit('Hotspot Settings Saved', `Default profile: ${db.settings.hotspot.defaultProfile}, Price/GB: ${db.settings.hotspot.pricePerGb} EGP`);
+  res.json({ success: true, hotspot: db.settings.hotspot });
 });
 
 app.get('/api/settings/icons', (req, res) => {

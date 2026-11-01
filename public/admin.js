@@ -553,6 +553,30 @@ document.addEventListener('DOMContentLoaded', () => {
     badge.textContent = parseInt(badge.textContent || 0) + 1;
   });
 
+  // Hotspot WiFi Vouchers Socket Listeners
+  socket.on('voucher_created', (voucher) => {
+    if (!state.vouchers) state.vouchers = [];
+    const idx = state.vouchers.findIndex(v => v.code === voucher.code);
+    if (idx !== -1) {
+      state.vouchers[idx] = voucher;
+    } else {
+      state.vouchers.unshift(voucher);
+    }
+    renderHotspotVouchersTable(state.vouchers);
+  });
+
+  socket.on('voucher_deleted', (data) => {
+    if (!state.vouchers) return;
+    state.vouchers = state.vouchers.filter(v => v.code !== data.code);
+    renderHotspotVouchersTable(state.vouchers);
+  });
+
+  socket.on('hotspot_settings_updated', (hotspot) => {
+    if (!state.settings) state.settings = {};
+    state.settings.hotspot = hotspot;
+    syncHotspotSettingsUI();
+  });
+
   // -------------------------------------------------------------
   // [EN]
   // -------------------------------------------------------------
@@ -604,6 +628,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderInvoices();
     renderAuditLog();
     updateShiftSummary();
+    if (state.vouchers) {
+      renderHotspotVouchersTable(state.vouchers);
+    }
     if (state.settings && state.settings.branding) {
       applyBranding(state.settings.branding);
     }
@@ -3157,6 +3184,8 @@ document.addEventListener('DOMContentLoaded', () => {
       renderPowerTable();
     } else if (sectionId === 'secMikrotik') {
       renderMikrotikSection();
+      syncHotspotSettingsUI();
+      fetchHotspotVouchersLive();
     } else if (sectionId === 'secPcVisuals') {
       syncStatusIconsUI();
     } else if (sectionId === 'secWordFilter') {
@@ -3949,6 +3978,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateMikrotikStatusUI(mt);
         renderVpnServersTable(mt.vpnServers || []);
+        syncHotspotSettingsUI();
+        if (state.vouchers) {
+          renderHotspotVouchersTable(state.vouchers);
+        }
       })
       .catch(err => console.error('Failed to load MikroTik config:', err));
   }
@@ -4155,6 +4188,496 @@ document.addEventListener('DOMContentLoaded', () => {
           alert('Failed to add VPN server: ' + (data.error || 'Validation error'));
         }
       });
+    });
+  }
+
+  // -------------------------------------------------------------
+  // MIKROTIK HOTSPOT SPEED PROFILES & WIFI VOUCHERS CONTROLLER
+  // -------------------------------------------------------------
+  let currentActiveTicket = null;
+  let activeVoucherQuotaGb = 1;
+
+  function syncHotspotSettingsUI() {
+    const hs = (state.settings && state.settings.hotspot) || {};
+    const defProfileEl = document.getElementById('mtHotspotDefProfile');
+    const priceEl = document.getElementById('mtHotspotPricePerGb');
+    const ssidEl = document.getElementById('mtHotspotSsid');
+    const loginUrlEl = document.getElementById('mtHotspotLoginUrl');
+
+    if (defProfileEl && hs.defaultProfile) defProfileEl.value = hs.defaultProfile;
+    if (priceEl && hs.pricePerGb) priceEl.value = hs.pricePerGb;
+    if (ssidEl && hs.ssid) ssidEl.value = hs.ssid;
+    if (loginUrlEl && hs.loginUrl) loginUrlEl.value = hs.loginUrl;
+  }
+
+  function fetchHotspotVouchersLive() {
+    const btn = document.getElementById('btnRefreshVouchersLive');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳</span> جاري التحديث...';
+    }
+
+    fetch('/api/mikrotik/hotspot/vouchers')
+      .then(r => r.json())
+      .then(res => {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<span>🔄</span> تحديث الاستهلاك المباشر';
+        }
+        if (res.success && Array.isArray(res.vouchers)) {
+          state.vouchers = res.vouchers;
+          renderHotspotVouchersTable(res.vouchers);
+        }
+      })
+      .catch(err => {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<span>🔄</span> تحديث الاستهلاك المباشر';
+        }
+        console.error('Failed to sync vouchers live:', err);
+      });
+  }
+
+  function formatBytes(bytes) {
+    if (!bytes || isNaN(bytes) || bytes <= 0) return '0 MB';
+    const mb = bytes / (1024 * 1024);
+    if (mb < 1024) return mb.toFixed(1) + ' MB';
+    return (mb / 1024).toFixed(2) + ' GB';
+  }
+
+  function renderHotspotVouchersTable(vouchers) {
+    const tbody = document.getElementById('hotspotVouchersTableBody');
+    if (!tbody) return;
+
+    if (!vouchers || vouchers.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" style="padding:1.8rem; text-align:center; color:var(--text-muted);">لا توجد كروت واي فاي مصدرة حالياً. اضغط على زر <b>🎫 إصدار كارت واي فاي</b> للبدء.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = vouchers.map(v => {
+      const pinFormatted = (v.code || '').replace(/(\d{3})(\d{3})/, '$1 $2');
+      const usedBytes = (v.bytesIn || 0) + (v.bytesOut || 0);
+      const limitBytes = v.limitBytesTotal || (v.gigabytes * 1073741824);
+      const pct = Math.min(100, Math.max(0, Math.round((usedBytes / limitBytes) * 100)));
+
+      let statusBadge = `<span class="badge-voucher-status active">● نشط</span>`;
+      if (v.status === 'depleted') {
+        statusBadge = `<span class="badge-voucher-status depleted">⚠ انتهت الكوتة</span>`;
+      } else if (v.status === 'expired') {
+        statusBadge = `<span class="badge-voucher-status expired">⏱ منتهي (30 يوم)</span>`;
+      }
+
+      const speedLabel = (v.speedProfile || 'profile_4m').replace('profile_', '').toUpperCase();
+      const createdDateStr = v.createdAt ? new Date(v.createdAt).toLocaleDateString('ar-EG', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+
+      return `
+        <tr>
+          <td>
+            <span class="font-cyber" style="color:var(--neon-cyan); font-weight:800; font-size:1.05rem; letter-spacing:1px; background:rgba(0,243,255,0.08); padding:3px 8px; border-radius:6px; border:1px solid rgba(0,243,255,0.25);">
+              ${pinFormatted}
+            </span>
+          </td>
+          <td>
+            <b style="color:#fff; font-size:0.95rem;">${v.gigabytes} GB</b>
+          </td>
+          <td>
+            <div style="min-width:140px;">
+              <div class="voucher-traffic-bar">
+                <div class="fill ${pct > 90 ? 'danger' : (pct > 70 ? 'warning' : '')}" style="width:${pct}%;"></div>
+              </div>
+              <div style="font-size:0.72rem; color:var(--text-muted); margin-top:3px; display:flex; justify-content:space-between;">
+                <span>${formatBytes(usedBytes)}</span>
+                <span style="font-weight:700; color:${pct > 90 ? 'var(--neon-pink)' : '#94a3b8'};">${pct}%</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="badge" style="background:rgba(5,255,161,0.12); color:var(--neon-green); border:1px solid rgba(5,255,161,0.3); padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.75rem;">
+              ${speedLabel}
+            </span>
+          </td>
+          <td>
+            <b style="color:var(--neon-green); font-size:0.92rem;">${Number(v.price).toFixed(0)} <small>جنيه</small></b>
+          </td>
+          <td style="font-size:0.76rem; color:var(--text-muted);">${createdDateStr}</td>
+          <td>
+            <span style="font-size:0.78rem; color:#94a3b8;">30 يوم <small style="color:var(--neon-cyan);">(جهاز 1)</small></span>
+          </td>
+          <td>${statusBadge}</td>
+          <td>
+            <div style="display:flex; gap:0.35rem; justify-content:center;">
+              <button class="btn btn-secondary-soft btn-xs btn-show-ticket" data-code="${v.code}" style="padding:4px 8px; font-size:0.75rem; border-radius:5px;" title="عرض وطباعة التذكرة">
+                🎫 طباعة
+              </button>
+              <button class="btn btn-danger-soft btn-xs btn-delete-voucher" data-code="${v.code}" style="padding:4px 8px; font-size:0.75rem; border-radius:5px;" title="حذف الكارت من المايكروتك">
+                🗑️
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Attach listeners for Print & Delete buttons
+    tbody.querySelectorAll('.btn-show-ticket').forEach(b => {
+      b.onclick = () => {
+        const code = b.dataset.code;
+        const v = (state.vouchers || []).find(x => x.code === code);
+        if (v) showVoucherTicket(v);
+      };
+    });
+
+    tbody.querySelectorAll('.btn-delete-voucher').forEach(b => {
+      b.onclick = () => {
+        const code = b.dataset.code;
+        if (!confirm(`هل أنت متأكد من حذف وإلغاء كارت الواي فاي (${code}) من المايكروتك فوراً؟`)) return;
+        fetch(`/api/mikrotik/hotspot/voucher/${code}`, { method: 'DELETE' })
+          .then(r => r.json())
+          .then(res => {
+            if (res.success) {
+              state.vouchers = (state.vouchers || []).filter(x => x.code !== code);
+              renderHotspotVouchersTable(state.vouchers);
+              window.cyberAudio?.playClick?.();
+            } else {
+              alert('فشل في حذف الكارت: ' + (res.error || 'خطأ'));
+            }
+          })
+          .catch(err => alert('خطأ في الاتصال: ' + err.message));
+      };
+    });
+  }
+
+  function getHotspotPricePerGb() {
+    const inputVal = parseFloat(document.getElementById('mtHotspotPricePerGb')?.value);
+    if (!isNaN(inputVal) && inputVal > 0) return inputVal;
+    return (state.settings && state.settings.hotspot && state.settings.hotspot.pricePerGb) || 5;
+  }
+
+  function updateVoucherPriceCalculation() {
+    const pricePerGb = getHotspotPricePerGb();
+    const priceInput = document.getElementById('voucherPriceInput');
+    if (priceInput) {
+      priceInput.value = (activeVoucherQuotaGb * pricePerGb).toFixed(0);
+    }
+    // Update pills price labels
+    const p1 = document.getElementById('pillPrice1');
+    const p2 = document.getElementById('pillPrice2');
+    const p3 = document.getElementById('pillPrice3');
+    const p4 = document.getElementById('pillPrice4');
+    if (p1) p1.textContent = (1 * pricePerGb).toFixed(0);
+    if (p2) p2.textContent = (2 * pricePerGb).toFixed(0);
+    if (p3) p3.textContent = (3 * pricePerGb).toFixed(0);
+    if (p4) p4.textContent = (4 * pricePerGb).toFixed(0);
+  }
+
+  function openIssueVoucherModal() {
+    const hs = (state.settings && state.settings.hotspot) || {};
+    const defaultProfile = hs.defaultProfile || 'profile_4m';
+    const profileSelect = document.getElementById('voucherSpeedProfile');
+    if (profileSelect) profileSelect.value = defaultProfile;
+
+    // Default to 1 GB
+    activeVoucherQuotaGb = 1;
+    document.querySelectorAll('.quota-pill').forEach(pill => {
+      pill.classList.toggle('active', pill.dataset.quota === '1');
+    });
+
+    const customWrap = document.getElementById('customQuotaWrap');
+    if (customWrap) customWrap.style.display = 'none';
+
+    updateVoucherPriceCalculation();
+
+    const noteInput = document.getElementById('voucherCustomerName');
+    if (noteInput) noteInput.value = '';
+
+    const chkDrawer = document.getElementById('voucherAddToDrawer');
+    if (chkDrawer) chkDrawer.checked = true;
+
+    openModal('issueVoucherModal');
+  }
+
+  window.openIssueVoucherModal = openIssueVoucherModal;
+
+  // Quota pills click handler
+  document.querySelectorAll('.quota-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('.quota-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      const quota = pill.dataset.quota;
+      const customWrap = document.getElementById('customQuotaWrap');
+
+      if (quota === 'custom') {
+        if (customWrap) customWrap.style.display = 'block';
+        const customInput = document.getElementById('customQuotaGb');
+        activeVoucherQuotaGb = parseFloat(customInput?.value) || 5;
+      } else {
+        if (customWrap) customWrap.style.display = 'none';
+        activeVoucherQuotaGb = parseFloat(quota) || 1;
+      }
+      updateVoucherPriceCalculation();
+      window.cyberAudio?.playClick?.();
+    });
+  });
+
+  const customQuotaInput = document.getElementById('customQuotaGb');
+  if (customQuotaInput) {
+    customQuotaInput.addEventListener('input', () => {
+      const val = parseFloat(customQuotaInput.value);
+      if (!isNaN(val) && val > 0) {
+        activeVoucherQuotaGb = val;
+        updateVoucherPriceCalculation();
+      }
+    });
+  }
+
+  // Quick Issue Button in Top Action Bar
+  const btnQuickIssueVoucher = document.getElementById('btnQuickIssueVoucher');
+  if (btnQuickIssueVoucher) {
+    btnQuickIssueVoucher.addEventListener('click', () => {
+      openIssueVoucherModal();
+    });
+  }
+
+  // Provision Hotspot Profiles Button
+  const btnProvisionHotspotProfiles = document.getElementById('btnProvisionHotspotProfiles');
+  if (btnProvisionHotspotProfiles) {
+    btnProvisionHotspotProfiles.addEventListener('click', () => {
+      btnProvisionHotspotProfiles.disabled = true;
+      btnProvisionHotspotProfiles.innerHTML = '<span>⏳</span> جاري تسطيب البروفايلات في المايكروتك...';
+
+      fetch('/api/mikrotik/hotspot/profiles/provision', { method: 'POST' })
+        .then(r => r.json().then(data => ({ ok: r.ok, data })))
+        .then(({ ok, data }) => {
+          btnProvisionHotspotProfiles.disabled = false;
+          btnProvisionHotspotProfiles.innerHTML = '<span>⚡</span> تسطيب البروفايلات في المايكروتك الآن';
+          if (ok && data.success) {
+            window.cyberAudio?.playUnlock?.();
+            alert(`✅ تم تسطيب وتحديث بروفايلات السرعة الأربعة في المايكروتك بنجاح!\n\n1. profile_2m (2 Mbps)\n2. profile_4m (4 Mbps)\n3. profile_8m (8 Mbps)\n4. profile_10m (10 Mbps)\n\nتم تفعيل: ربط الكارت بجهاز 1 فقط (shared-users=1) والحذف التلقائي بعد 30 يوم أو انتهاء الكوتة.`);
+          } else {
+            window.cyberAudio?.playWarning?.();
+            alert('فشل تسطيب البروفايلات: ' + (data.error || 'خطأ في الاتصال بالراوتر'));
+          }
+        })
+        .catch(err => {
+          btnProvisionHotspotProfiles.disabled = false;
+          btnProvisionHotspotProfiles.innerHTML = '<span>⚡</span> تسطيب البروفايلات في المايكروتك الآن';
+          alert('خطأ أثناء التسطيب: ' + err.message);
+        });
+    });
+  }
+
+  // Copy Hotspot Script Button
+  const btnCopyHotspotScript = document.getElementById('btnCopyHotspotScript');
+  if (btnCopyHotspotScript) {
+    btnCopyHotspotScript.addEventListener('click', () => {
+      fetch('/api/mikrotik/hotspot/profiles/script')
+        .then(r => r.json())
+        .then(res => {
+          if (res.success && res.script) {
+            const textarea = document.getElementById('hotspotScriptTextarea');
+            if (textarea) textarea.value = res.script;
+            const fb = document.getElementById('copyHotspotScriptFeedback');
+            if (fb) fb.style.display = 'none';
+            openModal('hotspotScriptModal');
+          } else {
+            alert('تعذر استخراج كود التيرمنال');
+          }
+        })
+        .catch(err => alert('خطأ في توليد الكود: ' + err.message));
+    });
+  }
+
+  const btnCopyHotspotScriptModal = document.getElementById('btnCopyHotspotScriptModal');
+  if (btnCopyHotspotScriptModal) {
+    btnCopyHotspotScriptModal.addEventListener('click', () => {
+      const textarea = document.getElementById('hotspotScriptTextarea');
+      const fb = document.getElementById('copyHotspotScriptFeedback');
+      if (textarea) {
+        navigator.clipboard.writeText(textarea.value).then(() => {
+          if (fb) fb.style.display = 'inline';
+          window.cyberAudio?.playClick?.();
+          setTimeout(() => { if (fb) fb.style.display = 'none'; }, 3000);
+        });
+      }
+    });
+  }
+
+  // Save Hotspot Settings Button
+  const btnSaveHotspotSettings = document.getElementById('btnSaveHotspotSettings');
+  if (btnSaveHotspotSettings) {
+    btnSaveHotspotSettings.addEventListener('click', () => {
+      const defaultProfile = document.getElementById('mtHotspotDefProfile')?.value || 'profile_4m';
+      const pricePerGb = parseFloat(document.getElementById('mtHotspotPricePerGb')?.value) || 5;
+      const ssid = document.getElementById('mtHotspotSsid')?.value?.trim() || 'CyberPulse_Gaming_WiFi';
+      const loginUrl = document.getElementById('mtHotspotLoginUrl')?.value?.trim() || 'http://10.10.10.1/login';
+
+      btnSaveHotspotSettings.disabled = true;
+      btnSaveHotspotSettings.innerHTML = '<span>💾</span> جاري الحفظ...';
+
+      fetch('/api/mikrotik/hotspot/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ defaultProfile, pricePerGb, ssid, loginUrl })
+      })
+      .then(r => r.json())
+      .then(res => {
+        btnSaveHotspotSettings.disabled = false;
+        btnSaveHotspotSettings.innerHTML = '<span>💾</span> حفظ إعدادات كروت الواي فاي';
+        if (res.success) {
+          if (!state.settings) state.settings = {};
+          state.settings.hotspot = res.hotspot;
+          window.cyberAudio?.playCash?.();
+          alert('تم حفظ إعدادات كروت الواي فاي بنجاح (ستبقى ثابتة لكل الكروت القادمة لحين تغييرها).');
+        }
+      })
+      .catch(err => {
+        btnSaveHotspotSettings.disabled = false;
+        btnSaveHotspotSettings.innerHTML = '<span>💾</span> حفظ إعدادات كروت الواي فاي';
+        alert('فشل حفظ الإعدادات: ' + err.message);
+      });
+    });
+  }
+
+  // Refresh Vouchers Live Button
+  const btnRefreshVouchersLive = document.getElementById('btnRefreshVouchersLive');
+  if (btnRefreshVouchersLive) {
+    btnRefreshVouchersLive.addEventListener('click', () => {
+      fetchHotspotVouchersLive();
+      window.cyberAudio?.playClick?.();
+    });
+  }
+
+  // Issue Voucher Form Submission
+  const formIssueVoucher = document.getElementById('formIssueVoucher');
+  if (formIssueVoucher) {
+    formIssueVoucher.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const gigabytes = activeVoucherQuotaGb;
+      const speedProfile = document.getElementById('voucherSpeedProfile')?.value || 'profile_4m';
+      const price = parseFloat(document.getElementById('voucherPriceInput')?.value) || (gigabytes * 5);
+      const customerName = document.getElementById('voucherCustomerName')?.value?.trim() || '';
+      const addToDrawer = document.getElementById('voucherAddToDrawer')?.checked ?? true;
+
+      const submitBtn = document.getElementById('btnSubmitIssueVoucher');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>⏳</span> جاري الاتصال بالمايكروتك وإصدار الكارت...';
+      }
+
+      fetch('/api/mikrotik/hotspot/voucher/issue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gigabytes, speedProfile, price, customerName, addToDrawer })
+      })
+      .then(r => r.json().then(data => ({ ok: r.ok, data })))
+      .then(({ ok, data }) => {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<span>⚡</span> إصدار وطباعة الكارت الآن';
+        }
+
+        if (ok && data.success && data.voucher) {
+          closeModal('issueVoucherModal');
+          window.cyberAudio?.playCash?.();
+          if (!state.vouchers) state.vouchers = [];
+          state.vouchers.unshift(data.voucher);
+          renderHotspotVouchersTable(state.vouchers);
+          showVoucherTicket(data.voucher);
+          if (addToDrawer) {
+            fetchState();
+          }
+        } else {
+          window.cyberAudio?.playWarning?.();
+          alert('فشل إصدار الكارت: ' + (data.error || 'خطأ غير معروف'));
+        }
+      })
+      .catch(err => {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<span>⚡</span> إصدار وطباعة الكارت الآن';
+        }
+        alert('خطأ أثناء إصدار الكارت: ' + err.message);
+      });
+    });
+  }
+
+  // Ticket Modal Display Function
+  function showVoucherTicket(v) {
+    currentActiveTicket = v;
+
+    const pinEl = document.getElementById('ticketPinCode');
+    const qrImg = document.getElementById('ticketQrImage');
+    const quotaEl = document.getElementById('ticketQuota');
+    const speedEl = document.getElementById('ticketSpeed');
+    const validityEl = document.getElementById('ticketValidity');
+    const priceEl = document.getElementById('ticketPrice');
+    const ssidEl = document.getElementById('ticketSsid');
+    const timeEl = document.getElementById('ticketTimestamp');
+    const feedbackEl = document.getElementById('copyVoucherFeedback');
+
+    if (feedbackEl) feedbackEl.style.display = 'none';
+
+    if (pinEl) {
+      pinEl.textContent = (v.code || '').replace(/(\d{3})(\d{3})/, '$1 $2');
+    }
+    if (qrImg && v.qrCodeDataUrl) {
+      qrImg.src = v.qrCodeDataUrl;
+    }
+    if (quotaEl) {
+      quotaEl.textContent = `${v.gigabytes} GB (${v.gigabytes} جيجابايت)`;
+    }
+    if (speedEl) {
+      const sp = (v.speedProfile || 'profile_4m').replace('profile_', '').toUpperCase();
+      speedEl.textContent = `${sp} Dedicated`;
+    }
+    if (validityEl) {
+      validityEl.textContent = '30 يوم من أول استخدام';
+    }
+    if (priceEl) {
+      priceEl.textContent = `${Number(v.price).toFixed(2)} EGP`;
+    }
+    if (ssidEl) {
+      ssidEl.textContent = v.ssid || (state.settings && state.settings.hotspot && state.settings.hotspot.ssid) || 'CyberPulse_Gaming_WiFi';
+    }
+    if (timeEl) {
+      timeEl.textContent = v.createdAt ? new Date(v.createdAt).toLocaleString('ar-EG') : new Date().toLocaleString('ar-EG');
+    }
+
+    openModal('voucherTicketModal');
+  }
+
+  window.showVoucherTicket = showVoucherTicket;
+
+  // Print Ticket Slip Button
+  const btnPrintVoucherTicket = document.getElementById('btnPrintVoucherTicket');
+  if (btnPrintVoucherTicket) {
+    btnPrintVoucherTicket.addEventListener('click', () => {
+      window.print();
+    });
+  }
+
+  // Copy PIN Code Button
+  const btnCopyVoucherCode = document.getElementById('btnCopyVoucherCode');
+  if (btnCopyVoucherCode) {
+    btnCopyVoucherCode.addEventListener('click', () => {
+      if (currentActiveTicket && currentActiveTicket.code) {
+        navigator.clipboard.writeText(currentActiveTicket.code).then(() => {
+          const fb = document.getElementById('copyVoucherFeedback');
+          if (fb) fb.style.display = 'inline';
+          window.cyberAudio?.playClick?.();
+          setTimeout(() => { if (fb) fb.style.display = 'none'; }, 2500);
+        });
+      }
+    });
+  }
+
+  // Issue Another Voucher Button
+  const btnIssueAnotherVoucher = document.getElementById('btnIssueAnotherVoucher');
+  if (btnIssueAnotherVoucher) {
+    btnIssueAnotherVoucher.addEventListener('click', () => {
+      closeModal('voucherTicketModal');
+      openIssueVoucherModal();
     });
   }
 

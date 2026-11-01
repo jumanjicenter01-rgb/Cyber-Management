@@ -71,6 +71,10 @@
 
       <!-- Header Action Buttons (Icon Only with English Tooltips) -->
       <div class="header-actions">
+        <!-- Issue WiFi Voucher Quick Button -->
+        <button class="btn btn-icon-only btn-warning-soft" id="btnQuickIssueVoucher" title="إصدار كارت واي فاي فوري (Issue WiFi Voucher)">
+          <span>🎫</span>
+        </button>
         <!-- Theme Toggle Button -->
         <button class="btn btn-icon-only btn-theme-toggle" id="btnThemeToggle" title="Toggle Theme (Dark / Light Mode)">
           <span id="themeToggleIcon">🌙</span>
@@ -1820,6 +1824,120 @@
                   </div>
                 </div>
 
+                <!-- ==================================================== -->
+                <!-- HOTSPOT SPEED PROFILES & WIFI VOUCHERS CARD         -->
+                <!-- ==================================================== -->
+                <div class="settings-card-box highlight-box" style="grid-column: 1 / -1; border-color: rgba(255, 184, 0, 0.45); background: linear-gradient(180deg, rgba(255, 184, 0, 0.05) 0%, rgba(10, 14, 26, 0.9) 100%);">
+                  <div class="card-box-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem;">
+                    <div style="display:flex; align-items:center; gap:0.6rem;">
+                      <span class="box-icon" style="font-size:1.4rem; color:var(--neon-amber);">🎫</span>
+                      <div>
+                        <h4 style="margin:0; font-size:1.05rem; color:#fff;">إدارة بروفايلات وهوستبوت كروت الواي فاي (Hotspot Profiles & Vouchers)</h4>
+                        <span style="font-size:0.78rem; color:var(--text-muted);">تسطيب بروفايلات السرعة التلقائية في المايكروتك • إصدار كروت واي فاي بكيو آر كود وحذف تلقائي بعد 30 يوم أو انتهاء الكوتة</span>
+                      </div>
+                    </div>
+                    <div style="display:flex; gap:0.6rem; align-items:center;">
+                      <button class="btn btn-primary" id="btnOpenIssueVoucherModal" style="background:linear-gradient(135deg, #ffb800 0%, #ff5e00 100%); border:none; color:#000; font-weight:800; padding:0.45rem 1rem;">
+                        <span>🎫</span> إصدار كارت واي فاي جديد
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Profiles Overview Badges -->
+                  <div style="background:rgba(255,184,0,0.04); border:1px solid rgba(255,184,0,0.2); border-radius:10px; padding:0.9rem; margin:1rem 0; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:0.8rem;">
+                    <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                      <span style="font-weight:700; color:#fff; font-size:0.85rem;">بروفايلات السرعة في المايكروتك:</span>
+                      <span class="badge" style="background:rgba(0,243,255,0.12); color:#00f3ff; border:1px solid rgba(0,243,255,0.3); padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.75rem;">profile_2m (2M/2M)</span>
+                      <span class="badge" style="background:rgba(5,255,161,0.12); color:#05ffa1; border:1px solid rgba(5,255,161,0.3); padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.75rem;">profile_4m (4M/4M)</span>
+                      <span class="badge" style="background:rgba(255,184,0,0.12); color:#ffb800; border:1px solid rgba(255,184,0,0.3); padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.75rem;">profile_8m (8M/8M)</span>
+                      <span class="badge" style="background:rgba(255,0,85,0.12); color:#ff0055; border:1px solid rgba(255,0,85,0.3); padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.75rem;">profile_10m (10M/10M)</span>
+                    </div>
+                    <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                      <button class="btn btn-secondary btn-sm" id="btnProvisionHotspotProfiles">
+                        <span>⚡</span> تسطيب البروفايلات في المايكروتك الآن
+                      </button>
+                      <button class="btn btn-secondary btn-sm" id="btnCopyHotspotScript">
+                        <span>📋</span> نسخ كود التيرمنال
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Hotspot Parameters Form -->
+                  <div style="background:rgba(10,14,26,0.6); border:1px solid var(--border-subtle); border-radius:10px; padding:1rem; margin-bottom:1.2rem;">
+                    <div style="font-weight:700; color:#fff; font-size:0.88rem; margin-bottom:0.75rem; display:flex; align-items:center; gap:0.4rem;">
+                      <span>⚙️</span> إعدادات الكروت الافتراضية (تُحفظ وتثبت لحين تغييرها):
+                    </div>
+                    <div class="mt-form-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:0.8rem;">
+                      <div class="form-group">
+                        <label>السرعة الافتراضية للكروت:</label>
+                        <select id="mtHotspotDefProfile" class="form-input">
+                          <option value="profile_2m">profile_2m (2 Mbps)</option>
+                          <option value="profile_4m" selected>profile_4m (4 Mbps) [موصى به]</option>
+                          <option value="profile_8m">profile_8m (8 Mbps)</option>
+                          <option value="profile_10m">profile_10m (10 Mbps)</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label>سعر الجيجا الافتراضي (جنيه / GB):</label>
+                        <input type="number" id="mtHotspotPricePerGb" class="form-input" value="5" min="1" step="0.5">
+                      </div>
+                      <div class="form-group">
+                        <label>مدة صلاحية الكارت:</label>
+                        <input type="text" id="mtHotspotValidityDays" class="form-input" value="30 يوم (جهاز واحد فقط)" readonly style="color:#94a3b8; background:rgba(0,0,0,0.3);">
+                      </div>
+                      <div class="form-group">
+                        <label>اسم شبكة الواي فاي (WiFi SSID للـ QR):</label>
+                        <input type="text" id="mtHotspotSsid" class="form-input" value="CyberPulse_Gaming_WiFi" placeholder="e.g. CyberPulse_WiFi">
+                      </div>
+                      <div class="form-group">
+                        <label>رابط صفحة الدخول (Hotspot Login URL):</label>
+                        <input type="text" id="mtHotspotLoginUrl" class="form-input" value="http://10.10.10.1/login" placeholder="http://10.10.10.1/login">
+                      </div>
+                      <div class="form-group" style="display:flex; align-items:flex-end;">
+                        <button class="btn btn-primary btn-sm" id="btnSaveHotspotSettings" style="width:100%; height:38px; justify-content:center;">
+                          <span>💾</span> حفظ إعدادات كروت الواي فاي
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Active Vouchers Table & Live Monitor -->
+                  <div style="background:rgba(5,9,20,0.7); border:1px solid var(--border-subtle); border-radius:10px; padding:1rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.8rem;">
+                      <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <span style="font-size:1.1rem;">📶</span>
+                        <h4 style="margin:0; font-size:0.95rem; color:#fff;">سجل كروت الواي فاي المنشأة والاستهلاك المباشر (Vouchers Monitor):</h4>
+                      </div>
+                      <button class="btn btn-secondary btn-sm" id="btnRefreshVouchersLive">
+                        <span>🔄</span> تحديث الاستهلاك المباشر
+                      </button>
+                    </div>
+
+                    <div style="overflow-x:auto;">
+                      <table class="table" style="width:100%; font-size:0.82rem; text-align:center;">
+                        <thead>
+                          <tr style="background:rgba(0,243,255,0.06); color:var(--neon-cyan);">
+                            <th>كود الكارت (PIN)</th>
+                            <th>الباقة (Quota)</th>
+                            <th>الاستهلاك الفعلي (Used)</th>
+                            <th>السرعة</th>
+                            <th>السعر</th>
+                            <th>تاريخ الإصدار</th>
+                            <th>الصلاحية</th>
+                            <th>الحالة</th>
+                            <th>إجراءات</th>
+                          </tr>
+                        </thead>
+                        <tbody id="hotspotVouchersTableBody">
+                          <tr>
+                            <td colspan="9" style="padding:1.5rem; color:var(--text-muted);">جاري تحميل كروت الواي فاي من المايكروتك...</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Curated Gaming VPN Servers Pool -->
                 <div class="settings-card-box full-width">
                   <div class="card-box-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.8rem;">
@@ -2759,6 +2877,233 @@
             <button type="submit" class="btn btn-primary btn-sm">حفظ الجهاز 💾</button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: ISSUE WIFI VOUCHER                            -->
+  <!-- ==================================================== -->
+  <div id="issueVoucherModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 520px; border-color: rgba(255, 184, 0, 0.45); box-shadow: 0 0 35px rgba(255, 184, 0, 0.2);">
+      <div class="modal-header">
+        <div class="modal-title" style="display:flex; align-items:center; gap:0.5rem; color:var(--neon-amber);">
+          <span>🎫</span> إصدار كارت واي فاي جديد (New WiFi Voucher)
+        </div>
+        <button class="modal-close" onclick="closeModal('issueVoucherModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="formIssueVoucher">
+          <!-- Quota Pills Selector -->
+          <div class="form-group" style="margin-bottom: 1.2rem;">
+            <label style="display:block; margin-bottom: 0.5rem; font-weight:700; color:#fff; font-size:0.88rem;">
+              اختر باقة الكارت (Voucher Quota):
+            </label>
+            <div class="voucher-quota-pills" style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 0.6rem;">
+              <button type="button" class="quota-pill active" data-gb="1">
+                <span class="quota-val">1 GB</span>
+                <span class="quota-price" id="pillPrice1">5 EGP</span>
+              </button>
+              <button type="button" class="quota-pill" data-gb="2">
+                <span class="quota-val">2 GB</span>
+                <span class="quota-price" id="pillPrice2">10 EGP</span>
+              </button>
+              <button type="button" class="quota-pill" data-gb="3">
+                <span class="quota-val">3 GB</span>
+                <span class="quota-price" id="pillPrice3">15 EGP</span>
+              </button>
+              <button type="button" class="quota-pill" data-gb="4">
+                <span class="quota-val">4 GB</span>
+                <span class="quota-price" id="pillPrice4">20 EGP</span>
+              </button>
+            </div>
+            <!-- Custom Quota Input -->
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <span style="font-size:0.8rem; color:var(--text-muted);">أو سعة مخصصة:</span>
+              <input type="number" id="voucherCustomGb" class="form-input" placeholder="مثال: 5" min="0.5" step="0.5" style="max-width:120px; padding:0.4rem 0.6rem; font-size:0.85rem;">
+              <span style="font-size:0.8rem; color:var(--neon-cyan); font-weight:700;">جيجابايت (GB)</span>
+            </div>
+          </div>
+
+          <!-- Speed Profile Selector -->
+          <div class="form-group" style="margin-bottom: 1.1rem;">
+            <label style="display:block; margin-bottom: 0.4rem; font-weight:700; color:#fff; font-size:0.85rem;">
+              بروفايل السرعة على المايكروتك (Speed Profile):
+            </label>
+            <select id="voucherSpeedProfile" class="form-input" style="width:100%;">
+              <option value="profile_2m">profile_2m (2 Mbps Upload / 2 Mbps Download)</option>
+              <option value="profile_4m" selected>profile_4m (4 Mbps Upload / 4 Mbps Download) [افتراضي]</option>
+              <option value="profile_8m">profile_8m (8 Mbps Upload / 8 Mbps Download) [Gaming]</option>
+              <option value="profile_10m">profile_10m (10 Mbps Upload / 10 Mbps Download) [Ultra]</option>
+            </select>
+          </div>
+
+          <!-- Price & Validity Summary Grid -->
+          <div style="background:rgba(255,184,0,0.06); border:1px solid rgba(255,184,0,0.25); border-radius:10px; padding:0.9rem; margin-bottom:1.1rem; display:grid; grid-template-columns:1fr 1fr; gap:0.8rem;">
+            <div>
+              <label style="display:block; margin-bottom:0.3rem; font-size:0.8rem; color:var(--text-muted);">سعر الكارت المطلوب (Price):</label>
+              <div style="display:flex; align-items:center; gap:0.4rem;">
+                <input type="number" id="voucherPriceInput" class="form-input font-cyber" value="5" min="0" step="1" style="font-weight:800; font-size:1.15rem; color:var(--neon-amber); max-width:110px;">
+                <span style="font-weight:700; color:#fff;">EGP</span>
+              </div>
+            </div>
+            <div>
+              <label style="display:block; margin-bottom:0.3rem; font-size:0.8rem; color:var(--text-muted);">مدة الصلاحية:</label>
+              <div style="font-size:0.88rem; font-weight:700; color:#05ffa1; margin-top:0.4rem;">
+                🛡️ 30 يوم من أول استخدام
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">جهاز واحد فقط (Single Device)</div>
+            </div>
+          </div>
+
+          <!-- Customer Note -->
+          <div class="form-group" style="margin-bottom: 1.1rem;">
+            <label style="display:block; margin-bottom: 0.35rem; font-size:0.82rem; color:var(--text-muted);">
+              اسم الزبون / ملاحظة (اختياري):
+            </label>
+            <input type="text" id="voucherCustomerName" class="form-input" placeholder="مثال: أحمد صالة أو ضيف كافيه">
+          </div>
+
+          <!-- Add to Drawer Checkbox -->
+          <div style="margin-bottom: 1.3rem; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:0.75rem 0.9rem;">
+            <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer; margin:0;">
+              <input type="checkbox" id="voucherAddToDrawer" checked style="width:18px; height:18px; accent-color:var(--neon-amber);">
+              <div>
+                <span style="font-weight:700; color:#fff; font-size:0.88rem;">إضافة قيمة الكارت إلى درج الكاشير وحساب الشفت</span>
+                <span style="display:block; font-size:0.75rem; color:var(--text-muted);">تسجيل مبيعات كارت الواي فاي فوراً في إيراد الدرج والفواتير</span>
+              </div>
+            </label>
+          </div>
+
+          <!-- Submit Buttons -->
+          <div style="display:flex; justify-content:flex-end; gap:0.8rem;">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('issueVoucherModal')">إلغاء</button>
+            <button type="submit" class="btn btn-primary" id="btnSubmitIssueVoucher" style="background:linear-gradient(135deg, #ffb800 0%, #ff5e00 100%); border:none; color:#000; font-weight:800; padding:0.6rem 1.4rem;">
+              <span>⚡</span> إصدار وطباعة الكارت الآن
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: VOUCHER TICKET PREVIEW & THERMAL PRINT       -->
+  <!-- ==================================================== -->
+  <div id="voucherTicketModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 440px; padding: 1.5rem; border-color: rgba(0, 243, 255, 0.4); box-shadow: 0 0 40px rgba(0, 243, 255, 0.2);">
+      <div class="modal-header" style="border:none; padding:0 0 0.8rem 0;">
+        <div class="modal-title" style="display:flex; align-items:center; gap:0.5rem; color:var(--neon-cyan); font-size:1.1rem;">
+          <span>🎫</span> تذكرة كارت الواي فاي (WiFi Voucher Pass)
+        </div>
+        <button class="modal-close" onclick="closeModal('voucherTicketModal')">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding:0;">
+        <!-- The Printable Thermal Voucher Slip -->
+        <div id="voucherPrintArea" class="cyber-thermal-ticket">
+          <!-- Ticket Header -->
+          <div class="ticket-header">
+            <div class="ticket-logo-text">⚡ CYBERPULSE OS ⚡</div>
+            <div class="ticket-sub">HIGH-SPEED GAMING WIFI PASS</div>
+            <div class="ticket-dotted-line">----------------------------------------</div>
+          </div>
+
+          <!-- PIN Code Section -->
+          <div class="ticket-pin-box">
+            <div class="ticket-pin-label">كود الدخول / PIN CODE</div>
+            <div class="ticket-pin-val font-cyber" id="ticketPinCode">000 000</div>
+            <div class="ticket-pin-hint">اسم المستخدم وكلمة المرور متطابقان</div>
+          </div>
+
+          <!-- QR Code Section -->
+          <div class="ticket-qr-wrap">
+            <img id="ticketQrImage" src="" alt="WiFi QR Code" class="ticket-qr-img">
+            <div class="ticket-qr-caption">📱 امسح الكود بكاميرا الموبايل للدخول المباشر</div>
+          </div>
+
+          <!-- Ticket Details Grid -->
+          <div class="ticket-details-table">
+            <div class="ticket-row">
+              <span>الباقة (Quota):</span>
+              <b id="ticketQuota">1.0 GB</b>
+            </div>
+            <div class="ticket-row">
+              <span>السرعة (Speed):</span>
+              <b id="ticketSpeed">4 Mbps Dedicated</b>
+            </div>
+            <div class="ticket-row">
+              <span>الأجهزة (Devices):</span>
+              <b>جهاز واحد فقط (Single Device)</b>
+            </div>
+            <div class="ticket-row">
+              <span>الصلاحية (Validity):</span>
+              <b id="ticketValidity">30 يوم من أول استخدام</b>
+            </div>
+            <div class="ticket-row">
+              <span>السعر (Price):</span>
+              <b class="text-green" id="ticketPrice">5.00 EGP</b>
+            </div>
+            <div class="ticket-row">
+              <span>شبكة الواي فاي:</span>
+              <b id="ticketSsid">CyberPulse_Gaming_WiFi</b>
+            </div>
+          </div>
+
+          <!-- Ticket Footer -->
+          <div class="ticket-footer">
+            <div class="ticket-dotted-line">----------------------------------------</div>
+            <div class="ticket-time" id="ticketTimestamp">2026-11-01 15:45</div>
+            <div class="ticket-wish">استمتع بتجربة ألعاب وتصفح فائق السرعة!</div>
+          </div>
+        </div>
+
+        <!-- Ticket Action Buttons -->
+        <div class="ticket-modal-actions" style="margin-top:1.2rem; display:flex; flex-direction:column; gap:0.6rem;">
+          <div style="display:flex; gap:0.6rem;">
+            <button class="btn btn-primary" id="btnPrintVoucherTicket" style="flex:2; justify-content:center; padding:0.65rem 1rem; font-weight:800; background:linear-gradient(135deg, #00f3ff 0%, #0088ff 100%); border:none; color:#000;">
+              <span>🖨️</span> طباعة إيصال حراري (Print Slip)
+            </button>
+            <button class="btn btn-secondary" id="btnCopyVoucherCode" style="flex:1; justify-content:center; padding:0.65rem 0.8rem;">
+              <span>📋</span> نسخ الكود
+            </button>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span id="copyVoucherFeedback" style="color:var(--neon-green); font-size:0.8rem; font-weight:700; display:none;">✔ تم نسخ كود الكارت!</span>
+            <button class="btn btn-outline-warning btn-sm" id="btnIssueAnotherVoucher" style="margin-right:auto;">
+              <span>➕</span> إصدار كارت آخر
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: HOTSPOT PROFILES SCRIPT (WINBOX COPY)         -->
+  <!-- ==================================================== -->
+  <div id="hotspotScriptModal" class="modal-overlay">
+    <div class="modal-box modal-wide" style="max-width:760px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display:flex; align-items:center; gap:0.5rem; color:var(--neon-amber);">
+          <span>📋</span> كود أوامر بروفايلات الهوتسبوت للمايكروتك (RouterOS Hotspot Script)
+        </div>
+        <button class="modal-close" onclick="closeModal('hotspotScriptModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background:rgba(255,184,0,0.06); border:1px solid rgba(255,184,0,0.25); border-radius:8px; padding:0.8rem 1rem; margin-bottom:0.9rem; font-size:0.82rem; color:var(--text-muted); line-height:1.5;">
+          <b style="color:#fff; display:block; margin-bottom:0.3rem;">📌 خطوات تشغيل وتسطيب البروفايلات في Winbox:</b>
+          <ol style="margin:0 0 0 1.2rem; padding:0; line-height:1.6;">
+            <li>افتح برنامج <b>Winbox</b> واضغط على <b>New Terminal</b>.</li>
+            <li>انسخ الكود بالأسفل والصقه في الشاشة واضغط <b>Enter</b>.</li>
+            <li>سيتم إنشاء وتحديث بروفايلات السرعة الأربعة (<code style="color:var(--neon-cyan);">profile_2m, profile_4m, profile_8m, profile_10m</code>) مع تفعيل قفل الجهاز الواحد وحذف الكروت المنتهية تلقائياً.</li>
+          </ol>
+        </div>
+        <textarea id="hotspotScriptTextarea" class="form-input" rows="12" readonly style="font-family:monospace; font-size:0.82rem; background:#050914; color:#ffb800; width:100%; box-sizing:border-box; line-height:1.45; border:1px solid rgba(255,184,0,0.3); border-radius:6px; padding:0.8rem;"></textarea>
+        <div style="margin-top:1rem; display:flex; justify-content:space-between; align-items:center; gap:0.8rem;">
+          <span id="copyHotspotScriptFeedback" style="color:var(--neon-green); font-size:0.84rem; font-weight:700; display:none;">✔ تم نسخ كود الهوتسبوت بنجاح!</span>
+          <button class="btn btn-primary" id="btnCopyHotspotScriptModal"><span>📄</span> نسخ الكود بالكامل (Copy Script)</button>
+        </div>
       </div>
     </div>
   </div>

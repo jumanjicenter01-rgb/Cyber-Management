@@ -4734,3 +4734,319 @@ select option:checked {
   transform: scale(1.1);
   box-shadow: 0 0 10px rgba(0, 243, 255, 0.4);
 }
+
+/* ======================================================== */
+/* HOTSPOT & WIFI VOUCHER STYLES                            */
+/* ======================================================== */
+
+/* Quota Selector Pills */
+.voucher-quota-pills {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.quota-pill {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 0.65rem 0.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #fff;
+  user-select: none;
+}
+
+.quota-pill:hover {
+  border-color: var(--neon-amber, #ffb800);
+  background: rgba(255, 184, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.quota-pill.active {
+  background: linear-gradient(135deg, rgba(255, 184, 0, 0.25) 0%, rgba(255, 94, 0, 0.2) 100%);
+  border-color: var(--neon-amber, #ffb800);
+  box-shadow: 0 0 14px rgba(255, 184, 0, 0.35);
+  transform: translateY(-2px);
+}
+
+.quota-pill .quota-val {
+  font-family: var(--font-cyber);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.quota-pill.active .quota-val {
+  color: var(--neon-amber, #ffb800);
+}
+
+.quota-pill .quota-price {
+  font-size: 0.75rem;
+  color: var(--neon-cyan, #00f3ff);
+  font-weight: 700;
+}
+
+/* Cyber Thermal Voucher Pass */
+.cyber-thermal-ticket {
+  background: #060913;
+  border: 1px dashed rgba(0, 243, 255, 0.4);
+  border-radius: 12px;
+  padding: 1.25rem 1rem;
+  color: #e2e8f0;
+  font-family: 'Courier New', Courier, monospace;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.8);
+  position: relative;
+  text-align: center;
+}
+
+.ticket-header {
+  margin-bottom: 0.8rem;
+}
+
+.ticket-logo-text {
+  font-family: var(--font-cyber);
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--neon-cyan, #00f3ff);
+  text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+}
+
+.ticket-sub {
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+  color: #94a3b8;
+  margin-top: 0.2rem;
+}
+
+.ticket-dotted-line {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 0.7rem;
+  overflow: hidden;
+  margin: 0.4rem 0;
+}
+
+.ticket-pin-box {
+  background: rgba(0, 243, 255, 0.05);
+  border: 1px solid rgba(0, 243, 255, 0.25);
+  border-radius: 8px;
+  padding: 0.75rem 0.5rem;
+  margin: 0.6rem 0;
+}
+
+.ticket-pin-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #94a3b8;
+}
+
+.ticket-pin-val {
+  font-size: 1.8rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: var(--neon-amber, #ffb800);
+  margin: 0.2rem 0;
+  text-shadow: 0 0 15px rgba(255, 184, 0, 0.6);
+}
+
+.ticket-pin-hint {
+  font-size: 0.68rem;
+  color: #64748b;
+}
+
+.ticket-qr-wrap {
+  margin: 0.8rem auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ticket-qr-img {
+  width: 170px;
+  height: 170px;
+  border: 2px solid rgba(0, 243, 255, 0.35);
+  border-radius: 8px;
+  background: #000;
+  padding: 4px;
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+}
+
+.ticket-qr-caption {
+  font-size: 0.7rem;
+  color: var(--neon-cyan, #00f3ff);
+  margin-top: 0.4rem;
+  font-weight: 600;
+}
+
+.ticket-details-table {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  margin: 0.7rem 0;
+  font-size: 0.8rem;
+  text-align: right;
+  line-height: 1.6;
+}
+
+.ticket-row {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px dotted rgba(255, 255, 255, 0.08);
+  padding: 0.2rem 0;
+}
+
+.ticket-row:last-child {
+  border-bottom: none;
+}
+
+.ticket-row span {
+  color: #94a3b8;
+}
+
+.ticket-row b {
+  color: #fff;
+}
+
+.ticket-footer {
+  margin-top: 0.6rem;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.ticket-time {
+  font-family: monospace;
+  color: #94a3b8;
+  margin-bottom: 0.2rem;
+}
+
+.ticket-wish {
+  font-size: 0.7rem;
+  color: #a1a1aa;
+}
+
+/* Vouchers Monitoring Table Elements */
+.voucher-traffic-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.voucher-traffic-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  background: linear-gradient(90deg, #05ffa1 0%, #00f3ff 100%);
+}
+
+.voucher-traffic-fill.danger {
+  background: linear-gradient(90deg, #ffb800 0%, #ff0055 100%);
+}
+
+.badge-voucher-status {
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-voucher-status.status-active {
+  background: rgba(5, 255, 161, 0.15);
+  border: 1px solid rgba(5, 255, 161, 0.4);
+  color: #05ffa1;
+}
+
+.badge-voucher-status.status-used {
+  background: rgba(0, 243, 255, 0.15);
+  border: 1px solid rgba(0, 243, 255, 0.4);
+  color: #00f3ff;
+}
+
+.badge-voucher-status.status-depleted {
+  background: rgba(255, 184, 0, 0.15);
+  border: 1px solid rgba(255, 184, 0, 0.4);
+  color: #ffb800;
+}
+
+.badge-voucher-status.status-expired {
+  background: rgba(255, 0, 85, 0.15);
+  border: 1px solid rgba(255, 0, 85, 0.4);
+  color: #ff0055;
+}
+
+/* Print Stylesheet for Thermal POS Printers (58mm / 80mm) */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #voucherPrintArea, #voucherPrintArea * {
+    visibility: visible !important;
+  }
+
+  #voucherPrintArea {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 72mm !important;
+    max-width: 72mm !important;
+    background: #fff !important;
+    color: #000 !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    z-index: 999999 !important;
+  }
+
+  .ticket-logo-text {
+    color: #000 !important;
+    text-shadow: none !important;
+    font-size: 1.1rem !important;
+  }
+
+  .ticket-sub, .ticket-pin-label, .ticket-pin-hint, .ticket-footer, .ticket-wish, .ticket-row span {
+    color: #333 !important;
+  }
+
+  .ticket-pin-box {
+    background: none !important;
+    border: 1px solid #000 !important;
+  }
+
+  .ticket-pin-val {
+    color: #000 !important;
+    text-shadow: none !important;
+  }
+
+  .ticket-qr-img {
+    border: 1px solid #000 !important;
+    background: #fff !important;
+    width: 140px !important;
+    height: 140px !important;
+  }
+
+  .ticket-qr-caption {
+    color: #000 !important;
+  }
+
+  .ticket-row b {
+    color: #000 !important;
+  }
+
+  .ticket-dotted-line {
+    color: #000 !important;
+  }
+}
