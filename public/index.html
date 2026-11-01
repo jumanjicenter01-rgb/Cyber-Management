@@ -122,18 +122,7 @@
         </button>
       </div>
 
-      <div class="nav-toolbar-right" style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
-        <!-- Live In-Place Screen View Toggle Button -->
-        <button class="btn btn-outline-cyan btn-sm btn-toggle-live-screens" id="btnToggleLiveScreensHeader" title="Toggle In-Place Live Screen Feeds on Station Cards">
-          <span class="live-dot-pulse"></span>
-          <span class="live-toggle-text">📺 Live Screens</span>
-        </button>
-
-        <!-- Auto Client Deployment Portal Button -->
-        <a href="/setup.html" target="_blank" class="btn btn-outline-cyan btn-sm" id="btnOpenSetupPortal" title="Auto-Deploy Client to Stations without USB" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 8px; font-weight: 700; font-size: 13px; border: 1px solid rgba(0, 243, 255, 0.4); background: rgba(0, 243, 255, 0.08); color: #00f3ff;">
-          <span>🚀 Auto-Client Setup</span>
-        </a>
-
+      <div class="nav-toolbar-right">
         <div class="nav-quick-filters">
           <span class="filter-chip active" data-filter="all">All (<span id="countAll">0</span>)</span>
           <span class="filter-chip chip-busy" data-filter="in_session">Busy (<span id="countBusy">0</span>)</span>
@@ -208,6 +197,9 @@
             </button>
             <button class="btn-power-act btn-scan-pcs-top" id="btnScanPcsTop" title="Auto-Scan LAN Network (فحص وتلقيط أجهزة الشبكة تلقائياً)">
               <span class="power-act-icon">📡</span>
+            </button>
+            <button class="btn-power-act btn-setup-portal-top" id="btnSetupPortalTop" title="Zero-Touch Client Setup Portal (فتح صفحة إعداد وتثبيت الكلينت)" onclick="window.open('/setup.html', '_blank')">
+              <span class="power-act-icon">🚀</span>
             </button>
             <button class="btn-power-act btn-clear-pcs-top" id="btnClearPcsTop" title="Clear Dummy / Offline Devices (مسح الأجهزة الوهمية)">
               <span class="power-act-icon">🧹</span>

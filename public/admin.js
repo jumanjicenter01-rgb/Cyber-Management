@@ -2548,10 +2548,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('cyber_grid_screen_view', isGridScreenView ? 'true' : 'false');
 
     const btnPower = document.getElementById('btnScreenSelect');
-    const btnHeader = document.getElementById('btnToggleLiveScreensHeader');
-
     if (btnPower) btnPower.classList.toggle('screen-view-active', isGridScreenView);
-    if (btnHeader) btnHeader.classList.toggle('screen-view-active', isGridScreenView);
 
     if (isGridScreenView) {
       window.cyberAudio?.playUnlock?.();
@@ -2575,12 +2572,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnScreenSelect) {
     btnScreenSelect.addEventListener('click', () => toggleGridScreenView());
     btnScreenSelect.classList.toggle('screen-view-active', isGridScreenView);
-  }
-
-  const btnToggleLiveScreensHeader = document.getElementById('btnToggleLiveScreensHeader');
-  if (btnToggleLiveScreensHeader) {
-    btnToggleLiveScreensHeader.addEventListener('click', () => toggleGridScreenView());
-    btnToggleLiveScreensHeader.classList.toggle('screen-view-active', isGridScreenView);
   }
 
   // Quick Card Actions: Snapshot from Card
