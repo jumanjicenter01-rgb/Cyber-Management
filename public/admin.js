@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedStartSessionType = 'open';
   let posCart = [];
   let currentViewMode = localStorage.getItem('cyber_view_mode') || 'large';
-  let isGridScreenView = false;
+  let isGridScreenView = localStorage.getItem('cyber_grid_screen_view') === 'true';
   let screenViewPollInterval = null;
   let cachedScreenSnapshots = {};
 
@@ -1056,14 +1056,65 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isGridScreenView) {
         const shot = cachedScreenSnapshots[pc.id];
         const shotSrc = shot && shot.image ? shot.image : '';
-        const activeWin = shot && shot.activeWindow ? shot.activeWindow : (pc.currentGame || (pc.status === 'in_session' ? 'Cyber Launcher' : 'Locked Screen'));
-        middleContent = `
-          <div class="pc-live-screen-feed-wrap" id="screen_feed_${pc.id}">
-            <img id="card_screen_img_${pc.id}" src="${shotSrc}" alt="${pc.name}" style="${shotSrc ? 'display:block;' : 'display:none;'}" onerror="this.style.display='none'; const p = document.getElementById('placeholder_${pc.id}'); if(p) p.style.display='flex';">
-            <div class="screen-empty-placeholder" id="placeholder_${pc.id}" style="${shotSrc ? 'display:none;' : 'display:flex;'}">
-              <span>👁️ Awaiting Live Screen...</span>
+        const activeWin = shot && shot.activeWindow ? shot.activeWindow : (pc.currentGame || (pc.status === 'in_session' ? 'Cyber Launcher' : (pc.status === 'locked' ? 'Locked Screen' : 'Ready to Play')));
+
+        let fallbackHtml = '';
+        if (pc.status === 'in_session') {
+          fallbackHtml = `
+            <div class="screen-fallback-gaming">
+              <div class="gaming-radar-grid"></div>
+              <div class="gaming-feed-title">🎮 ${pc.currentGame || 'GAMING SESSION ACTIVE'}</div>
+              <div class="gaming-feed-fps">60 FPS • DIRECT FEED</div>
             </div>
-            <div class="screen-feed-win-tag" id="card_win_tag_${pc.id}">${activeWin}</div>
+          `;
+        } else if (pc.status === 'locked') {
+          fallbackHtml = `
+            <div class="screen-fallback-locked">
+              <div class="lock-neon-symbol">🔒</div>
+              <div class="lock-neon-label">STATION LOCKED</div>
+            </div>
+          `;
+        } else {
+          fallbackHtml = `
+            <div class="screen-fallback-standby">
+              <div class="standby-pulse-dot"></div>
+              <div class="standby-neon-label">READY TO PLAY</div>
+            </div>
+          `;
+        }
+
+        const isFeedLive = !!shotSrc || pc.status === 'in_session';
+        middleContent = `
+          <div class="pc-live-screen-feed-wrap ${isFeedLive ? 'feed-active' : ''}" id="screen_feed_${pc.id}">
+            <div class="screen-top-bar">
+              <span class="screen-live-badge ${pc.status === 'in_session' ? 'active-live' : 'standby-live'}">
+                <span class="live-dot-pulse"></span>
+                <span>${pc.status === 'in_session' ? 'LIVE' : 'IDLE'}</span>
+              </span>
+              <span class="screen-res-badge">${pc.specs ? pc.specs.split('•')[0].trim() : '1080p'}</span>
+            </div>
+
+            <img id="card_screen_img_${pc.id}" src="${shotSrc}" alt="${pc.name}" style="${shotSrc ? 'display:block;' : 'display:none;'}" onerror="this.style.display='none'; const p = document.getElementById('placeholder_${pc.id}'); if(p) p.style.display='flex';">
+            
+            <div class="screen-empty-placeholder" id="placeholder_${pc.id}" style="${shotSrc ? 'display:none;' : 'display:flex;'}">
+              ${fallbackHtml}
+            </div>
+
+            <div class="screen-feed-win-tag" id="card_win_tag_${pc.id}" title="${activeWin}">
+              ${activeWin}
+            </div>
+
+            <div class="screen-hover-overlay">
+              <button class="screen-hover-act-btn btn-hover-zoom" onclick="event.stopPropagation(); openRemoteModal('${pc.id}')" title="فتح شاشة الجهاز بالكامل والتحكم المباشر (Full Remote Screen / Interactive Control)">
+                <span>🔍 تكبير وتحكم</span>
+              </button>
+              <button class="screen-hover-act-btn btn-hover-shot" onclick="event.stopPropagation(); saveQuickCardSnapshot('${pc.id}')" title="التقاط سكرين شوت وحفظها في أرشيف الأمان (Quick Snapshot)">
+                <span>📸 لقطة سريعة</span>
+              </button>
+              <button class="screen-hover-act-btn btn-hover-msg" onclick="event.stopPropagation(); quickCardMessage('${pc.id}')" title="إرسال تنبيه أو رسالة فورية لشاشة هذا الجهاز (Send Toast)">
+                <span>💬 رسالة للشاشة</span>
+              </button>
+            </div>
           </div>
         `;
       }
@@ -2483,25 +2534,115 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Live Screen Toggle on In-Place Grid (Refresh every 5s)
+  // -------------------------------------------------------------
+  // IN-PLACE LIVE SCREEN CONTROLLER & HOVER ACTIONS
+  // -------------------------------------------------------------
+  function toggleGridScreenView(explicitVal) {
+    if (typeof explicitVal === 'boolean') {
+      isGridScreenView = explicitVal;
+    } else {
+      isGridScreenView = !isGridScreenView;
+    }
+
+    localStorage.setItem('cyber_grid_screen_view', isGridScreenView ? 'true' : 'false');
+
+    const btnPower = document.getElementById('btnScreenSelect');
+    const btnHeader = document.getElementById('btnToggleLiveScreensHeader');
+
+    if (btnPower) btnPower.classList.toggle('screen-view-active', isGridScreenView);
+    if (btnHeader) btnHeader.classList.toggle('screen-view-active', isGridScreenView);
+
+    if (isGridScreenView) {
+      window.cyberAudio?.playUnlock?.();
+      fetchLiveScreenSnapshots();
+      if (screenViewPollInterval) clearInterval(screenViewPollInterval);
+      screenViewPollInterval = setInterval(fetchLiveScreenSnapshots, 2500);
+      showToast('Live Screens Activated 📺', 'عرض الشاشات الحية للأجهزة مفعل الآن مباشرة في كروت الواجهة');
+    } else {
+      window.cyberAudio?.playClick?.();
+      if (screenViewPollInterval) clearInterval(screenViewPollInterval);
+      screenViewPollInterval = null;
+      showToast('Hardware Icons Mode 🖥️', 'تم التحويل إلى وضع الأيقونات وموديلات الشاشات');
+    }
+
+    renderPcsGrid();
+  }
+
+  window.toggleGridScreenView = toggleGridScreenView;
+
   const btnScreenSelect = document.getElementById('btnScreenSelect');
   if (btnScreenSelect) {
-    btnScreenSelect.addEventListener('click', () => {
-      isGridScreenView = !isGridScreenView;
-      btnScreenSelect.classList.toggle('screen-view-active', isGridScreenView);
+    btnScreenSelect.addEventListener('click', () => toggleGridScreenView());
+    btnScreenSelect.classList.toggle('screen-view-active', isGridScreenView);
+  }
 
-      if (isGridScreenView) {
-        window.cyberAudio?.playUnlock?.();
-        fetchLiveScreenSnapshots();
-        if (screenViewPollInterval) clearInterval(screenViewPollInterval);
-        screenViewPollInterval = setInterval(fetchLiveScreenSnapshots, 5000);
-      } else {
-        window.cyberAudio?.playClick?.();
-        if (screenViewPollInterval) clearInterval(screenViewPollInterval);
-        screenViewPollInterval = null;
+  const btnToggleLiveScreensHeader = document.getElementById('btnToggleLiveScreensHeader');
+  if (btnToggleLiveScreensHeader) {
+    btnToggleLiveScreensHeader.addEventListener('click', () => toggleGridScreenView());
+    btnToggleLiveScreensHeader.classList.toggle('screen-view-active', isGridScreenView);
+  }
+
+  // Quick Card Actions: Snapshot from Card
+  window.saveQuickCardSnapshot = function(pcId) {
+    const shot = cachedScreenSnapshots[pcId];
+    const imgEl = document.getElementById(`card_screen_img_${pcId}`);
+    let imageData = (shot && shot.image) || (imgEl && imgEl.src);
+
+    if (!imageData || imageData.length < 50 || imageData.includes('placeholder')) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 960;
+      canvas.height = 540;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#060a12';
+      ctx.fillRect(0, 0, 960, 540);
+      ctx.fillStyle = '#00f3ff';
+      ctx.font = 'bold 36px sans-serif';
+      ctx.fillText(`CYBER SURVEILLANCE CAPTURE: ${pcId}`, 60, 100);
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '24px sans-serif';
+      ctx.fillText(`Timestamp: ${new Date().toLocaleString()}`, 60, 150);
+      imageData = canvas.toDataURL('image/jpeg', 0.85);
+    }
+
+    fetch('/api/screenshots/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pcId,
+        image: imageData,
+        note: `لقطة شاشة سريعة من الواجهة الرئيسية (${pcId})`
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        window.cyberAudio?.playCash?.();
+        showToast('📸 Snapshot Saved', `تم حفظ لقطة شاشة ${pcId} في أرشيف الأمان والمراقبة بنجاح.`);
       }
-      renderPcsGrid();
     });
+  };
+
+  // Quick Card Actions: Send Toast Message to Screen
+  window.quickCardMessage = function(pcId) {
+    const msg = prompt(`أدخل الرسالة التي تريد إظهارها فوراً على شاشة جهاز ${pcId}:`, 'يرجى الالتزام بالتعليمات والهدوء داخل الصالة');
+    if (!msg || !msg.trim()) return;
+
+    socket.emit('admin_send_message', {
+      pcId,
+      message: msg.trim(),
+      level: 'warning'
+    });
+    window.cyberAudio?.playClick?.();
+    showToast('💬 Message Sent', `تم إرسال الرسالة إلى شاشة ${pcId} بنجاح.`);
+  };
+
+  // Auto-init screen view if saved in preferences
+  if (isGridScreenView) {
+    setTimeout(() => {
+      fetchLiveScreenSnapshots();
+      if (screenViewPollInterval) clearInterval(screenViewPollInterval);
+      screenViewPollInterval = setInterval(fetchLiveScreenSnapshots, 2500);
+    }, 350);
   }
 
   // Checkout & Settle Bill on Selected PC
