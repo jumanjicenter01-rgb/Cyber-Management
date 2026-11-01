@@ -126,9 +126,9 @@ if "%BROWSER_EXE%"=="" (
 
 :KIOSK_WATCHDOG_LOOP
 if "%BROWSER_TYPE%"=="edge" (
-    "%BROWSER_EXE%" --kiosk "%CLIENT_URL%" --edge-kiosk-type=fullscreen --no-first-run --kiosk-idle-timeout-minutes=0 --disable-pinch --overscroll-history-navigation=0 --user-data-dir="%KIOSK_DATA_DIR%"
+    "%BROWSER_EXE%" --kiosk "%CLIENT_URL%" --edge-kiosk-type=fullscreen --no-first-run --kiosk-idle-timeout-minutes=0 --disable-pinch --overscroll-history-navigation=0 --auto-select-desktop-capture-source="Entire screen" --enable-usermedia-screen-capturing --allow-http-screen-capture --user-data-dir="%KIOSK_DATA_DIR%"
 ) else (
-    "%BROWSER_EXE%" --kiosk "%CLIENT_URL%" --no-first-run --disable-pinch --overscroll-history-navigation=0 --user-data-dir="%KIOSK_DATA_DIR%"
+    "%BROWSER_EXE%" --kiosk "%CLIENT_URL%" --no-first-run --disable-pinch --overscroll-history-navigation=0 --auto-select-desktop-capture-source="Entire screen" --enable-usermedia-screen-capturing --allow-http-screen-capture --user-data-dir="%KIOSK_DATA_DIR%"
 )
 
 echo [!] Station client was closed or interrupted.

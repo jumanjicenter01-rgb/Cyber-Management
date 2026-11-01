@@ -3312,17 +3312,21 @@ app.post('/api/wordfilter/test-trigger', (req, res) => {
 
   // Client sends Live Screen Frame / Thumbnail to Admin
   socket.on('screen_frame', (data) => {
-    db.screenSnapshots[data.pcId] = {
-      image: data.image,
-      timestamp: Date.now(),
-      activeWindow: data.activeWindow,
-      isRealStream: true
-    };
-    io.to('admins').emit('screen_frame_relay', data);
+    if (!data || !data.pcId || !data.image) return;
 
-    // Run Real-Time Word Filter Inspection
-    if (data.activeWindow) {
-      checkWordFilter(data.activeWindow, data.pcId, data.image);
+    if (data.isRealStream) {
+      db.screenSnapshots[data.pcId] = {
+        image: data.image,
+        timestamp: Date.now(),
+        activeWindow: data.activeWindow || 'Desktop',
+        isRealStream: true
+      };
+      io.to('admins').emit('screen_frame_relay', data);
+
+      // Run Real-Time Word Filter Inspection
+      if (data.activeWindow) {
+        checkWordFilter(data.activeWindow, data.pcId, data.image);
+      }
     }
   });
 

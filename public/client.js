@@ -521,6 +521,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateRealScreenBtnUI(active) {
     const btn = document.getElementById('btnShareRealScreen');
     const txt = document.getElementById('btnShareRealScreenText');
+    const modal = document.getElementById('realScreenPromptModal');
+    if (active && modal) modal.classList.remove('active');
     if (!btn) return;
     if (active) {
       btn.classList.add('active');
@@ -540,24 +542,54 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Loop to send screen frames to server (Only if running in web browser; Electron handles its own native screen capture)
+  const realScreenPromptModal = document.getElementById('realScreenPromptModal');
+  const btnPromptStartShare = document.getElementById('btnPromptStartShare');
+  const btnPromptDismiss = document.getElementById('btnPromptDismiss');
+
+  if (btnPromptStartShare) {
+    btnPromptStartShare.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (realScreenPromptModal) realScreenPromptModal.classList.remove('active');
+      await toggleRealDesktopCapture();
+    });
+  }
+  if (btnPromptDismiss) {
+    btnPromptDismiss.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (realScreenPromptModal) realScreenPromptModal.classList.remove('active');
+    });
+  }
+
+  // Attempt auto-stream / show prompt on page load if in browser
+  if (!isElectronApp) {
+    setTimeout(() => {
+      if (!isSharingRealDesktop && realScreenPromptModal) {
+        realScreenPromptModal.classList.add('active');
+      }
+    }, 1200);
+
+    // Auto-prompt on first click anywhere in client if not already sharing
+    document.addEventListener('click', function onFirstClientClick() {
+      if (!isSharingRealDesktop && !isElectronApp) {
+        document.removeEventListener('click', onFirstClientClick);
+        if (realScreenPromptModal) realScreenPromptModal.classList.add('active');
+      }
+    }, { once: true });
+  }
+
+  // Loop to send screen frames to server:
+  // IMPORTANT: Only emit frames when REAL desktop screen stream is active!
+  // If not sharing real screen yet, do not pollute server with fake frames so server keeps its rich Windows desktop.
   if (!isElectronApp) {
     setInterval(() => {
-      // Render frame to screenCaptureCanvas
-      renderScreenFrame();
-      
-      const activeWin = isSharingRealDesktop 
-        ? 'Real Windows Desktop' 
-        : (activeGame ? activeGame.title : (pcState && pcState.status === 'in_session' ? 'Cyber Launcher' : 'Locked Screen'));
-      checkClientWordFilter(activeWin);
-
-      if (socket && socket.connected) {
+      if (isSharingRealDesktop && realDesktopVideo.videoWidth > 0 && socket && socket.connected) {
+        renderScreenFrame();
         const frameData = screenCaptureCanvas.toDataURL('image/jpeg', 0.65);
         socket.emit('screen_frame', {
           pcId,
           image: frameData,
-          activeWindow: activeWin,
-          isRealStream: isSharingRealDesktop
+          activeWindow: 'Real Windows Desktop',
+          isRealStream: true
         });
       }
     }, 350);
@@ -570,49 +602,137 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    screenCaptureCtx.fillStyle = '#07090e';
-    screenCaptureCtx.fillRect(0, 0, screenCaptureCanvas.width, screenCaptureCanvas.height);
+    const w = screenCaptureCanvas.width;
+    const h = screenCaptureCanvas.height;
 
-    if (activeGame) {
-      // Draw actual game canvas
-      screenCaptureCtx.drawImage(gameCanvas, 0, 0, screenCaptureCanvas.width, screenCaptureCanvas.height);
-      // Overlay game title
-      screenCaptureCtx.fillStyle = 'rgba(0,0,0,0.6)';
-      screenCaptureCtx.fillRect(10, 10, 260, 40);
+    // Full Windows 11 Fluent Dark Wallpaper
+    const grad = screenCaptureCtx.createLinearGradient(0, 0, w, h);
+    grad.addColorStop(0, '#060913');
+    grad.addColorStop(0.5, '#0d1527');
+    grad.addColorStop(1, '#171e38');
+    screenCaptureCtx.fillStyle = grad;
+    screenCaptureCtx.fillRect(0, 0, w, h);
+
+    // Glowing Wallpaper Radial Aura
+    const radial = screenCaptureCtx.createRadialGradient(w / 2, h / 2, 20, w / 2, h / 2, 350);
+    radial.addColorStop(0, 'rgba(0, 243, 255, 0.18)');
+    radial.addColorStop(0.6, 'rgba(168, 85, 247, 0.1)');
+    radial.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    screenCaptureCtx.fillStyle = radial;
+    screenCaptureCtx.fillRect(0, 0, w, h);
+
+    // Desktop Shortcuts (Left Column)
+    const icons = [
+      { name: 'This PC', sym: '🖥️' },
+      { name: 'Recycle Bin', sym: '🗑️' },
+      { name: 'Chrome', sym: '🌐' },
+      { name: 'Steam', sym: '♨' },
+      { name: 'Valorant', sym: '⚡' },
+      { name: 'GTA V', sym: '🚗' },
+      { name: 'Discord', sym: '💬' }
+    ];
+    icons.forEach((ic, i) => {
+      const iy = 22 + i * 58;
+      screenCaptureCtx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+      screenCaptureCtx.fillRect(20, iy, 44, 40);
+      screenCaptureCtx.fillStyle = '#fff';
+      screenCaptureCtx.font = '18px sans-serif';
+      screenCaptureCtx.textAlign = 'center';
+      screenCaptureCtx.fillText(ic.sym, 42, iy + 26);
+      screenCaptureCtx.font = '9px Segoe UI';
+      screenCaptureCtx.fillText(ic.name, 42, iy + 49);
+    });
+
+    // Active Window: CyberPulse Gaming Lounge (Centered)
+    const winX = 100, winY = 22, winW = 760, winH = 455;
+    screenCaptureCtx.fillStyle = '#0a0f1d';
+    screenCaptureCtx.fillRect(winX, winY, winW, winH);
+    screenCaptureCtx.strokeStyle = 'rgba(0, 243, 255, 0.4)';
+    screenCaptureCtx.lineWidth = 1.5;
+    screenCaptureCtx.strokeRect(winX, winY, winW, winH);
+
+    // Window Title Bar
+    screenCaptureCtx.fillStyle = '#0f172a';
+    screenCaptureCtx.fillRect(winX, winY, winW, 36);
+    screenCaptureCtx.fillStyle = '#00f3ff';
+    screenCaptureCtx.font = 'bold 13px Orbitron';
+    screenCaptureCtx.textAlign = 'left';
+    screenCaptureCtx.fillText(`CYBERPULSE ESPORTS ARENA - ${pcId}`, winX + 16, winY + 23);
+
+    // Window Controls (- □ x)
+    screenCaptureCtx.fillStyle = '#64748b';
+    screenCaptureCtx.font = '14px sans-serif';
+    screenCaptureCtx.fillText('—  □  ✕', winX + winW - 65, winY + 23);
+
+    // In-Window Content: Session Stats
+    screenCaptureCtx.fillStyle = '#05ffa1';
+    screenCaptureCtx.font = 'bold 15px Segoe UI';
+    screenCaptureCtx.fillText(`Session Active  |  ${hudTimer.textContent}  |  Cost: ${hudTotalCost.textContent} EGP`, winX + 24, winY + 68);
+
+    // Popular Game Cards with rich colors
+    const gamesList = [
+      { title: 'VALORANT', color: '#ff4655' },
+      { title: 'GTA V / FIVEM', color: '#1e3a5f' },
+      { title: 'COUNTER-STRIKE 2', color: '#d97706' },
+      { title: 'EA FC 25', color: '#047857' }
+    ];
+    gamesList.forEach((gm, idx) => {
+      const gx = winX + 24 + idx * 175;
+      const gy = winY + 90;
+      screenCaptureCtx.fillStyle = '#151c2f';
+      screenCaptureCtx.fillRect(gx, gy, 160, 205);
+      screenCaptureCtx.fillStyle = gm.color;
+      screenCaptureCtx.fillRect(gx, gy, 160, 115);
+      screenCaptureCtx.fillStyle = '#ffffff';
+      screenCaptureCtx.font = 'bold 13px Segoe UI';
+      screenCaptureCtx.textAlign = 'center';
+      screenCaptureCtx.fillText(gm.title, gx + 80, gy + 148);
       screenCaptureCtx.fillStyle = '#00f3ff';
-      screenCaptureCtx.font = '16px Segoe UI';
-      screenCaptureCtx.fillText(`🎮 ${activeGame.title} (FPS: 144)`, 20, 35);
-    } else if (pcState && pcState.status === 'in_session') {
-      // High-Fidelity Launcher Preview
-      screenCaptureCtx.fillStyle = '#0f172a';
-      screenCaptureCtx.fillRect(0, 0, screenCaptureCanvas.width, screenCaptureCanvas.height);
-      screenCaptureCtx.fillStyle = '#00f3ff';
-      screenCaptureCtx.font = 'bold 24px Orbitron';
-      screenCaptureCtx.fillText(`CYBERPULSE ARENA - ${pcId}`, 30, 50);
+      screenCaptureCtx.fillRect(gx + 20, gy + 165, 120, 26);
+      screenCaptureCtx.fillStyle = '#000';
+      screenCaptureCtx.font = 'bold 11px Segoe UI';
+      screenCaptureCtx.fillText('PLAY NOW', gx + 80, gy + 182);
+    });
 
-      screenCaptureCtx.fillStyle = '#05ffa1';
-      screenCaptureCtx.font = '18px Segoe UI';
-      screenCaptureCtx.fillText(`Time: ${hudTimer.textContent} | Cost: ${hudTotalCost.textContent} EGP`, 30, 85);
+    // Alert Banner inside window
+    screenCaptureCtx.fillStyle = 'rgba(0, 243, 255, 0.12)';
+    screenCaptureCtx.fillRect(winX + 24, winY + 315, winW - 48, 50);
+    screenCaptureCtx.strokeStyle = 'rgba(0, 243, 255, 0.3)';
+    screenCaptureCtx.strokeRect(winX + 24, winY + 315, winW - 48, 50);
+    screenCaptureCtx.fillStyle = '#00f3ff';
+    screenCaptureCtx.font = '12px Segoe UI';
+    screenCaptureCtx.textAlign = 'center';
+    screenCaptureCtx.fillText('🔴 Click "Stream Real Screen" in top bar to broadcast full Windows desktop, Chrome & Alt-Tab to Cashier', winX + winW / 2, winY + 345);
 
-      screenCaptureCtx.fillStyle = '#f59e0b';
-      screenCaptureCtx.font = 'bold 15px Segoe UI';
-      screenCaptureCtx.fillText(`Click "Stream Real Screen" in top bar to broadcast full Windows desktop / Alt-Tab`, 30, 120);
+    // Windows 11 Taskbar across bottom
+    const tbY = h - 44;
+    screenCaptureCtx.fillStyle = 'rgba(10, 15, 26, 0.98)';
+    screenCaptureCtx.fillRect(0, tbY, w, 44);
+    screenCaptureCtx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+    screenCaptureCtx.beginPath();
+    screenCaptureCtx.moveTo(0, tbY);
+    screenCaptureCtx.lineTo(w, tbY);
+    screenCaptureCtx.stroke();
 
-      // Draw game tiles
-      for (let i = 0; i < 4; i++) {
-        screenCaptureCtx.fillStyle = '#1e293b';
-        screenCaptureCtx.fillRect(30 + (i * 180), 145, 160, 195);
-        screenCaptureCtx.strokeStyle = '#334155';
-        screenCaptureCtx.strokeRect(30 + (i * 180), 145, 160, 195);
-      }
-    } else {
-      // Locked screen preview
-      screenCaptureCtx.fillStyle = '#05070c';
-      screenCaptureCtx.fillRect(0, 0, screenCaptureCanvas.width, screenCaptureCanvas.height);
-      screenCaptureCtx.fillStyle = '#ff0055';
-      screenCaptureCtx.font = 'bold 30px Segoe UI';
-      screenCaptureCtx.fillText(`🔒 ${pcId} - LOCKED`, screenCaptureCanvas.width / 2 - 120, screenCaptureCanvas.height / 2);
-    }
+    // Centered Taskbar Icons
+    const tbIcons = ['⊞', '🔍', '🌐', '♨', '⚡', '🎧'];
+    tbIcons.forEach((ic, i) => {
+      const ix = w / 2 - 90 + i * 32;
+      screenCaptureCtx.fillStyle = (i === 0) ? '#00f3ff' : 'rgba(255,255,255,0.1)';
+      screenCaptureCtx.fillRect(ix, tbY + 8, 26, 26);
+      screenCaptureCtx.fillStyle = (i === 0) ? '#000' : '#fff';
+      screenCaptureCtx.font = 'bold 13px sans-serif';
+      screenCaptureCtx.textAlign = 'center';
+      screenCaptureCtx.fillText(ic, ix + 13, tbY + 26);
+    });
+
+    // System Tray (Right)
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    screenCaptureCtx.fillStyle = '#94a3b8';
+    screenCaptureCtx.font = '11px Segoe UI';
+    screenCaptureCtx.textAlign = 'right';
+    screenCaptureCtx.fillText(`^  WiFi  🔊  ${timeStr}`, w - 24, tbY + 26);
   }
 
   // -------------------------------------------------------------
