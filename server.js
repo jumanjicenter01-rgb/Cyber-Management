@@ -129,6 +129,11 @@ let db = {
   screenSnapshots: {}, // pcId -> base64 frame
   screenshots: [], // Gallery of captured screenshots { id, pcId, timestamp, timeFormatted, image, note }
   settings: {
+    branding: {
+      shopName: 'CYBERPULSE OS',
+      shopSubtitle: 'Esports Lounge & Central Arena Management',
+      shopLogo: '⚡'
+    },
     masterPassword: 'admin',
     power: {
       autoShutdownIdleEnabled: true,
@@ -509,6 +514,36 @@ app.get('/api/state', (req, res) => {
   });
 });
 
+// Shop Lounge Branding Customization (Shop Name, Subtitle, Logo)
+app.get('/api/settings/branding', (req, res) => {
+  res.json({
+    success: true,
+    branding: db.settings.branding || {
+      shopName: 'CYBERPULSE OS',
+      shopSubtitle: 'Esports Lounge & Central Arena Management',
+      shopLogo: '⚡'
+    }
+  });
+});
+
+app.post('/api/settings/branding', (req, res) => {
+  const { shopName, shopSubtitle, shopLogo } = req.body;
+  if (!db.settings.branding) {
+    db.settings.branding = {
+      shopName: 'CYBERPULSE OS',
+      shopSubtitle: 'Esports Lounge & Central Arena Management',
+      shopLogo: '⚡'
+    };
+  }
+  if (shopName) db.settings.branding.shopName = String(shopName).trim();
+  if (shopSubtitle !== undefined) db.settings.branding.shopSubtitle = String(shopSubtitle).trim();
+  if (shopLogo) db.settings.branding.shopLogo = String(shopLogo).trim();
+  saveData();
+  addAudit('Branding Updated', `Shop name configured to "${db.settings.branding.shopName}"`, 'info');
+  io.emit('branding_updated', db.settings.branding);
+  res.json({ success: true, branding: db.settings.branding });
+});
+
 // Update PC Visuals & Neon Colors
 app.get('/api/settings/visuals', (req, res) => {
   res.json({ success: true, pcVisuals: db.settings.pcVisuals || {} });
@@ -884,6 +919,64 @@ app.post('/api/orders/add', (req, res) => {
   res.json({ success: true, order: orderItem });
 });
 
+// Cafeteria Products Management: GET, ADD, UPDATE, DELETE
+app.get('/api/menu', (req, res) => {
+  res.json({ success: true, menu: db.menu });
+});
+
+app.post('/api/menu/add', (req, res) => {
+  const { name, category, price, stock, icon } = req.body;
+  if (!name || price === undefined) {
+    return res.status(400).json({ error: 'Product name and price are required' });
+  }
+
+  const newItem = {
+    id: 'm_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4),
+    name: String(name).trim(),
+    category: category ? String(category).trim() : 'General',
+    price: parseFloat(price) || 0,
+    stock: parseInt(stock, 10) || 0,
+    icon: icon ? String(icon).trim() : '🍔'
+  };
+
+  db.menu.push(newItem);
+  saveData();
+  addAudit('Product Added', `Added cafeteria product "${newItem.name}" (${newItem.price} EGP)`, 'info');
+  io.emit('menu_updated', db.menu);
+  res.json({ success: true, item: newItem, menu: db.menu });
+});
+
+app.put('/api/menu/:id', (req, res) => {
+  const { id } = req.params;
+  const { name, category, price, stock, icon } = req.body;
+  const item = db.menu.find(m => m.id === id);
+  if (!item) return res.status(404).json({ error: 'Product not found' });
+
+  if (name !== undefined) item.name = String(name).trim();
+  if (category !== undefined) item.category = String(category).trim();
+  if (price !== undefined) item.price = parseFloat(price) || 0;
+  if (stock !== undefined) item.stock = parseInt(stock, 10) || 0;
+  if (icon !== undefined) item.icon = String(icon).trim();
+
+  saveData();
+  addAudit('Product Updated', `Updated product "${item.name}" (${item.price} EGP)`, 'info');
+  io.emit('menu_updated', db.menu);
+  res.json({ success: true, item, menu: db.menu });
+});
+
+app.delete('/api/menu/:id', (req, res) => {
+  const { id } = req.params;
+  const index = db.menu.findIndex(m => m.id === id);
+  if (index === -1) return res.status(404).json({ error: 'Product not found' });
+
+  const deletedName = db.menu[index].name;
+  db.menu.splice(index, 1);
+  saveData();
+  addAudit('Product Deleted', `Deleted cafeteria product "${deletedName}"`, 'warning');
+  io.emit('menu_updated', db.menu);
+  res.json({ success: true, deletedName, menu: db.menu });
+});
+
 // Move / Transfer Session from PC to PC
 app.post('/api/session/transfer', (req, res) => {
   const { fromPcId, toPcId } = req.body;
@@ -1036,7 +1129,8 @@ app.post('/api/games/add', (req, res) => {
   };
 
   db.games.push(newGame);
-  addAudit('Game Added to Hub', `Admin added game (${title}) to Launcher Library`, 'success');
+  saveData();
+  addAudit('Game Added to Hub', `Admin added title (${title}) to Launcher Library`, 'success');
   io.emit('games_updated', db.games);
   res.json({ success: true, game: newGame, games: db.games });
 });
@@ -1044,7 +1138,7 @@ app.post('/api/games/add', (req, res) => {
 app.put('/api/games/update/:id', (req, res) => {
   const { id } = req.params;
   const game = db.games.find(g => g.id === id);
-  if (!game) return res.status(404).json({ error: 'Game not found' });
+  if (!game) return res.status(404).json({ error: 'Title not found' });
 
   const { title, category, developer, poster, executable, status } = req.body;
   if (title) game.title = title;
@@ -1054,7 +1148,8 @@ app.put('/api/games/update/:id', (req, res) => {
   if (executable) game.executable = executable;
   if (status) game.status = status;
 
-  addAudit('Game Updated', `Admin modified game details for (${game.title})`);
+  saveData();
+  addAudit('Game Updated', `Admin modified details for (${game.title})`);
   io.emit('games_updated', db.games);
   res.json({ success: true, game, games: db.games });
 });
@@ -1062,10 +1157,11 @@ app.put('/api/games/update/:id', (req, res) => {
 app.delete('/api/games/:id', (req, res) => {
   const { id } = req.params;
   const idx = db.games.findIndex(g => g.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'Game not found' });
+  if (idx === -1) return res.status(404).json({ error: 'Title not found' });
 
   const removed = db.games.splice(idx, 1)[0];
-  addAudit('Game Removed', `Removed game (${removed.title}) from Launcher Library`, 'warning');
+  saveData();
+  addAudit('Game Removed', `Removed title (${removed.title}) from Launcher Library`, 'warning');
   io.emit('games_updated', db.games);
   res.json({ success: true, removed, games: db.games });
 });

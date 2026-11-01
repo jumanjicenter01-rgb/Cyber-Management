@@ -489,6 +489,17 @@ document.addEventListener('DOMContentLoaded', () => {
     renderMasterGames();
   });
 
+  socket.on('menu_updated', (menu) => {
+    state.menu = menu;
+    renderCafeteriaPos();
+  });
+
+  socket.on('branding_updated', (branding) => {
+    if (!state.settings) state.settings = {};
+    state.settings.branding = branding;
+    applyBranding(branding);
+  });
+
   socket.on('screenshot_saved', (shot) => {
     if (!state.screenshots) state.screenshots = [];
     state.screenshots.unshift(shot);
@@ -559,6 +570,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderInvoices();
     renderAuditLog();
     updateShiftSummary();
+    if (state.settings && state.settings.branding) {
+      applyBranding(state.settings.branding);
+    }
     applyViewMode(currentViewMode);
   }
 
@@ -949,23 +963,26 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       }
 
+      const isElapsedType = pc.session.type === 'open' || pc.session.type === 'admin' || pc.isAdminSession;
       const timerStr = (pc.status === 'in_session' && pc.session)
-        ? (pc.session.type === 'open' ? formatTime(pc.session.elapsedSeconds) : formatTime(pc.session.remainingSeconds))
+        ? (isElapsedType ? formatTime(pc.session.elapsedSeconds) : formatTime(pc.session.remainingSeconds))
         : '';
+      const costDisplayVal = (pc.session.type === 'admin' || pc.isAdminSession) ? '0.00' : (pc.session.totalCost || 0).toFixed(2);
       const costStr = (pc.status === 'in_session' && pc.session)
-        ? `<span class="cost-num">${(pc.session.totalCost || 0).toFixed(2)}</span> <small>EGP</small>`
+        ? `<span class="cost-num">${costDisplayVal}</span> <small>EGP</small>`
         : '';
-      const isDanger = pc.status === 'in_session' && pc.session && pc.session.type !== 'open' && (pc.session.remainingSeconds <= 300);
+      const isDanger = pc.status === 'in_session' && pc.session && !isElapsedType && (pc.session.remainingSeconds <= 300);
 
       const vpnBadgeHtml = pc.vpnEnabled ? `
         <div class="pc-vpn-badge" title="Traffic load-balanced via ${pc.vpnServer || 'VPN'} (${pc.vpnServerIp || ''})">
-          <span class="vpn-dot"></span> 🛡️ VPN ACTIVE [${pc.vpnServerFlag || '🌐'} ${pc.vpnServer || 'Route'}]
+          <span class="vpn-dot"></span> 🛡️ VPN ACTIVE
         </div>
       ` : '';
 
       // PC card: Name + Status Badge on top, Hardware Icon or Live Screen in middle, Timer directly under hardware icon, Cost under timer
       const stateBadge = stateConf.badgeIcon || '⚡';
       card.innerHTML = `
+        ${vpnBadgeHtml}
         <div class="centered-name-header">
           <div class="header-name-row" style="display:flex; align-items:center; justify-content:center; gap:0.4rem; position:relative;">
             <div class="centered-title" title="${pc.specs} • IP: ${pc.ip || '10.10.10.101'}">
@@ -973,7 +990,6 @@ document.addEventListener('DOMContentLoaded', () => {
               <span class="pc-state-indicator-badge" title="${stateConf.label} (${pcState})">${stateBadge}</span>
             </div>
           </div>
-          ${vpnBadgeHtml}
         </div>
         ${middleContent}
         <div class="pc-timer-under-device ${isDanger ? 'timer-danger' : ''}" id="timer_${pc.id}">${timerStr}</div>
@@ -1002,13 +1018,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const timerEl = document.getElementById(`timer_${pc.id}`);
     const costEl = document.getElementById(`cost_${pc.id}`);
     if (pc.status === 'in_session' && pc.session) {
-      const timeVal = pc.session.type === 'open' 
+      const isElapsedType = pc.session.type === 'open' || pc.session.type === 'admin' || pc.isAdminSession;
+      const timeVal = isElapsedType 
         ? formatTime(pc.session.elapsedSeconds)
         : formatTime(pc.session.remainingSeconds);
 
       if (timerEl) {
         timerEl.textContent = timeVal;
-        if (pc.session.type !== 'open' && pc.session.remainingSeconds <= 300) {
+        if (!isElapsedType && pc.session.remainingSeconds <= 300) {
           timerEl.className = 'pc-timer-under-device timer-danger';
         } else {
           timerEl.className = 'pc-timer-under-device';
@@ -1016,7 +1033,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (costEl) {
-        const costVal = (pc.session.totalCost || 0).toFixed(2);
+        const costVal = (pc.session.type === 'admin' || pc.isAdminSession) ? '0.00' : (pc.session.totalCost || 0).toFixed(2);
         costEl.innerHTML = `<span class="cost-num">${costVal}</span> <small>EGP</small>`;
       }
     } else {
@@ -1057,26 +1074,80 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 4. Render Cafeteria POS
+  let activeCafeCategory = 'all';
+
+  function renderDynamicCafeCategories() {
+    const tabsContainer = document.getElementById('posCategoryTabs');
+    if (!tabsContainer) return;
+
+    const categoriesSet = new Set();
+    (state.menu || []).forEach(m => {
+      if (m.category) categoriesSet.add(m.category);
+    });
+
+    const defaultCats = ['Cold Drinks', 'Hot Drinks', 'Meals', 'Snacks'];
+    defaultCats.forEach(c => categoriesSet.add(c));
+
+    let html = `<button class="pos-cat-btn ${activeCafeCategory === 'all' ? 'active' : ''}" data-pos-cat="all">All</button>`;
+    categoriesSet.forEach(cat => {
+      const isActive = activeCafeCategory === cat ? 'active' : '';
+      let emoji = '📦';
+      const cLower = cat.toLowerCase();
+      if (cLower.includes('cold') || cLower.includes('drink') || cLower.includes('pepsi')) emoji = '🥤';
+      else if (cLower.includes('hot') || cLower.includes('coffee') || cLower.includes('tea')) emoji = '☕';
+      else if (cLower.includes('meal') || cLower.includes('food') || cLower.includes('burger')) emoji = '🍜';
+      else if (cLower.includes('snack') || cLower.includes('candy') || cLower.includes('chip')) emoji = '🍫';
+      html += `<button class="pos-cat-btn ${isActive}" data-pos-cat="${cat}">${cat} ${emoji}</button>`;
+    });
+
+    tabsContainer.innerHTML = html;
+
+    tabsContainer.querySelectorAll('.pos-cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeCafeCategory = btn.dataset.posCat;
+        renderCafeteriaPos();
+      });
+    });
+  }
+
   function renderCafeteriaPos() {
     const grid = document.getElementById('posItemsGrid');
     const targetSelect = document.getElementById('posTargetSelect');
+    if (!grid) return;
 
     grid.innerHTML = '';
-    targetSelect.innerHTML = '<option value="">🛒 Direct Walk-in Sale (Takeaway)</option>';
+    if (targetSelect) {
+      targetSelect.innerHTML = '<option value="">🛒 Direct Walk-in Sale (Takeaway)</option>';
+      state.pcs.forEach(pc => {
+        const opt = document.createElement('option');
+        opt.value = pc.id;
+        opt.textContent = `💻 ${pc.name} ${pc.status === 'in_session' ? '(In Session)' : ''}`;
+        targetSelect.appendChild(opt);
+      });
+    }
 
-    // Fill select
-    state.pcs.forEach(pc => {
-      const opt = document.createElement('option');
-      opt.value = pc.id;
-      opt.textContent = `💻 ${pc.name} ${pc.status === 'in_session' ? '(In Session)' : ''}`;
-      targetSelect.appendChild(opt);
+    renderDynamicCafeCategories();
+
+    const menu = state.menu || [];
+    const items = menu.filter(item => {
+      if (activeCafeCategory === 'all') return true;
+      return item.category === activeCafeCategory;
     });
 
-    state.menu.forEach(item => {
+    if (items.length === 0) {
+      grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2.5rem; font-size: 0.95rem;">No products found in this category. Click "➕ Add Product" above to create one!</div>';
+      return;
+    }
+
+    items.forEach(item => {
       const el = document.createElement('div');
       el.className = 'pos-item-card';
       el.innerHTML = `
-        <div class="pos-item-icon">${item.icon}</div>
+        <div class="pos-card-manage-bar">
+          <button class="btn-pos-manage-btn btn-pos-edit" title="Edit Product" onclick="event.stopPropagation(); window.openEditProductModal('${item.id}');">✏️</button>
+          <button class="btn-pos-manage-btn btn-pos-delete" title="Delete Product" onclick="event.stopPropagation(); window.deleteProductItem('${item.id}');">🗑️</button>
+        </div>
+        <div class="pos-item-icon">${item.icon || '🥤'}</div>
         <div class="pos-item-name">${item.name}</div>
         <div class="pos-item-price">${item.price} EGP</div>
         <div class="pos-item-stock">In Stock: ${item.stock}</div>
@@ -1087,6 +1158,100 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       grid.appendChild(el);
+    });
+  }
+
+  // Open Add Product Modal
+  window.openAddProductModal = function() {
+    const modalId = document.getElementById('productCrudId');
+    if (modalId) modalId.value = '';
+    const heading = document.getElementById('productCrudHeading');
+    if (heading) heading.textContent = 'Add New Product';
+    const nameEl = document.getElementById('productCrudName');
+    if (nameEl) nameEl.value = '';
+    const catEl = document.getElementById('productCrudCategory');
+    if (catEl) catEl.value = 'Cold Drinks';
+    const priceEl = document.getElementById('productCrudPrice');
+    if (priceEl) priceEl.value = '';
+    const stockEl = document.getElementById('productCrudStock');
+    if (stockEl) stockEl.value = '50';
+    const iconEl = document.getElementById('productCrudIcon');
+    if (iconEl) iconEl.value = '🥤';
+    openModal('modalProductCrud');
+  };
+
+  const btnOpenAddProduct = document.getElementById('btnOpenAddProductModal');
+  if (btnOpenAddProduct) {
+    btnOpenAddProduct.addEventListener('click', window.openAddProductModal);
+  }
+
+  // Open Edit Product Modal
+  window.openEditProductModal = function(id) {
+    const item = (state.menu || []).find(m => m.id === id);
+    if (!item) return;
+
+    document.getElementById('productCrudId').value = item.id;
+    document.getElementById('productCrudHeading').textContent = `Edit Product (${item.name})`;
+    document.getElementById('productCrudName').value = item.name;
+    document.getElementById('productCrudCategory').value = item.category || 'Cold Drinks';
+    document.getElementById('productCrudPrice').value = item.price;
+    document.getElementById('productCrudStock').value = item.stock;
+    document.getElementById('productCrudIcon').value = item.icon || '🥤';
+    openModal('modalProductCrud');
+  };
+
+  // Delete Product Item
+  window.deleteProductItem = function(id) {
+    const item = (state.menu || []).find(m => m.id === id);
+    if (!item) return;
+
+    if (confirm(`Are you sure you want to delete (${item.name}) from cafeteria products?`)) {
+      fetch(`/api/menu/${id}`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            window.cyberAudio.playWarning();
+            if (res.menu) state.menu = res.menu;
+            renderCafeteriaPos();
+          }
+        });
+    }
+  };
+
+  // Submit Add / Edit Product
+  const btnSaveProductSubmit = document.getElementById('btnSaveProductSubmit');
+  if (btnSaveProductSubmit) {
+    btnSaveProductSubmit.addEventListener('click', () => {
+      const id = document.getElementById('productCrudId').value;
+      const name = document.getElementById('productCrudName').value.trim();
+      const category = document.getElementById('productCrudCategory').value.trim() || 'General';
+      const price = parseFloat(document.getElementById('productCrudPrice').value) || 0;
+      const stock = parseInt(document.getElementById('productCrudStock').value, 10) || 0;
+      const icon = document.getElementById('productCrudIcon').value.trim() || '🥤';
+
+      if (!name) return alert('Product name is required!');
+      if (price <= 0) return alert('Please enter a valid price in EGP!');
+
+      const isUpdate = !!id;
+      const url = isUpdate ? `/api/menu/${id}` : '/api/menu/add';
+      const method = isUpdate ? 'PUT' : 'POST';
+
+      fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, category, price, stock, icon })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          window.cyberAudio.playUnlock();
+          closeModal('modalProductCrud');
+          if (res.menu) state.menu = res.menu;
+          renderCafeteriaPos();
+        } else {
+          alert(res.error || 'Failed to save product');
+        }
+      });
     });
   }
 
@@ -1770,13 +1935,58 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  let selectedGameCategory = 'all';
+
+  function renderGameCategoryFilterTabs() {
+    const bar = document.getElementById('gameCategoriesFilterBar');
+    if (!bar) return;
+
+    const cats = new Set();
+    (state.games || []).forEach(g => {
+      if (g.category) cats.add(g.category);
+    });
+
+    const defaultGameCats = ['Shooters', 'Battle Royale', 'MOBA', 'Sports', 'Open World', 'Apps & Tools', 'Browsers', 'Design & Media', 'Emulators'];
+    defaultGameCats.forEach(c => cats.add(c));
+
+    let html = `<button class="pos-cat-btn ${selectedGameCategory === 'all' ? 'active' : ''}" data-game-cat="all">All Titles</button>`;
+    cats.forEach(c => {
+      const isActive = selectedGameCategory === c ? 'active' : '';
+      html += `<button class="pos-cat-btn ${isActive}" data-game-cat="${c}">${c}</button>`;
+    });
+
+    bar.innerHTML = html;
+    bar.querySelectorAll('.pos-cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedGameCategory = btn.dataset.gameCat;
+        renderMasterGames();
+      });
+    });
+  }
+
   function renderMasterGames() {
     const grid = document.getElementById('masterGamesGrid');
     if (!grid) return;
     grid.innerHTML = '';
 
-    const games = state.games || [];
+    renderGameCategoryFilterTabs();
+
+    const games = (state.games || []).filter(g => {
+      if (selectedGameCategory === 'all') return true;
+      return g.category === selectedGameCategory;
+    });
+
+    if (games.length === 0) {
+      grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2.5rem; font-size: 0.95rem;">No titles found in this category. Click "➕ Add Title" above to configure games, apps, or scripts!</div>';
+      return;
+    }
+
     games.forEach(game => {
+      const isBat = (game.executable || '').toLowerCase().endsWith('.bat') || (game.executable || '').toLowerCase().endsWith('.cmd');
+      const exeBadge = game.executable 
+        ? (isBat ? '<span style="background:rgba(255,184,0,0.2); border:1px solid rgba(255,184,0,0.5); color:#ffb800; padding:1px 6px; border-radius:4px; font-size:0.68rem; font-weight:800; margin-left:4px;">BAT SCRIPT</span>' : '<span style="background:rgba(0,243,255,0.2); border:1px solid rgba(0,243,255,0.5); color:#00f3ff; padding:1px 6px; border-radius:4px; font-size:0.68rem; font-weight:800; margin-left:4px;">EXE BINARY</span>')
+        : '';
+
       const card = document.createElement('div');
       card.className = 'master-game-card';
       card.innerHTML = `
@@ -1787,10 +1997,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="master-game-details">
           <div>
             <div class="game-title-text">${game.title}</div>
-            <div class="game-developer-text">Developer: ${game.developer || 'Not Specified'}</div>
+            <div class="game-developer-text">Studio: ${game.developer || 'Not Specified'}</div>
           </div>
           <div class="game-exe-path" title="${game.executable || 'Auto Path'}">
-            📁 ${game.executable || 'Default Windows executable path'}
+            📁 ${game.executable || 'Default Windows executable path'} ${exeBadge}
           </div>
           <div class="master-card-actions">
             <button class="btn btn-sm btn-game-edit" onclick="openEditGameModal('${game.id}')">
@@ -1806,14 +2016,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Handle custom category toggle
+  const gameCatSelect = document.getElementById('gameCategoryInput');
+  const gameCustomCatInput = document.getElementById('gameCustomCategoryInput');
+  if (gameCatSelect && gameCustomCatInput) {
+    gameCatSelect.addEventListener('change', () => {
+      if (gameCatSelect.value === '__custom__') {
+        gameCustomCatInput.style.display = 'block';
+        gameCustomCatInput.focus();
+      } else {
+        gameCustomCatInput.style.display = 'none';
+      }
+    });
+  }
+
   // Open Add Game Modal
   const btnOpenAddGame = document.getElementById('btnOpenAddGameModal');
   if (btnOpenAddGame) {
     btnOpenAddGame.addEventListener('click', () => {
       document.getElementById('gameModalId').value = '';
-      document.getElementById('gameModalHeading').textContent = 'Add New Game to Launcher';
+      document.getElementById('gameModalHeading').textContent = 'Add New Title (Game / App / Script)';
       document.getElementById('gameTitleInput').value = '';
-      document.getElementById('gameCategoryInput').value = 'Shooters';
+      if (gameCatSelect) gameCatSelect.value = 'Shooters';
+      if (gameCustomCatInput) {
+        gameCustomCatInput.value = '';
+        gameCustomCatInput.style.display = 'none';
+      }
       document.getElementById('gameDeveloperInput').value = '';
       document.getElementById('gamePosterInput').value = '';
       document.getElementById('gameExecutableInput').value = '';
@@ -1826,9 +2054,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!game) return;
 
     document.getElementById('gameModalId').value = game.id;
-    document.getElementById('gameModalHeading').textContent = `Edit Game (${game.title})`;
+    document.getElementById('gameModalHeading').textContent = `Edit Title (${game.title})`;
     document.getElementById('gameTitleInput').value = game.title;
-    document.getElementById('gameCategoryInput').value = game.category || 'Shooters';
+    
+    // Check if category is in select options
+    let hasOption = false;
+    if (gameCatSelect) {
+      for (let i = 0; i < gameCatSelect.options.length; i++) {
+        if (gameCatSelect.options[i].value === game.category) {
+          hasOption = true;
+          break;
+        }
+      }
+      if (hasOption) {
+        gameCatSelect.value = game.category;
+        if (gameCustomCatInput) gameCustomCatInput.style.display = 'none';
+      } else {
+        gameCatSelect.value = '__custom__';
+        if (gameCustomCatInput) {
+          gameCustomCatInput.style.display = 'block';
+          gameCustomCatInput.value = game.category || '';
+        }
+      }
+    }
+
     document.getElementById('gameDeveloperInput').value = game.developer || '';
     document.getElementById('gamePosterInput').value = game.poster || '';
     document.getElementById('gameExecutableInput').value = game.executable || '';
@@ -1840,14 +2089,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const game = (state.games || []).find(g => g.id === gameId);
     if (!game) return;
 
-    if (confirm(`Are you sure you want to delete (${game.title}) from all client launchers?`)) {
+    if (confirm(`Are you sure you want to delete (${game.title}) from the launcher library?`)) {
       fetch(`/api/games/${gameId}`, { method: 'DELETE' })
         .then(r => r.json())
         .then(res => {
           if (res.success) {
             window.cyberAudio.playWarning();
-            alert(`Successfully deleted (${game.title}) and updated all client machines!`);
-            fetchState();
+            if (res.games) state.games = res.games;
+            renderMasterGames();
           }
         });
     }
@@ -1859,12 +2108,15 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSaveGame.addEventListener('click', () => {
       const id = document.getElementById('gameModalId').value;
       const title = document.getElementById('gameTitleInput').value.trim();
-      const category = document.getElementById('gameCategoryInput').value;
+      let category = gameCatSelect ? gameCatSelect.value : 'Shooters';
+      if (category === '__custom__') {
+        category = (gameCustomCatInput && gameCustomCatInput.value.trim()) || 'General';
+      }
       const developer = document.getElementById('gameDeveloperInput').value.trim();
       const poster = document.getElementById('gamePosterInput').value.trim();
       const executable = document.getElementById('gameExecutableInput').value.trim();
 
-      if (!title) return alert('Game title is required!');
+      if (!title) return alert('Title is required!');
 
       const isUpdate = !!id;
       const url = isUpdate ? `/api/games/update/${id}` : '/api/games/add';
@@ -1878,10 +2130,106 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res.success) {
           window.cyberAudio.playUnlock();
           closeModal('gameModal');
-          alert(isUpdate ? 'Game updated successfully!' : 'Game added to launcher and broadcast to all PCs!');
-          fetchState();
+          if (res.games) state.games = res.games;
+          renderMasterGames();
         } else {
           alert(res.error || 'Error occurred while saving');
+        }
+      });
+    });
+  }
+
+  // -------------------------------------------------------------
+  // SHOP BRANDING & CUSTOM LOUNGE IDENTITY
+  // -------------------------------------------------------------
+  function applyBranding(branding) {
+    if (!branding) return;
+    if (branding.shopName) {
+      const elName = document.getElementById('brandShopName');
+      if (elName) elName.textContent = branding.shopName;
+      const setInput = document.getElementById('settingShopName');
+      if (setInput) setInput.value = branding.shopName;
+      const modalInput = document.getElementById('modalBrandingName');
+      if (modalInput) modalInput.value = branding.shopName;
+      document.title = branding.shopName + ' - Gaming Lounge Management System';
+    }
+    if (branding.shopSubtitle !== undefined) {
+      const elSub = document.getElementById('brandShopSub');
+      if (elSub) elSub.textContent = branding.shopSubtitle;
+      const setSub = document.getElementById('settingShopSub');
+      if (setSub) setSub.value = branding.shopSubtitle;
+      const modalSub = document.getElementById('modalBrandingSub');
+      if (modalSub) modalSub.value = branding.shopSubtitle;
+    }
+    if (branding.shopLogo) {
+      const elLogo = document.getElementById('brandLogoIcon');
+      if (elLogo) elLogo.textContent = branding.shopLogo;
+      const setLogo = document.getElementById('settingShopLogo');
+      if (setLogo) setLogo.value = branding.shopLogo;
+      const modalLogo = document.getElementById('modalBrandingLogo');
+      if (modalLogo) modalLogo.value = branding.shopLogo;
+    }
+  }
+
+  // Header Brand click opens quick customize modal
+  const headerBrandWrap = document.getElementById('headerBrandWrap');
+  if (headerBrandWrap) {
+    headerBrandWrap.addEventListener('click', () => {
+      const currentName = document.getElementById('brandShopName') ? document.getElementById('brandShopName').textContent : 'CYBERPULSE OS';
+      const currentSub = document.getElementById('brandShopSub') ? document.getElementById('brandShopSub').textContent : '';
+      const currentLogo = document.getElementById('brandLogoIcon') ? document.getElementById('brandLogoIcon').textContent : '⚡';
+      if (document.getElementById('modalBrandingName')) document.getElementById('modalBrandingName').value = currentName;
+      if (document.getElementById('modalBrandingSub')) document.getElementById('modalBrandingSub').value = currentSub;
+      if (document.getElementById('modalBrandingLogo')) document.getElementById('modalBrandingLogo').value = currentLogo;
+      openModal('modalEditBranding');
+    });
+  }
+
+  // Submit modal branding
+  const btnSubmitModalBranding = document.getElementById('btnSubmitModalBranding');
+  if (btnSubmitModalBranding) {
+    btnSubmitModalBranding.addEventListener('click', () => {
+      const shopName = document.getElementById('modalBrandingName').value.trim();
+      const shopSubtitle = document.getElementById('modalBrandingSub').value.trim();
+      const shopLogo = document.getElementById('modalBrandingLogo').value.trim() || '⚡';
+      if (!shopName) return alert('Shop name cannot be empty!');
+
+      fetch('/api/settings/branding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shopName, shopSubtitle, shopLogo })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          applyBranding(res.branding);
+          closeModal('modalEditBranding');
+          window.cyberAudio.playSuccess();
+        }
+      });
+    });
+  }
+
+  // Save branding from Settings section
+  const btnSaveBrandingSettings = document.getElementById('btnSaveBrandingSettings');
+  if (btnSaveBrandingSettings) {
+    btnSaveBrandingSettings.addEventListener('click', () => {
+      const shopName = document.getElementById('settingShopName').value.trim();
+      const shopSubtitle = document.getElementById('settingShopSub').value.trim();
+      const shopLogo = document.getElementById('settingShopLogo').value.trim() || '⚡';
+      if (!shopName) return alert('Shop name cannot be empty!');
+
+      fetch('/api/settings/branding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shopName, shopSubtitle, shopLogo })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          applyBranding(res.branding);
+          window.cyberAudio.playSuccess();
+          alert('Shop identity & branding saved successfully!');
         }
       });
     });
@@ -2716,7 +3064,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const badgeGroup = document.createElement('div');
         badgeGroup.className = 'control-group state-badge-group';
         badgeGroup.innerHTML = `
-          <label>Status Badge Icon (Next to PC Name):</label>
+          <label title="Icon badge displayed next to station name">Status Badge:</label>
           <select class="form-input state-badge-select" data-state-key="${key}">
             ${STATUS_BADGE_OPTIONS.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('')}
           </select>

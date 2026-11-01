@@ -203,9 +203,11 @@ ipcMain.handle('launch-native-game', (event, gameId) => {
 
   if (fs.existsSync(game.executable)) {
     try {
+      const isScript = game.executable.toLowerCase().endsWith('.bat') || game.executable.toLowerCase().endsWith('.cmd');
       const child = spawn(game.executable, game.args || [], {
         detached: true,
-        stdio: 'ignore'
+        stdio: 'ignore',
+        shell: isScript
       });
       child.unref();
       currentActiveProcess = { id: game.id, name: game.name, pid: child.pid };

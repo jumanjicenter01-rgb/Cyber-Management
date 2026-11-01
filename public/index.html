@@ -18,12 +18,13 @@
     
     <!-- Top Main Header -->
     <header class="admin-header">
-      <div class="header-brand">
-        <span class="brand-logo">⚡</span>
+      <div class="header-brand" id="headerBrandWrap" style="cursor: pointer;" title="Click to change lounge name & branding">
+        <span class="brand-logo" id="brandLogoIcon">⚡</span>
         <div>
-          <div class="brand-title">CYBERPULSE OS</div>
-          <div class="brand-subtitle">Esports Lounge & Central Arena Management</div>
+          <div class="brand-title" id="brandShopName">CYBERPULSE OS</div>
+          <div class="brand-subtitle" id="brandShopSub">Esports Lounge & Central Arena Management</div>
         </div>
+        <span class="brand-edit-badge" title="Edit lounge name" style="font-size: 0.85rem; opacity: 0.7; margin-left: 2px;">✏️</span>
       </div>
 
       <!-- Live Shift Stats Widget -->
@@ -249,12 +250,17 @@
       <section id="gameHubTab" class="tab-panel">
         <div class="game-hub-header">
           <div>
-            <h2 class="section-title">🎮 Master Game Hub & Launcher Library</h2>
-            <p class="section-desc">Centralized library control: add new titles, update game posters, and configure auto-launch executables across all client stations.</p>
+            <h2 class="section-title">🎮 Master Games & Apps Hub (Library)</h2>
+            <p class="section-desc">Centralized library control: add games, apps, and tools, configure custom categories/specialties, and assign .exe / .bat executables across all client stations.</p>
           </div>
           <button class="btn btn-primary" id="btnOpenAddGameModal">
-            <span>➕</span> Add New Game to Launcher
+            <span>➕</span> Add Title (Game / App / Script)
           </button>
+        </div>
+
+        <!-- Dynamic Category Filter Tabs for Games & Apps -->
+        <div class="game-categories-bar" id="gameCategoriesFilterBar" style="display:flex; gap:0.5rem; margin-bottom:1.2rem; flex-wrap:wrap;">
+          <button class="pos-cat-btn active" data-game-cat="all">All Titles</button>
         </div>
 
         <div class="games-management-grid" id="masterGamesGrid">
@@ -271,12 +277,17 @@
         <div class="cafe-pos-layout">
           <!-- Menu Products -->
           <div class="pos-menu-section">
-            <div class="pos-categories" id="posCategoryTabs">
-              <button class="pos-cat-btn active" data-pos-cat="all">All</button>
-              <button class="pos-cat-btn" data-pos-cat="Cold Drinks">Cold Drinks 🥤</button>
-              <button class="pos-cat-btn" data-pos-cat="Hot Drinks">Hot Drinks ☕</button>
-              <button class="pos-cat-btn" data-pos-cat="Meals">Meals 🍜</button>
-              <button class="pos-cat-btn" data-pos-cat="Snacks">Snacks & Candy 🍫</button>
+            <div class="pos-menu-topbar" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.9rem; gap:1rem; flex-wrap:wrap;">
+              <div class="pos-categories" id="posCategoryTabs">
+                <button class="pos-cat-btn active" data-pos-cat="all">All</button>
+                <button class="pos-cat-btn" data-pos-cat="Cold Drinks">Cold Drinks 🥤</button>
+                <button class="pos-cat-btn" data-pos-cat="Hot Drinks">Hot Drinks ☕</button>
+                <button class="pos-cat-btn" data-pos-cat="Meals">Meals 🍜</button>
+                <button class="pos-cat-btn" data-pos-cat="Snacks">Snacks & Candy 🍫</button>
+              </div>
+              <button class="btn btn-primary btn-sm" id="btnOpenAddProductModal" style="display:inline-flex; align-items:center; gap:0.4rem; white-space:nowrap;">
+                <span>➕</span> Add Product
+              </button>
             </div>
             <div class="pos-items-grid" id="posItemsGrid"></div>
           </div>
@@ -381,6 +392,14 @@
             </div>
 
             <div class="settings-nav-list">
+              <button class="settings-nav-item" data-settings-section="secBranding">
+                <span class="settings-nav-icon">🏪</span>
+                <div class="settings-nav-text">
+                  <span class="nav-title">Shop Identity & Name</span>
+                  <span class="nav-desc">Cafe name, logo & tagline</span>
+                </div>
+              </button>
+
               <button class="settings-nav-item active" data-settings-section="secPcVisuals">
                 <span class="settings-nav-icon">🎨</span>
                 <div class="settings-nav-text">
@@ -439,6 +458,58 @@
 
           <!-- Settings Main Content Area -->
           <div class="settings-content-pane">
+
+            <!-- ==================================================== -->
+            <!-- SECTION 0: SHOP IDENTITY & BRANDING                  -->
+            <!-- ==================================================== -->
+            <div id="secBranding" class="settings-section">
+              <div class="settings-section-header">
+                <div>
+                  <h2 class="section-title">🏪 Shop Identity & Lounge Branding</h2>
+                  <p class="section-desc">Customize your Cyber Cafe or Esports Lounge name, tagline, and brand logo displayed across all screens and receipts.</p>
+                </div>
+                <div class="settings-actions-top">
+                  <button class="btn btn-primary btn-sm" id="btnSaveBrandingSettings">
+                    <span>💾</span> Save Shop Branding
+                  </button>
+                </div>
+              </div>
+
+              <div class="settings-card-box">
+                <div class="card-box-header">
+                  <span class="box-icon">⚡</span>
+                  <div>
+                    <h4>Lounge Brand Information:</h4>
+                    <p class="box-sub">This name appears in the top navigation bar, invoice receipts, and client lock screens.</p>
+                  </div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:1.1rem; max-width:620px; margin-top:1.2rem;">
+                  <div class="form-group">
+                    <label style="font-weight:700; color:#fff; font-size:0.85rem;">Lounge / Cyber Cafe Name (اسم المحل):</label>
+                    <input type="text" id="settingShopName" class="form-input" placeholder="e.g. CYBERPULSE OS, MATRIX ARENA, GLADIATOR ESPORTS">
+                  </div>
+                  <div class="form-group">
+                    <label style="font-weight:700; color:#fff; font-size:0.85rem;">Tagline / Subtitle (الشعار أو الوصف):</label>
+                    <input type="text" id="settingShopSub" class="form-input" placeholder="e.g. Esports Lounge & Central Arena Management">
+                  </div>
+                  <div class="form-group">
+                    <label style="font-weight:700; color:#fff; font-size:0.85rem;">Brand Icon / Logo Emoji (أيقونة اللوجو):</label>
+                    <div style="display:flex; gap:0.6rem; align-items:center;">
+                      <input type="text" id="settingShopLogo" class="form-input" value="⚡" style="width:75px; text-align:center; font-size:1.4rem;">
+                      <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                        <button type="button" class="btn-preset-chip" onclick="document.getElementById('settingShopLogo').value='⚡'">⚡</button>
+                        <button type="button" class="btn-preset-chip" onclick="document.getElementById('settingShopLogo').value='🎮'">🎮</button>
+                        <button type="button" class="btn-preset-chip" onclick="document.getElementById('settingShopLogo').value='👑'">👑</button>
+                        <button type="button" class="btn-preset-chip" onclick="document.getElementById('settingShopLogo').value='🔥'">🔥</button>
+                        <button type="button" class="btn-preset-chip" onclick="document.getElementById('settingShopLogo').value='🚀'">🚀</button>
+                        <button type="button" class="btn-preset-chip" onclick="document.getElementById('settingShopLogo').value='💎'">💎</button>
+                        <button type="button" class="btn-preset-chip" onclick="document.getElementById('settingShopLogo').value='🛡️'">🛡️</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <!-- ==================================================== -->
             <!-- SECTION 1: DEVICE ICONS & NEON CUSTOMIZER            -->
@@ -2058,11 +2129,14 @@
   <!-- ============================================================== -->
   <!-- MODAL: ADD / EDIT GAME IN LAUNCHER LIBRARY                     -->
   <!-- ============================================================== -->
+  <!-- ============================================================== -->
+  <!-- MODAL: ADD / EDIT GAME IN LAUNCHER LIBRARY                     -->
+  <!-- ============================================================== -->
   <div id="gameModal" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-header">
         <div class="modal-title">
-          <span>🎮</span> <span id="gameModalHeading">Add New Game to Launcher</span>
+          <span>🎮</span> <span id="gameModalHeading">Add New Title (Game / App / Script)</span>
         </div>
         <button class="modal-close" onclick="closeModal('gameModal')">&times;</button>
       </div>
@@ -2070,24 +2144,32 @@
         <input type="hidden" id="gameModalId">
         
         <div class="form-group">
-          <label>Game Title:</label>
-          <input type="text" id="gameTitleInput" class="form-input" placeholder="e.g. Valorant, EA FC 25, Counter-Strike 2">
+          <label>Title (Game, App, or Script):</label>
+          <input type="text" id="gameTitleInput" class="form-input" placeholder="e.g. Valorant, Photoshop, Discord, Booster Script">
         </div>
 
         <div class="form-group">
-          <label>Category:</label>
-          <select id="gameCategoryInput" class="form-input">
-            <option value="Shooters">Shooters / FPS</option>
-            <option value="Battle Royale">Battle Royale</option>
-            <option value="MOBA">MOBA & Strategy</option>
-            <option value="Sports">Sports & Racing</option>
-            <option value="Open World">Open World & RPG</option>
-          </select>
+          <label>Category / Specialty (التخصص أو الفئة):</label>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <select id="gameCategoryInput" class="form-input" style="flex:1; min-width:180px;">
+              <option value="Shooters">Shooters / FPS</option>
+              <option value="Battle Royale">Battle Royale</option>
+              <option value="MOBA">MOBA & Strategy</option>
+              <option value="Sports">Sports & Racing</option>
+              <option value="Open World">Open World & RPG</option>
+              <option value="Apps & Tools">Apps & Tools (برامج وأدوات)</option>
+              <option value="Browsers">Browsers (متصفحات)</option>
+              <option value="Design & Media">Design & Media (تصميم ومونتاج)</option>
+              <option value="Emulators">Emulators (محاكيات)</option>
+              <option value="__custom__">➕ New Custom Specialty...</option>
+            </select>
+            <input type="text" id="gameCustomCategoryInput" class="form-input" placeholder="Enter custom category name..." style="display:none; flex:1; min-width:180px;">
+          </div>
         </div>
 
         <div class="form-group">
-          <label>Developer / Studio:</label>
-          <input type="text" id="gameDeveloperInput" class="form-input" placeholder="e.g. Riot Games, Valve, Rockstar">
+          <label>Developer / Studio / Publisher:</label>
+          <input type="text" id="gameDeveloperInput" class="form-input" placeholder="e.g. Riot Games, Valve, Adobe, Custom Tool">
         </div>
 
         <div class="form-group">
@@ -2107,12 +2189,111 @@
         </div>
 
         <div class="form-group">
-          <label>Executable Path on Windows (Optional):</label>
-          <input type="text" id="gameExecutableInput" class="form-input" placeholder="C:\Games\Game.exe or launch protocol">
+          <label>Executable Binary or Batch Script (.exe / .bat):</label>
+          <input type="text" id="gameExecutableInput" class="form-input" placeholder="e.g. D:\Games\CS2\cs2.exe or C:\Apps\Launcher.bat">
+          <small style="color:var(--text-muted); font-size:0.75rem; margin-top:0.3rem; display:block;">
+            Supports standard Windows executables (.exe) and batch scripts (.bat) directly.
+          </small>
         </div>
 
         <button class="btn btn-primary btn-block btn-lg" id="btnSaveGameSubmit">
           <span>💾</span> Save & Broadcast to All PCs
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / EDIT CAFETERIA PRODUCT -->
+  <div id="modalProductCrud" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🍔</span> <span id="productCrudHeading">Add New Product</span>
+        </div>
+        <button class="modal-close" onclick="closeModal('modalProductCrud')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="productCrudId">
+        
+        <div class="form-group">
+          <label>Product Name (اسم المنتج):</label>
+          <input type="text" id="productCrudName" class="form-input" placeholder="e.g. Red Bull 250ml, Indomie Noodles, Espresso">
+        </div>
+
+        <div class="form-group">
+          <label>Category (الفئة / القسم):</label>
+          <input list="productCategoryList" id="productCrudCategory" class="form-input" placeholder="e.g. Cold Drinks, Hot Drinks, Meals, Snacks">
+          <datalist id="productCategoryList">
+            <option value="Cold Drinks">
+            <option value="Hot Drinks">
+            <option value="Meals">
+            <option value="Snacks">
+            <option value="Sweets">
+            <option value="Accessories">
+          </datalist>
+        </div>
+
+        <div class="form-row" style="display:flex; gap:0.8rem;">
+          <div class="form-group" style="flex:1;">
+            <label>Price in EGP (السعر بالجنيه):</label>
+            <input type="number" id="productCrudPrice" class="form-input" min="0" step="0.5" placeholder="e.g. 25">
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label>Stock Count (الكمية بالمخزن):</label>
+            <input type="number" id="productCrudStock" class="form-input" min="0" step="1" value="50">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Product Icon / Emoji (الأيقونة):</label>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <input type="text" id="productCrudIcon" class="form-input" value="🥤" style="width:70px; text-align:center; font-size:1.4rem;">
+            <div class="emoji-suggestions" style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+              <button type="button" class="btn-preset-chip" onclick="document.getElementById('productCrudIcon').value='🥤'">🥤</button>
+              <button type="button" class="btn-preset-chip" onclick="document.getElementById('productCrudIcon').value='☕'">☕</button>
+              <button type="button" class="btn-preset-chip" onclick="document.getElementById('productCrudIcon').value='🍔'">🍔</button>
+              <button type="button" class="btn-preset-chip" onclick="document.getElementById('productCrudIcon').value='🍟'">🍟</button>
+              <button type="button" class="btn-preset-chip" onclick="document.getElementById('productCrudIcon').value='🍫'">🍫</button>
+              <button type="button" class="btn-preset-chip" onclick="document.getElementById('productCrudIcon').value='🍜'">🍜</button>
+              <button type="button" class="btn-preset-chip" onclick="document.getElementById('productCrudIcon').value='⚡'">⚡</button>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block btn-lg" id="btnSaveProductSubmit">
+          <span>💾</span> Save Product
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT SHOP BRANDING & LOUNGE NAME -->
+  <div id="modalEditBranding" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>⚡</span> <span>Customize Lounge Branding & Shop Name</span>
+        </div>
+        <button class="modal-close" onclick="closeModal('modalEditBranding')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Lounge / Cyber Cafe Name (اسم المحل):</label>
+          <input type="text" id="modalBrandingName" class="form-input" placeholder="e.g. CYBERPULSE ARENA, MATRIX GAMING">
+        </div>
+
+        <div class="form-group">
+          <label>Tagline / Subtitle (الوصف أو الشعار):</label>
+          <input type="text" id="modalBrandingSub" class="form-input" placeholder="e.g. Esports Lounge & Central Arena Management">
+        </div>
+
+        <div class="form-group">
+          <label>Brand Icon / Logo Emoji (أيقونة اللوجو):</label>
+          <input type="text" id="modalBrandingLogo" class="form-input" value="⚡" style="width:80px; text-align:center; font-size:1.4rem;">
+        </div>
+
+        <button class="btn btn-primary btn-block btn-lg" id="btnSubmitModalBranding">
+          <span>💾</span> Save Lounge Identity
         </button>
       </div>
     </div>

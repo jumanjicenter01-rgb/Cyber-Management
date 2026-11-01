@@ -66,11 +66,31 @@ document.addEventListener('DOMContentLoaded', () => {
       renderGames(allGames);
       renderCafeteriaMenu(data.menu || []);
 
+      if (data.settings && data.settings.branding && data.settings.branding.shopName) {
+        document.querySelectorAll('.brand-title').forEach(el => el.textContent = data.settings.branding.shopName);
+        if (data.settings.branding.shopSubtitle) {
+          document.querySelectorAll('.brand-sub').forEach(el => el.textContent = data.settings.branding.shopSubtitle);
+        }
+      }
+
       const pc = data.pcs.find(p => p.id === pcId);
       if (pc) {
         updatePcUI(pc);
       }
     });
+
+  socket.on('branding_updated', (branding) => {
+    if (branding && branding.shopName) {
+      document.querySelectorAll('.brand-title').forEach(el => el.textContent = branding.shopName);
+      if (branding.shopSubtitle) {
+        document.querySelectorAll('.brand-sub').forEach(el => el.textContent = branding.shopSubtitle);
+      }
+    }
+  });
+
+  socket.on('menu_updated', (menu) => {
+    renderCafeteriaMenu(menu);
+  });
 
   // Handle PC Update
   function updatePcUI(pc) {
