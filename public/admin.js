@@ -595,6 +595,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // RENDERING FUNCTIONS
   // -------------------------------------------------------------
   function renderAll() {
+    updateShiftSummary();
     renderPcsGrid();
     renderSurveillanceGrid();
     renderScreenshotsGallery();
@@ -619,17 +620,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateShiftSummary() {
     const shift = state.shift || {};
-    document.getElementById('shiftCashierName').textContent = shift.cashierName || 'Cashier';
+    const cashierEl = document.getElementById('shiftCashierName');
+    if (cashierEl) cashierEl.textContent = shift.cashierName || 'Cashier';
     
-    const activeCount = state.pcs.filter(p => p.status === 'in_session').length;
-    const totalCount = state.pcs.length;
-    document.getElementById('activePcsCount').textContent = activeCount;
-    document.getElementById('totalPcsCount').textContent = totalCount;
+    const pcsList = Array.isArray(state.pcs) ? state.pcs : [];
+    const activeCount = pcsList.filter(p => p.status === 'in_session').length;
+    const totalCount = pcsList.length;
 
-    document.getElementById('countAll').textContent = totalCount;
-    document.getElementById('countBusy').textContent = activeCount;
-    document.getElementById('countAvail').textContent = state.pcs.filter(p => p.status === 'available').length;
-    document.getElementById('countLocked').textContent = state.pcs.filter(p => p.status === 'locked').length;
+    const elActive = document.getElementById('activePcsCount');
+    const elTotal = document.getElementById('totalPcsCount');
+    const elAll = document.getElementById('countAll');
+    const elBusy = document.getElementById('countBusy');
+    const elAvail = document.getElementById('countAvail');
+    const elLocked = document.getElementById('countLocked');
+
+    if (elActive) elActive.textContent = activeCount;
+    if (elTotal) elTotal.textContent = totalCount;
+    if (elAll) elAll.textContent = totalCount;
+    if (elBusy) elBusy.textContent = activeCount;
+    if (elAvail) elAvail.textContent = pcsList.filter(p => p.status === 'available').length;
+    if (elLocked) elLocked.textContent = pcsList.filter(p => p.status === 'locked').length;
 
     const gameRev = (shift.totalGameRevenue || 0);
     const cafeRev = (shift.totalCafeRevenue || 0);
@@ -1055,7 +1065,6 @@ document.addEventListener('DOMContentLoaded', () => {
       // PC card: Name + Status Badge on top, Hardware Icon or Live Screen in middle, Timer directly under hardware icon, Cost under timer
       const stateBadge = stateConf.badgeIcon || '⚡';
       card.innerHTML = `
-        ${vpnBadgeHtml}
         <div class="centered-name-header">
           <div class="header-name-row" style="display:flex; align-items:center; justify-content:center; gap:0.4rem; position:relative;">
             <div class="centered-title" title="${pc.specs} • IP: ${pc.ip || '10.10.10.101'}">
@@ -1063,6 +1072,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <span class="pc-state-indicator-badge" title="${stateConf.label} (${pcState})">${stateBadge}</span>
             </div>
           </div>
+          ${vpnBadgeHtml}
         </div>
         ${middleContent}
         <div class="pc-timer-under-device ${isDanger ? 'timer-danger' : ''}" id="timer_${pc.id}">${timerStr}</div>
@@ -1122,6 +1132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 2. Render Surveillance Multi-Screen Wall
   function renderSurveillanceGrid() {
+    if (!surveillanceGrid) return;
     surveillanceGrid.innerHTML = '';
 
     state.pcs.forEach(pc => {
@@ -1431,10 +1442,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // 5. Render Invoices Table
   function renderInvoices() {
     const tbody = document.getElementById('invoicesTableBody');
+    if (!tbody) return;
     tbody.innerHTML = '';
-    document.getElementById('invoicesCount').textContent = state.invoices.length;
+    const invoicesCount = document.getElementById('invoicesCount');
+    if (invoicesCount) invoicesCount.textContent = (state.invoices || []).length;
 
-    state.invoices.forEach(inv => {
+    (state.invoices || []).forEach(inv => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><b>${inv.id}</b></td>
@@ -1454,10 +1467,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 6. Render Audit Log
   function renderAuditLog() {
-    const list = document.getElementById('auditListContainer');
+    const list = document.getElementById('auditLogList') || document.getElementById('auditListContainer');
+    if (!list) return;
     list.innerHTML = '';
 
-    state.auditLog.forEach(a => {
+    (state.auditLog || []).forEach(a => {
       const div = document.createElement('div');
       div.className = `audit-item level-${a.level}`;
       div.innerHTML = `

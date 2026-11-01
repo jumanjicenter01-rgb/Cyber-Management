@@ -3580,27 +3580,26 @@ select option:checked {
   to { transform: translateY(-4px); }
 }
 
-/* PC Card VPN Active Badge - Absolute Overlay so it never shifts card height */
+/* PC Card VPN Active Badge - Clean In-Flow pill under the PC name */
 .pc-vpn-badge {
-  position: absolute;
-  top: 10px;
-  left: 10px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.35rem;
-  background: rgba(5, 255, 161, 0.16);
-  border: 1px solid rgba(5, 255, 161, 0.55);
+  background: rgba(5, 255, 161, 0.12);
+  border: 1px solid rgba(5, 255, 161, 0.5);
   color: var(--neon-green);
   border-radius: 20px;
-  padding: 0.2rem 0.6rem;
+  padding: 0.15rem 0.55rem;
   font-family: var(--font-cyber);
   font-size: 0.65rem;
   font-weight: 800;
   letter-spacing: 0.5px;
-  box-shadow: 0 0 10px rgba(5, 255, 161, 0.3);
+  box-shadow: 0 0 10px rgba(5, 255, 161, 0.25);
   animation: vpnPulseGlow 2.5s infinite alternate;
-  z-index: 5;
   white-space: nowrap;
+  margin-top: 0.35rem;
+  pointer-events: auto;
 }
 
 .vpn-dot {
@@ -3609,6 +3608,24 @@ select option:checked {
   border-radius: 50%;
   background: var(--neon-green);
   box-shadow: 0 0 8px var(--neon-green);
+  flex-shrink: 0;
+}
+
+.pc-cards-grid.view-small .pc-vpn-badge {
+  font-size: 0.56rem;
+  padding: 0.1rem 0.45rem;
+  margin-top: 0.2rem;
+  gap: 0.25rem;
+}
+
+.pc-cards-grid.view-small .pc-vpn-badge .vpn-dot {
+  width: 5px;
+  height: 5px;
+}
+
+.pc-cards-grid.view-list .pc-vpn-badge {
+  margin-top: 0.2rem;
+  align-self: flex-start;
 }
 
 @keyframes vpnPulseGlow {
