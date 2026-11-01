@@ -47,7 +47,12 @@ document.addEventListener('DOMContentLoaded', () => {
     reconnectionAttempts: Infinity
   });
 
+  // Security & Offline Resilience State
+  let localWordFilter = null;
+  const offlineViolations = [];
+  const localFilterCooldowns = new Map();
   let offlineTicker = null;
+
 
   socket.on('connect', () => {
     console.log('Connected to Cyber Server, registering as:', pcId || 'Auto-Detect LAN');
@@ -57,16 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
       hostname: window.location.hostname || pcId,
       specs: `${navigator.hardwareConcurrency || 8} Cores • Gaming Client`
     });
-  });
-
-  socket.on('registered', (data) => {
-    if (data && data.pcId) {
-      pcId = data.pcId;
-      localStorage.setItem('cyberpulse_pc_id', data.pcId);
-      if (lockPcName) lockPcName.textContent = data.pcId;
-      if (hudPcName) hudPcName.textContent = data.pcId;
-    }
-  });
 
     // Stop offline ticker when reconnected to server
     if (offlineTicker) {
@@ -88,6 +83,15 @@ document.addEventListener('DOMContentLoaded', () => {
     while (offlineViolations.length > 0) {
       const v = offlineViolations.shift();
       socket.emit('client_reported_violation', { pcId, violation: v });
+    }
+  });
+
+  socket.on('registered', (data) => {
+    if (data && data.pcId) {
+      pcId = data.pcId;
+      localStorage.setItem('cyberpulse_pc_id', data.pcId);
+      if (lockPcName) lockPcName.textContent = data.pcId;
+      if (hudPcName) hudPcName.textContent = data.pcId;
     }
   });
 
@@ -118,6 +122,73 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // -------------------------------------------------------------
+  // FULLSCREEN & ANTI-TAMPER SCREEN LOCK SHIELD
+  // -------------------------------------------------------------
+  function enforceFullscreen() {
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }
+  document.addEventListener('click', enforceFullscreen);
+  document.addEventListener('keydown', enforceFullscreen);
+
+  // Prevent right-click context menu (inspect element, back, reload)
+  document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    return false;
+  });
+
+  // Intercept window close (Alt+F4 / browser close prompt)
+  window.addEventListener('beforeunload', (e) => {
+    if (window.isMasterAuthorizedExit) return;
+    e.preventDefault();
+    e.returnValue = 'CyberPulse Station Lock active. Please use Master Admin credentials to close.';
+    return e.returnValue;
+  });
+
+  // Trap shortcut keys (F11, F12, DevTools, Ctrl+W, Ctrl+R, etc.)
+  document.addEventListener('keydown', (e) => {
+    // Secret Master Cashier / Admin exit combo: Ctrl + Alt + Shift + F12
+    if (e.ctrlKey && e.altKey && e.shiftKey && (e.key === 'F12' || e.code === 'F12')) {
+      e.preventDefault();
+      const pass = prompt('Enter Master Cashier Password to exit lock screen:');
+      if (pass === 'admin') {
+        window.isMasterAuthorizedExit = true;
+        window.close();
+      }
+      return;
+    }
+
+    // Block F11 (exit fullscreen)
+    if (e.key === 'F11' || e.code === 'F11') {
+      e.preventDefault();
+      return false;
+    }
+
+    // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U (Developer Tools)
+    if (e.key === 'F12' ||
+       (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key)) ||
+       (e.ctrlKey && ['u', 'U', 's', 'S'].includes(e.key))) {
+      e.preventDefault();
+      return false;
+    }
+
+    // Block Ctrl+W, Ctrl+T, Ctrl+N, Ctrl+Shift+N (Browser Navigation)
+    if (e.ctrlKey && ['w', 'W', 't', 'T', 'n', 'N', 'q', 'Q'].includes(e.key)) {
+      e.preventDefault();
+      return false;
+    }
+
+    // When station is locked, block Alt+F4
+    if (e.altKey && (e.key === 'F4' || e.code === 'F4')) {
+      if (!pcState || pcState.status !== 'in_session') {
+        e.preventDefault();
+        return false;
+      }
+    }
+  }, true);
+
   // Clock Update for Lock Screen
   function updateClock() {
     const now = new Date();
@@ -127,11 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   setInterval(updateClock, 1000);
   updateClock();
-
-  // Local Security & Word Filter Offline Shield
-  let localWordFilter = null;
-  const offlineViolations = [];
-  const localFilterCooldowns = new Map();
 
   function checkClientWordFilter(text) {
     if (!text || !localWordFilter || !localWordFilter.enabled) return;

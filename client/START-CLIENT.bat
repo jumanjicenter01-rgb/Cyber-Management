@@ -12,11 +12,32 @@ if exist "%CONFIG_FILE%" (
     )
 )
 
+if not "%PC_NAME%"=="" (
+    cls
+    echo ================================================================
+    echo     ⚡ CYBERPULSE GAMING CLIENT - STATION LOCK SYSTEM ⚡
+    echo ================================================================
+    echo.
+    echo  Current Station Name : [%PC_NAME%]
+    echo  Cashier Server IP    : [%SERVER_IP%]
+    echo.
+    echo  [Enter] Start Fullscreen Lock Screen
+    echo  [R]     Reset / Change Server IP or Station Name
+    echo ================================================================
+    set "USER_CHOICE="
+    set /p USER_CHOICE="Select option [Press Enter to Launch]: "
+    if /i "%USER_CHOICE%"=="R" (
+        set "PC_NAME="
+        set "SERVER_IP="
+        del /f /q "%CONFIG_FILE%" > nul 2>&1
+    )
+)
+
 if "%PC_NAME%"=="" (
     cls
     echo ================================================================
-    echo     [CYBERPULSE] First-Time Client Station Quick Setup
-    echo     (Zero-Install Mode: Works without any programming software)
+    echo     ⚡ CYBERPULSE CLIENT QUICK SETUP (Zero-Install Mode) ⚡
+    echo     No programming software or installation required!
     echo ================================================================
     echo.
     set /p PC_NAME="Enter Station Name / ID [Press Enter for %COMPUTERNAME%]: "
@@ -32,48 +53,58 @@ if "%PC_NAME%"=="" (
     
     echo.
     echo [✔] Station configuration saved to client_config.ini!
-    timeout /t 2 > nul
+    timeout /t 1 > nul
 )
 
-echo.
-echo Launching CyberPulse Station Client for [%PC_NAME%] on [http://%SERVER_IP%:4000]...
-
-:: Option A: Standalone Portable Electron if present
-if exist "%~dp0..\node_modules\electron\dist\electron.exe" (
-    start "" "%~dp0..\node_modules\electron\dist\electron.exe" "%~dp0main.js"
-    exit
-)
-
-:: Option B: Node Modules Electron if present
-if exist "%~dp0..\node_modules\.bin\electron.cmd" (
-    start "" "%~dp0..\node_modules\.bin\electron.cmd" "%~dp0main.js"
-    exit
-)
-
-:: Option C: 100% Zero-Install Windows Native Mode (Microsoft Edge Standalone App Mode)
 set "CLIENT_URL=http://%SERVER_IP%:4000/client.html?pc=%PC_NAME%"
+set "KIOSK_DATA_DIR=%TEMP%\cyber_kiosk_%PC_NAME%"
+
+:: Find Browser Executable (Edge or Chrome)
+set "BROWSER_EXE="
+set "BROWSER_TYPE="
 
 if exist "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" (
-    start "" "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" --app="%CLIENT_URL%" --start-fullscreen --disable-pinch --overscroll-history-navigation=0 --no-first-run
+    set "BROWSER_EXE=%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"
+    set "BROWSER_TYPE=edge"
+) else if exist "%ProgramFiles%\Microsoft\Edge\Application\msedge.exe" (
+    set "BROWSER_EXE=%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"
+    set "BROWSER_TYPE=edge"
+) else if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" (
+    set "BROWSER_EXE=%ProgramFiles%\Google\Chrome\Application\chrome.exe"
+    set "BROWSER_TYPE=chrome"
+) else if exist "%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe" (
+    set "BROWSER_EXE=%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"
+    set "BROWSER_TYPE=chrome"
+)
+
+cls
+echo ================================================================
+echo     ⚡ CYBERPULSE CLIENT ACTIVE - WATCHDOG LOCK ENABLED ⚡
+echo ================================================================
+echo  Station ID    : [%PC_NAME%]
+echo  Server Target : [%CLIENT_URL%]
+echo.
+echo  [!] The client is running in 100%% Fullscreen Kiosk Lock Mode.
+echo  [!] If closed, it will automatically restart within 1 second.
+echo  [!] Master Exit Combo: Press Ctrl + Alt + Shift + F12 on screen
+echo ================================================================
+echo.
+
+if "%BROWSER_EXE%"=="" (
+    echo [!] No Microsoft Edge or Chrome detected. Opening default browser...
+    start "" "%CLIENT_URL%"
+    pause
     exit
 )
 
-if exist "%ProgramFiles%\Microsoft\Edge\Application\msedge.exe" (
-    start "" "%ProgramFiles%\Microsoft\Edge\Application\msedge.exe" --app="%CLIENT_URL%" --start-fullscreen --disable-pinch --overscroll-history-navigation=0 --no-first-run
-    exit
+:KIOSK_WATCHDOG_LOOP
+if "%BROWSER_TYPE%"=="edge" (
+    "%BROWSER_EXE%" --kiosk "%CLIENT_URL%" --edge-kiosk-type=fullscreen --no-first-run --kiosk-idle-timeout-minutes=0 --disable-pinch --overscroll-history-navigation=0 --user-data-dir="%KIOSK_DATA_DIR%"
+) else (
+    "%BROWSER_EXE%" --kiosk "%CLIENT_URL%" --no-first-run --disable-pinch --overscroll-history-navigation=0 --user-data-dir="%KIOSK_DATA_DIR%"
 )
 
-:: Option D: Google Chrome Standalone App Mode
-if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" (
-    start "" "%ProgramFiles%\Google\Chrome\Application\chrome.exe" --app="%CLIENT_URL%" --start-fullscreen
-    exit
-)
-
-if exist "%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe" (
-    start "" "%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe" --app="%CLIENT_URL%" --start-fullscreen
-    exit
-)
-
-:: Fallback Default Browser
-start "" "%CLIENT_URL%"
-exit
+echo [!] Station client was closed or interrupted.
+echo [!] Watchdog re-launching fullscreen lock screen in 1 second...
+timeout /t 1 > nul
+goto KIOSK_WATCHDOG_LOOP
