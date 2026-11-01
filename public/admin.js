@@ -644,47 +644,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const pcClickAttr = '';
     let overlayContent = '';
 
-    if (!isMini && pc) {
-      if (pc.status === 'in_session' && pc.session) {
-        const isSessionOpen = pc.session.type === 'open';
-        const timerStr = isSessionOpen 
-          ? formatTime(pc.session.elapsedSeconds || 0)
-          : formatTime(pc.session.remainingSeconds || 0);
-
-        overlayContent = `
-          <div class="screen-live-badge ${isSessionOpen ? 'badge-pulse-cyan' : 'badge-pulse-green'}">
-            <span class="live-dot"></span> ${isSessionOpen ? 'OPEN PLAY' : 'FIXED TIME'}
-          </div>
-          <div class="screen-live-timer" id="curved_timer_${pc.id}">${timerStr}</div>
-          <div class="screen-live-player">👤 ${pc.session.customerName || 'Guest'}</div>
-        `;
-      } else if (pc.status === 'locked') {
-        overlayContent = `
-          <div class="screen-live-lock">🔒</div>
-          <div class="screen-live-status-txt" style="color:var(--neon-pink); font-family:var(--font-cyber); font-weight:800; font-size:0.8rem; letter-spacing:1px; margin-top:3px;">LOCKED</div>
-        `;
-      } else if (pc.status === 'maintenance' || pc.isMaintenance) {
-        overlayContent = `
-          <div style="font-size:1.5rem; filter:drop-shadow(0 0 8px #ff9900);">🔧</div>
-          <div class="screen-live-status-txt" style="color:#ff9900; font-family:var(--font-cyber); font-weight:800; font-size:0.8rem; letter-spacing:1px; margin-top:3px;">MAINTENANCE</div>
-        `;
-      } else if (pc.status === 'offline') {
-        overlayContent = `
-          <div style="font-size:1.3rem; opacity:0.6;">⚫</div>
-          <div class="screen-live-status-txt" style="color:#64748b; font-family:var(--font-cyber); font-weight:700; font-size:0.75rem; letter-spacing:1px; margin-top:3px;">OFFLINE</div>
-        `;
-      } else {
-        overlayContent = `
-          <div class="screen-avail-badge">
-            <span class="live-dot" style="background:#05ffa1; box-shadow:0 0 6px #05ffa1;"></span> READY
-          </div>
-          <div class="screen-avail-rate" style="color:#fff; font-family:var(--font-cyber); font-size:0.85rem; font-weight:700; margin-top:4px;">
-            ${pc.ratePerHour || 20} <small style="font-size:0.65rem; color:#05ffa1;">EGP/h</small>
-          </div>
-        `;
-      }
-    }
-
     if (model && (model.startsWith('icon_') || model.startsWith('custom_'))) {
       const sym = getIconSymbol(model);
       return `
@@ -956,30 +915,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const hardwareModelHtml = generateHardwareSvg(model, color, pc.id, stateConf.label, currentVisuals.enableStandRgb, pcState, pc);
 
-      const ordersCount = (pc.orders || []).reduce((acc, it) => acc + (it.qty || 1), 0);
-
-      let bodyContent = '';
-      if (pc.status === 'in_session' && pc.session) {
-        bodyContent = `
-          ${hardwareModelHtml}
-
-          <div class="pc-active-details">
-            <div class="customer-line">
-              <span class="customer-name">👤 ${pc.session.customerName || 'Guest'}</span>
-              <span class="game-running-tag">🎮 ${pc.currentGame || 'Cyber Launcher'}</span>
-            </div>
-            <div class="timer-row">
-              <span class="pc-timer-display ${pc.session.type !== 'open' && pc.session.remainingSeconds <= 300 ? 'timer-danger' : ''}" id="timer_${pc.id}">⏱️ ${pc.session.type === 'open' ? formatTime(pc.session.elapsedSeconds) : formatTime(pc.session.remainingSeconds)}</span>
-              <span class="pc-cost-display" id="cost_${pc.id}">${(pc.session.totalCost || 0).toFixed(2)} <small>EGP</small></span>
-            </div>
-            ${ordersCount > 0 ? `<div class="orders-mini-pill">🍔 Cafe Orders: ${ordersCount} items</div>` : ''}
-          </div>
-        `;
-      } else {
-        bodyContent = `
-          ${hardwareModelHtml}
-        `;
-      }
+      const timerStr = (pc.status === 'in_session' && pc.session)
+        ? (pc.session.type === 'open' ? formatTime(pc.session.elapsedSeconds) : formatTime(pc.session.remainingSeconds))
+        : '';
+      const costStr = (pc.status === 'in_session' && pc.session)
+        ? `<span class="cost-num">${(pc.session.totalCost || 0).toFixed(2)}</span> <small>EGP</small>`
+        : '';
+      const isDanger = pc.status === 'in_session' && pc.session && pc.session.type !== 'open' && (pc.session.remainingSeconds <= 300);
 
       const vpnBadgeHtml = pc.vpnEnabled ? `
         <div class="pc-vpn-badge" title="Traffic load-balanced via ${pc.vpnServer || 'VPN'} (${pc.vpnServerIp || ''})">
@@ -987,7 +929,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       ` : '';
 
-      // PC card header: name + state badge indicator icon ONLY (No buttons, no clutter!)
+      // PC card: Name + Status Badge on top, Hardware Icon in middle, Timer directly under hardware icon, Cost under timer
       const stateBadge = stateConf.badgeIcon || '⚡';
       card.innerHTML = `
         <div class="centered-name-header">
@@ -999,7 +941,9 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
           ${vpnBadgeHtml}
         </div>
-        ${bodyContent}
+        ${hardwareModelHtml}
+        <div class="pc-timer-under-device ${isDanger ? 'timer-danger' : ''}" id="timer_${pc.id}">${timerStr}</div>
+        <div class="pc-cost-under-timer" id="cost_${pc.id}">${costStr}</div>
       `;
 
       card.addEventListener('dblclick', () => {
@@ -1021,26 +965,33 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   // Update PC Card on second tick
   function updatePcCardLive(pc) {
+    const timerEl = document.getElementById(`timer_${pc.id}`);
+    const costEl = document.getElementById(`cost_${pc.id}`);
     if (pc.status === 'in_session' && pc.session) {
-      const timerEl = document.getElementById(`timer_${pc.id}`);
-      const curvedTimerEl = document.getElementById(`curved_timer_${pc.id}`);
-      const costEl = document.getElementById(`cost_${pc.id}`);
-
       const timeVal = pc.session.type === 'open' 
         ? formatTime(pc.session.elapsedSeconds)
         : formatTime(pc.session.remainingSeconds);
 
       if (timerEl) {
-        timerEl.textContent = `⏱️ ${timeVal}`;
-        if (pc.session.type !== 'open' && pc.session.remainingSeconds <= 60) {
-          timerEl.className = 'pc-timer-display timer-danger';
+        timerEl.textContent = timeVal;
+        if (pc.session.type !== 'open' && pc.session.remainingSeconds <= 300) {
+          timerEl.className = 'pc-timer-under-device timer-danger';
+        } else {
+          timerEl.className = 'pc-timer-under-device';
         }
       }
-      if (curvedTimerEl) {
-        curvedTimerEl.textContent = timeVal;
+
+      if (costEl) {
+        const costVal = (pc.session.totalCost || 0).toFixed(2);
+        costEl.innerHTML = `<span class="cost-num">${costVal}</span> <small>EGP</small>`;
+      }
+    } else {
+      if (timerEl) {
+        timerEl.textContent = '';
+        timerEl.className = 'pc-timer-under-device';
       }
       if (costEl) {
-        costEl.innerHTML = `${(pc.session.totalCost || 0).toFixed(2)} <small>EGP</small>`;
+        costEl.innerHTML = '';
       }
     }
   }

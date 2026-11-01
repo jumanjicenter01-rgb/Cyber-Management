@@ -480,40 +480,78 @@ body {
 
 .pc-card.card-selected {
   border-color: var(--neon-cyan) !important;
-  box-shadow: 0 0 0 2px var(--neon-cyan), 0 12px 30px rgba(0, 243, 255, 0.35) !important;
+  box-shadow: 0 0 0 2px var(--neon-cyan), 0 0 24px rgba(0, 243, 255, 0.45) !important;
   transform: translateY(-4px);
   background: linear-gradient(180deg, rgba(0, 243, 255, 0.08) 0%, var(--bg-card) 100%) !important;
 }
 
-.pc-card.card-selected::before {
-  content: '✓ SELECTED';
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  background: linear-gradient(135deg, var(--neon-cyan), #0077ff);
-  color: #040814;
-  font-family: var(--font-cyber);
-  font-size: 0.65rem;
-  font-weight: 900;
-  padding: 3px 8px;
-  border-radius: 6px;
-  letter-spacing: 1px;
-  box-shadow: 0 0 12px rgba(0, 243, 255, 0.6);
-  z-index: 10;
-  pointer-events: none;
-  animation: selectedPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes selectedPop {
-  0% { transform: scale(0.6); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-/* Centered Name at the top */
+/* Centered Name Header */
 .centered-name-header {
   text-align: center;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
   padding: 0 0.5rem;
+}
+
+.pc-timer-under-device {
+  font-family: var(--font-cyber);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--neon-cyan);
+  letter-spacing: 2px;
+  margin-top: -0.1rem;
+  margin-bottom: 0.15rem;
+  min-height: 1.6rem;
+  text-shadow: 0 0 16px rgba(0, 243, 255, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.pc-timer-under-device:empty {
+  min-height: 0;
+  margin: 0;
+  display: none;
+}
+
+.pc-timer-under-device.timer-danger {
+  color: var(--neon-pink);
+  text-shadow: 0 0 16px rgba(255, 0, 85, 0.85);
+  animation: timerPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes timerPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(1.04); }
+}
+
+.pc-cost-under-timer {
+  font-family: var(--font-cyber);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--neon-amber);
+  letter-spacing: 1px;
+  min-height: 1.4rem;
+  text-shadow: 0 0 14px rgba(255, 184, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-bottom: 0.2rem;
+}
+
+.pc-cost-under-timer:empty {
+  min-height: 0;
+  margin: 0;
+  display: none;
+}
+
+.pc-cost-under-timer small {
+  font-size: 0.75rem;
+  color: #ffffff;
+  opacity: 0.85;
+  margin-left: 5px;
+  font-weight: 600;
 }
 
 .centered-title {
