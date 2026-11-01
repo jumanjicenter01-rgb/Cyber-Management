@@ -2433,7 +2433,28 @@ async function executeMikrotikProvisioning(mt) {
   }
   results.push('Populated destination address-list GAMING-UNBLOCK-DESTINATIONS for Roblox & Valorant Vivox Voice');
 
-  // Mangle rule: Mark gaming & voice traffic from targeted PCs to VPN route
+  // 4. Mangle Rule 1: Local LAN Bypass (Ensures Diskless CCBoot and local router DNS 10.10.10.x are never sent to VPN)
+  const lanCheck = await runRouterOsApi(mt.host, port, username, password, [
+    '/ip/firewall/mangle/print',
+    '?comment=CyberPulse Local LAN Bypass'
+  ]);
+  let lanMangleId = null;
+  for (const m of lanCheck) {
+    const idWord = m.find(w => w.startsWith('=.id='));
+    if (idWord) lanMangleId = idWord.replace('=.id=', '');
+  }
+  if (!lanMangleId) {
+    await runRouterOsApi(mt.host, port, username, password, [
+      '/ip/firewall/mangle/add',
+      '=chain=prerouting',
+      '=dst-address=10.10.10.0/24',
+      '=action=accept',
+      '=comment=CyberPulse Local LAN Bypass'
+    ]);
+    results.push('Added Mangle Rule: Local LAN 10.10.10.0/24 direct bypass (100% Diskless/CCBoot Safe)');
+  }
+
+  // Mangle Rule 2: Mark all gaming VPN traffic from targeted PCs to VPN route (Roblox CDN/Akamai/AWS + Vivox)
   const mCheck = await runRouterOsApi(mt.host, port, username, password, [
     '/ip/firewall/mangle/print',
     '?comment=CyberPulse Gaming Traffic to VPN'
@@ -2449,24 +2470,22 @@ async function executeMikrotikProvisioning(mt) {
       '=.id=' + mangleId,
       '=chain=prerouting',
       '=src-address-list=' + vpnList,
-      '=dst-address-list=GAMING-UNBLOCK-DESTINATIONS',
       '=action=mark-routing',
       '=new-routing-mark=' + routingMark,
       '=passthrough=no'
     ]);
-    results.push(`Updated Selective Mangle: src-address-list=${vpnList} & dst-address-list=GAMING-UNBLOCK-DESTINATIONS -> mark-routing ${routingMark}`);
+    results.push(`Updated Mangle: src-address-list=${vpnList} -> mark-routing ${routingMark} (Full bypass for Roblox & Voice)`);
   } else {
     await runRouterOsApi(mt.host, port, username, password, [
       '/ip/firewall/mangle/add',
       '=chain=prerouting',
       '=src-address-list=' + vpnList,
-      '=dst-address-list=GAMING-UNBLOCK-DESTINATIONS',
       '=action=mark-routing',
       '=new-routing-mark=' + routingMark,
       '=passthrough=no',
       '=comment=CyberPulse Gaming Traffic to VPN'
     ]);
-    results.push(`Created Selective Mangle: src-address-list=${vpnList} & dst-address-list=GAMING-UNBLOCK-DESTINATIONS -> mark-routing ${routingMark}`);
+    results.push(`Created Mangle: src-address-list=${vpnList} -> mark-routing ${routingMark} (Full bypass for Roblox & Voice)`);
   }
 
   // 5. TCP MSS Clamping to prevent packet fragmentation over tunnel
