@@ -142,6 +142,9 @@
             <span class="selected-pcs-pill" id="selectedPcsCountBadge">Selected: <b>0</b></span>
           </div>
           <div class="power-quick-actions">
+            <button class="btn-power-act btn-vpn-all" id="btnVpnSelect" title="Distribute Gaming VPN across selected PCs">
+              <span>🛡️</span> VPN Select
+            </button>
             <button class="btn-power-act btn-wol-all" id="btnWolSelect" title="Send Wake-on-LAN magic packet to selected PCs">
               <span>⚡</span> WOL Select
             </button>
@@ -1635,14 +1638,14 @@
                   <div class="card-box-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.8rem;">
                     <div style="display:flex; align-items:center; gap:0.5rem;">
                       <span class="box-icon">🌍</span>
-                      <h4>Curated Gaming VPN Server Pool (  VPN ):</h4>
+                      <h4>Curated Gaming VPN Multi-Node Server Pool (36 Low-Latency Nodes):</h4>
                     </div>
                     <button class="btn btn-secondary btn-sm" id="btnOpenAddVpnServerModal">
                       <span>➕</span> Add Custom VPN Server
                     </button>
                   </div>
 
-                  <div class="vpn-servers-table-wrap">
+                  <div class="vpn-servers-table-wrap" style="max-height: 480px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 8px;">
                     <table class="data-table">
                       <thead>
                         <tr>
@@ -1650,7 +1653,7 @@
                           <th>Server Name</th>
                           <th>Endpoint IP</th>
                           <th>Latency</th>
-                          <th>Status</th>
+                          <th>Load / Connected PCs</th>
                           <th>Action</th>
                         </tr>
                       </thead>

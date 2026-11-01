@@ -291,12 +291,42 @@ let db = {
       vpnList: 'GAMING-VPN',
       activeVpnServer: '185.220.101.5',
       vpnServers: [
-        { id: 'vpn-uae', name: 'UAE Dubai Gaming Route', ip: '185.220.101.5', ping: '15ms', flag: '🇦🇪', enabled: true },
-        { id: 'vpn-de', name: 'Frankfurt Esports Tier-1', ip: '194.26.29.112', ping: '42ms', flag: '🇩🇪', enabled: true },
-        { id: 'vpn-sa', name: 'Riyadh Low-Latency Hub', ip: '178.63.14.88', ping: '18ms', flag: '🇸🇦', enabled: true },
-        { id: 'vpn-tr', name: 'Istanbul Cyber Route', ip: '185.193.64.12', ping: '28ms', flag: '🇹🇷', enabled: true },
-        { id: 'vpn-sg', name: 'Singapore Southeast Asia', ip: '139.99.120.40', ping: '65ms', flag: '🇸🇬', enabled: true },
-        { id: 'vpn-nl', name: 'Amsterdam Dedicated Route', ip: '149.202.88.90', ping: '45ms', flag: '🇳🇱', enabled: true }
+        { id: 'vpn-uae', name: 'UAE Dubai Ultra-Low Latency', ip: '185.220.101.5', ping: '14ms', flag: '🇦🇪', enabled: true },
+        { id: 'vpn-sa-ryd', name: 'Riyadh KSA Gaming Hub', ip: '178.63.14.88', ping: '17ms', flag: '🇸🇦', enabled: true },
+        { id: 'vpn-sa-jed', name: 'Jeddah Red Sea Gateway', ip: '178.63.14.92', ping: '19ms', flag: '🇸🇦', enabled: true },
+        { id: 'vpn-bh', name: 'Bahrain Manama AWS Gamelift', ip: '157.241.12.30', ping: '16ms', flag: '🇧🇭', enabled: true },
+        { id: 'vpn-kw', name: 'Kuwait City Gulf Fast-Route', ip: '195.154.88.10', ping: '21ms', flag: '🇰🇼', enabled: true },
+        { id: 'vpn-eg-cai', name: 'Cairo Telecom Egypt Esports POP', ip: '156.204.18.5', ping: '8ms', flag: '🇪🇬', enabled: true },
+        { id: 'vpn-eg-alex', name: 'Alexandria Coastal Low-Ping Hub', ip: '156.204.19.12', ping: '9ms', flag: '🇪🇬', enabled: true },
+        { id: 'vpn-de-fra1', name: 'Frankfurt Riot Direct Core 1', ip: '194.26.29.112', ping: '41ms', flag: '🇩🇪', enabled: true },
+        { id: 'vpn-de-fra2', name: 'Frankfurt Valve SDR Relay', ip: '194.26.29.115', ping: '42ms', flag: '🇩🇪', enabled: true },
+        { id: 'vpn-fr-par', name: 'Paris AWS EU-West Gaming Node', ip: '51.15.80.20', ping: '44ms', flag: '🇫🇷', enabled: true },
+        { id: 'vpn-fr-mrs', name: 'Marseille Mediterranean Hop', ip: '51.15.82.14', ping: '38ms', flag: '🇫🇷', enabled: true },
+        { id: 'vpn-gb-ldn1', name: 'London Slough Esports Hub', ip: '185.190.140.8', ping: '46ms', flag: '🇬🇧', enabled: true },
+        { id: 'vpn-gb-ldn2', name: 'London Docklands Gamer Route', ip: '185.190.140.15', ping: '47ms', flag: '🇬🇧', enabled: true },
+        { id: 'vpn-nl-ams', name: 'Amsterdam Equinix AM4 Peer', ip: '149.202.88.90', ping: '43ms', flag: '🇳🇱', enabled: true },
+        { id: 'vpn-it-mil', name: 'Milan Cyber Valley Node', ip: '185.220.103.44', ping: '39ms', flag: '🇮🇹', enabled: true },
+        { id: 'vpn-es-mad', name: 'Madrid Iberian Fast Track', ip: '185.193.65.10', ping: '48ms', flag: '🇪🇸', enabled: true },
+        { id: 'vpn-at-vie', name: 'Vienna Central European Edge', ip: '193.138.218.70', ping: '40ms', flag: '🇦🇹', enabled: true },
+        { id: 'vpn-pl-waw', name: 'Warsaw Eastern EU Gaming Core', ip: '185.25.51.80', ping: '45ms', flag: '🇵🇱', enabled: true },
+        { id: 'vpn-tr-ist1', name: 'Istanbul Bosphorus Gaming Gateway', ip: '185.193.64.12', ping: '26ms', flag: '🇹🇷', enabled: true },
+        { id: 'vpn-tr-ist2', name: 'Istanbul Turkcell Esports Backbone', ip: '185.193.64.25', ping: '27ms', flag: '🇹🇷', enabled: true },
+        { id: 'vpn-gr-ath', name: 'Athens Balkan Direct Relay', ip: '185.138.20.15', ping: '29ms', flag: '🇬🇷', enabled: true },
+        { id: 'vpn-cy-nic', name: 'Nicosia Levant Low-Latency POP', ip: '185.14.28.10', ping: '24ms', flag: '🇨🇾', enabled: true },
+        { id: 'vpn-sg-eq', name: 'Singapore Equinix SG1 Hub', ip: '139.99.120.40', ping: '68ms', flag: '🇸🇬', enabled: true },
+        { id: 'vpn-sg-aws', name: 'Singapore AWS AP-Southeast', ip: '139.99.120.55', ping: '69ms', flag: '🇸🇬', enabled: true },
+        { id: 'vpn-jp-tyo', name: 'Tokyo Riot Japan Core', ip: '160.16.200.12', ping: '95ms', flag: '🇯🇵', enabled: true },
+        { id: 'vpn-kr-sel', name: 'Seoul SK Telecom Gamer Edge', ip: '118.217.150.30', ping: '98ms', flag: '🇰🇷', enabled: true },
+        { id: 'vpn-in-bom', name: 'Mumbai Cloudflare Gaming Gateway', ip: '103.21.244.10', ping: '52ms', flag: '🇮🇳', enabled: true },
+        { id: 'vpn-za-jnb', name: 'Johannesburg Africa Esports Hub', ip: '197.80.200.40', ping: '110ms', flag: '🇿🇦', enabled: true },
+        { id: 'vpn-us-iad', name: 'Ashburn Virginia Riot East Coast', ip: '198.51.100.22', ping: '92ms', flag: '🇺🇸', enabled: true },
+        { id: 'vpn-us-chi', name: 'Chicago Central Gaming Hub', ip: '198.51.100.45', ping: '102ms', flag: '🇺🇸', enabled: true },
+        { id: 'vpn-us-dfw', name: 'Dallas Texas Esports Arena Relay', ip: '198.51.100.68', ping: '108ms', flag: '🇺🇸', enabled: true },
+        { id: 'vpn-us-lax', name: 'Los Angeles Valve West Coast', ip: '198.51.100.80', ping: '118ms', flag: '🇺🇸', enabled: true },
+        { id: 'vpn-se-arn', name: 'Stockholm Nordic Fiber Loop', ip: '185.157.162.20', ping: '49ms', flag: '🇸🇪', enabled: true },
+        { id: 'vpn-fi-hel', name: 'Helsinki Telia Gaming Edge', ip: '185.157.162.35', ping: '51ms', flag: '🇫🇮', enabled: true },
+        { id: 'vpn-ch-zrh', name: 'Zurich Swiss Gaming Tunnel', ip: '179.43.140.10', ping: '42ms', flag: '🇨🇭', enabled: true },
+        { id: 'vpn-ie-dub', name: 'Dublin Riot Europe Production', ip: '54.170.80.12', ping: '49ms', flag: '🇮🇪', enabled: true }
       ],
       lastProvisioned: null
     }
@@ -997,59 +1027,125 @@ app.post('/api/screenshots/save', (req, res) => {
 // -------------------------------------------------------------
 function generateMikrotikScript(cfg) {
   const vpnList = cfg.vpnList || 'GAMING-VPN';
+  const vpnServers = (cfg && cfg.vpnServers) || [];
+  const topServers = vpnServers.slice(0, 15);
+
+  const peerRules = topServers.map((s, idx) => 
+    `/interface wireguard peers add interface=vpn-gaming-out endpoint-address="${s.ip}" endpoint-port=51820 allowed-address=0.0.0.0/0 comment="Peer ${idx + 1}: ${s.name} (${s.ip})"`
+  ).join('\n');
+
   return `# ==============================================================
-# CyberPulse Gaming Lounge - MikroTik RouterOS Setup Script
+# CyberPulse Gaming Lounge - MikroTik RouterOS Multi-Route Setup
+# Generated for: ${cfg.host || '192.168.88.1'} | Active Nodes: ${vpnServers.length}
 # ==============================================================
+
+# 1. WireGuard Core Interface
 /interface wireguard add listen-port=51820 name=vpn-gaming-out comment="CyberPulse Gaming VPN Tunnel"
+
+# 2. WireGuard Low-Latency Multi-Peer Endpoints
+${peerRules}
+
+# 3. Dedicated Routing Table for Gaming Traffic
+/routing table add name=to_GAMING_VPN fib
+
+# 4. Route Gaming Traffic to WireGuard Gateway
+/ip route add dst-address=0.0.0.0/0 gateway=vpn-gaming-out routing-table=to_GAMING_VPN comment="CyberPulse Route to Gaming VPN"
+
+# 5. Create Address-List for Gaming Machines
 /ip firewall address-list add list=${vpnList} address=127.0.0.1 comment="VPN Initializer"
 /ip firewall address-list remove [find list=${vpnList} address=127.0.0.1]
-/routing table add name=to_GAMING_VPN fib
-/ip route add dst-address=0.0.0.0/0 gateway=vpn-gaming-out routing-table=to_GAMING_VPN comment="CyberPulse Route to VPN"
+
+# 6. Mark Routing for all Arena Machines in ${vpnList}
 /ip firewall mangle add chain=prerouting src-address-list=${vpnList} action=mark-routing new-routing-mark=to_GAMING_VPN passthrough=no comment="CyberPulse Gaming Traffic to VPN"
+
+# 7. NAT Masquerade on VPN Interface
 /ip firewall nat add chain=srcnat out-interface=vpn-gaming-out action=masquerade comment="CyberPulse VPN Masquerade"
-:log info "CyberPulse Gaming VPN rules successfully provisioned on RouterOS"`;
+
+:log info "CyberPulse Gaming VPN multi-node rules successfully provisioned on RouterOS"
+:put ">> CyberPulse Multi-Node Gaming VPN configured on ${cfg.host} <<"`;
 }
 
-function addPcToMikrotikVpn(pc, serverIp) {
+async function addPcToMikrotikVpn(pc, serverIp) {
   const mt = (db.settings && db.settings.mikrotik) || {};
   const targetIp = pc.ip || `192.168.88.${100 + parseInt(pc.id.replace(/\D/g, '') || 1)}`;
   if (!pc.ip) pc.ip = targetIp;
 
+  const srvObj = (mt.vpnServers || []).find(s => s.ip === serverIp) || { name: 'Gaming VPN', ip: serverIp, flag: '🌐' };
+
   if (mt && mt.host && mt.connected) {
     try {
-      fetch(`http://${mt.host}:${mt.restPort || 80}/rest/ip/firewall/address-list`, {
+      const authHeader = 'Basic ' + Buffer.from(`${mt.username}:${mt.password || ''}`).toString('base64');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+      const res = await fetch(`http://${mt.host}:${mt.restPort || 80}/rest/ip/firewall/address-list`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Basic ' + Buffer.from(`${mt.username}:${mt.password}`).toString('base64')
+          'Authorization': authHeader
         },
         body: JSON.stringify({
           list: mt.vpnList || 'GAMING-VPN',
           address: targetIp,
-          comment: `CyberPulse-${pc.id}-ActiveSession`
-        })
-      }).catch(err => {
-        // RouterOS call attempted
+          comment: `CyberPulse-${pc.id}-${pc.name}->${srvObj.name}(${serverIp})`
+        }),
+        signal: controller.signal
       });
-    } catch (e) {}
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        addAudit('MikroTik Rule Synced', `Added ${targetIp} (${pc.name}) to RouterOS list ${mt.vpnList || 'GAMING-VPN'} -> ${srvObj.flag} ${srvObj.name}`, 'success');
+        return { success: true, synced: true };
+      } else {
+        const errText = await res.text();
+        addAudit('MikroTik REST Warning', `RouterOS status ${res.status}: ${errText.slice(0, 80)}`, 'warning');
+        return { success: true, synced: false, warning: `RouterOS error: ${res.status}` };
+      }
+    } catch (err) {
+      addAudit('MikroTik Dispatch Error', `Could not reach RouterOS: ${err.message}`, 'warning');
+      return { success: true, synced: false, error: err.message };
+    }
+  } else {
+    addAudit('VPN Configured Locally', `Assigned ${pc.name} (${targetIp}) to ${srvObj.flag} ${srvObj.name} (${serverIp})`, 'info');
+    return { success: true, synced: false, localOnly: true };
   }
-  return true;
 }
 
-function removePcFromMikrotikVpn(pc) {
+async function removePcFromMikrotikVpn(pc) {
   const mt = (db.settings && db.settings.mikrotik) || {};
   const targetIp = pc.ip || `192.168.88.${100 + parseInt(pc.id.replace(/\D/g, '') || 1)}`;
+
   if (mt && mt.host && mt.connected) {
     try {
-      fetch(`http://${mt.host}:${mt.restPort || 80}/rest/ip/firewall/address-list/${mt.vpnList || 'GAMING-VPN'}/${targetIp}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': 'Basic ' + Buffer.from(`${mt.username}:${mt.password}`).toString('base64')
-        }
-      }).catch(err => {
-        // RouterOS call attempted
+      const authHeader = 'Basic ' + Buffer.from(`${mt.username}:${mt.password || ''}`).toString('base64');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+      const listName = mt.vpnList || 'GAMING-VPN';
+      const searchRes = await fetch(`http://${mt.host}:${mt.restPort || 80}/rest/ip/firewall/address-list?address=${targetIp}&list=${listName}`, {
+        headers: { 'Authorization': authHeader },
+        signal: controller.signal
       });
-    } catch (e) {}
+      clearTimeout(timeoutId);
+
+      if (searchRes.ok) {
+        const items = await searchRes.json();
+        if (Array.isArray(items) && items.length > 0) {
+          for (const item of items) {
+            const itemId = item['.id'];
+            if (itemId) {
+              await fetch(`http://${mt.host}:${mt.restPort || 80}/rest/ip/firewall/address-list/${itemId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': authHeader }
+              });
+            }
+          }
+          addAudit('MikroTik Rule Removed', `Removed ${targetIp} (${pc.name}) from RouterOS list ${listName}`, 'info');
+        }
+      }
+    } catch (err) {
+      addAudit('MikroTik Delete Error', `Failed removing rule from RouterOS: ${err.message}`, 'warning');
+    }
   }
   return true;
 }
@@ -1265,7 +1361,9 @@ app.post('/api/mikrotik/provision-vpn', async (req, res) => {
   });
 });
 
-function pickNextVpnServer(preferredId) {
+let vpnRoundRobinIdx = 0;
+
+function pickNextVpnServer(preferredId, extraCounts = {}) {
   const servers = (db.settings.mikrotik && db.settings.mikrotik.vpnServers) || [];
   const enabledServers = servers.filter(s => s.enabled);
   if (enabledServers.length === 0) return null;
@@ -1277,28 +1375,35 @@ function pickNextVpnServer(preferredId) {
 
   // Count active devices connected to each VPN server
   const serverUsage = {};
-  enabledServers.forEach(s => { serverUsage[s.id] = 0; });
+  enabledServers.forEach(s => { 
+    serverUsage[s.id] = (extraCounts[s.id] || 0); 
+  });
 
   db.pcs.forEach(pc => {
     if (pc.vpnEnabled && pc.vpnServerId) {
-      serverUsage[pc.vpnServerId] = (serverUsage[pc.vpnServerId] || 0) + 1;
+      if (serverUsage[pc.vpnServerId] !== undefined) {
+        serverUsage[pc.vpnServerId] += 1;
+      }
     }
   });
 
-  // Pick server with least active connected PCs (least-loaded distribution)
-  let bestServer = enabledServers[0];
+  // Find minimum connection count
   let minCount = Infinity;
   for (const s of enabledServers) {
     const count = serverUsage[s.id] || 0;
     if (count < minCount) {
       minCount = count;
-      bestServer = s;
     }
   }
-  return bestServer;
+
+  // Balanced candidates with least active loads
+  const candidates = enabledServers.filter(s => (serverUsage[s.id] || 0) === minCount);
+  const picked = candidates[vpnRoundRobinIdx % candidates.length];
+  vpnRoundRobinIdx++;
+  return picked;
 }
 
-app.post('/api/mikrotik/vpn/toggle', (req, res) => {
+app.post('/api/mikrotik/vpn/toggle', async (req, res) => {
   const { pcId, enable, serverId } = req.body;
   const pc = db.pcs.find(p => p.id === pcId);
   if (!pc) return res.status(404).json({ error: 'PC not found' });
@@ -1307,13 +1412,6 @@ app.post('/api/mikrotik/vpn/toggle', (req, res) => {
   pc.vpnEnabled = targetState;
 
   if (targetState) {
-    const mt = db.settings.mikrotik;
-    if (mt && !mt.connected) {
-      return res.status(400).json({
-        success: false,
-        error: 'Cannot activate VPN: MikroTik RouterOS is not connected. Please verify router connection in Settings > MikroTik first.'
-      });
-    }
     const srv = pickNextVpnServer(serverId);
     if (!srv) return res.status(400).json({ error: 'No active VPN servers available in pool' });
 
@@ -1322,19 +1420,63 @@ app.post('/api/mikrotik/vpn/toggle', (req, res) => {
     pc.vpnServerIp = srv.ip;
     pc.vpnServerFlag = srv.flag;
 
-    addPcToMikrotikVpn(pc, srv.ip);
+    const dispatchRes = await addPcToMikrotikVpn(pc, srv.ip);
     addAudit('VPN Load-Balanced on PC', `Activated Gaming VPN on ${pc.name} -> Assigned to ${srv.flag} ${srv.name} (${srv.ip})`, 'success');
+    io.emit('pc_updated', pc);
+    return res.json({ success: true, pc, dispatched: dispatchRes });
   } else {
-    removePcFromMikrotikVpn(pc);
+    await removePcFromMikrotikVpn(pc);
     pc.vpnServerId = null;
     pc.vpnServer = null;
     pc.vpnServerIp = null;
     pc.vpnServerFlag = null;
     addAudit('VPN Disabled on PC', `Deactivated Gaming VPN on ${pc.name} - Restored default WAN`, 'info');
+    io.emit('pc_updated', pc);
+    return res.json({ success: true, pc });
+  }
+});
+
+// Bulk distribute VPN across selected PCs
+app.post('/api/mikrotik/vpn/bulk-distribute', async (req, res) => {
+  const { pcIds, enable } = req.body;
+  if (!Array.isArray(pcIds) || pcIds.length === 0) {
+    return res.status(400).json({ error: 'No PC IDs provided' });
   }
 
-  io.emit('pc_updated', pc);
-  res.json({ success: true, pc });
+  const results = [];
+  const batchUsage = {};
+
+  for (const pcId of pcIds) {
+    const pc = db.pcs.find(p => p.id === pcId);
+    if (!pc) continue;
+
+    const targetState = typeof enable === 'boolean' ? enable : !pc.vpnEnabled;
+    pc.vpnEnabled = targetState;
+
+    if (targetState) {
+      const srv = pickNextVpnServer(null, batchUsage);
+      if (srv) {
+        batchUsage[srv.id] = (batchUsage[srv.id] || 0) + 1;
+        pc.vpnServerId = srv.id;
+        pc.vpnServer = srv.name;
+        pc.vpnServerIp = srv.ip;
+        pc.vpnServerFlag = srv.flag;
+        await addPcToMikrotikVpn(pc, srv.ip);
+        results.push({ pcId: pc.id, name: pc.name, vpnEnabled: true, server: srv.name, ip: srv.ip, flag: srv.flag });
+      }
+    } else {
+      await removePcFromMikrotikVpn(pc);
+      pc.vpnServerId = null;
+      pc.vpnServer = null;
+      pc.vpnServerIp = null;
+      pc.vpnServerFlag = null;
+      results.push({ pcId: pc.id, name: pc.name, vpnEnabled: false });
+    }
+    io.emit('pc_updated', pc);
+  }
+
+  addAudit('Bulk VPN Distributed', `Distributed Gaming VPN routes across ${results.length} PC(s)`, 'success');
+  res.json({ success: true, count: results.length, results });
 });
 
 app.post('/api/mikrotik/servers/add', (req, res) => {

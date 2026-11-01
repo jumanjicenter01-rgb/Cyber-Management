@@ -633,8 +633,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function generateHardwareSvg(model, color, pcId, label, enableStandRgb, pcState, pc, isMini = false) {
     const uid = `${pcId || 'preview'}_${Math.random().toString(36).substr(2, 5)}`;
-    const pcClickAttr = (pc && pc.id) ? `onclick="event.stopPropagation(); openDeviceIconPickerModal('${pc.id}')" ondblclick="event.stopPropagation(); openDeviceIconPickerModal('${pc.id}')" title="Click to choose icon & color"` : '';
-    // Screen surface is kept completely clean without text as requested
+    // Icon customization is strictly restricted to Settings -> Device Icons & Appearance
+    const pcClickAttr = '';
     let overlayContent = '';
 
     if (model && (model.startsWith('icon_') || model.startsWith('custom_'))) {
@@ -871,15 +871,6 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         handleCardSelect(pc.id, e);
-      });
-
-      card.addEventListener('dblclick', (e) => {
-        if (e.target.closest('button, .btn-card-action, a, input, select, textarea')) {
-          return;
-        }
-        e.preventDefault();
-        e.stopPropagation();
-        window.openDeviceIconPickerModal(pc.id);
       });
 
       // Resolve pcState for hardware model & color
@@ -1891,7 +1882,43 @@ document.addEventListener('DOMContentLoaded', () => {
   // POWER MANAGEMENT CONTROLLER (WOL Select - Restart - Shutdown Select - Shutdown Idle)
   // -------------------------------------------------------------
 
-  // [EN]
+  const btnVpnSelect = document.getElementById('btnVpnSelect');
+  if (btnVpnSelect) {
+    btnVpnSelect.addEventListener('click', () => {
+      if (selectedPcs.size === 0) {
+        return alert('Please select at least one PC to balance and assign Gaming VPN routes!');
+      }
+      const pcIds = Array.from(selectedPcs);
+      btnVpnSelect.disabled = true;
+      btnVpnSelect.innerHTML = '<span>⏳</span> Balancing VPN...';
+
+      fetch('/api/mikrotik/vpn/bulk-distribute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pcIds })
+      })
+        .then(r => r.json())
+        .then(res => {
+          btnVpnSelect.disabled = false;
+          btnVpnSelect.innerHTML = '<span>🛡️</span> VPN Select';
+          if (res.success) {
+            window.cyberAudio?.playUnlock?.();
+            const summary = (res.results || []).map(r => 
+              r.vpnEnabled ? `• ${r.name} -> ${r.flag} ${r.server} (${r.ip})` : `• ${r.name} -> VPN Disabled (WAN)`
+            ).join('\n');
+            alert(`Gaming VPN Load-Balanced across ${res.count} PC(s):\n\n${summary}`);
+          } else {
+            alert(res.error || 'Failed to distribute VPN');
+          }
+        })
+        .catch(err => {
+          btnVpnSelect.disabled = false;
+          btnVpnSelect.innerHTML = '<span>🛡️</span> VPN Select';
+          alert('Network error distributing VPN: ' + err.message);
+        });
+    });
+  }
+
   const btnWolSelect = document.getElementById('btnWolSelect');
   if (btnWolSelect) {
     btnWolSelect.addEventListener('click', () => {
@@ -2708,20 +2735,36 @@ document.addEventListener('DOMContentLoaded', () => {
       tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:1.5rem;">No VPN servers configured yet.</td></tr>`;
       return;
     }
-    tbody.innerHTML = servers.map(srv => `
-      <tr>
-        <td style="font-size:1.3rem;">${srv.flag || '🌐'}</td>
-        <td style="font-weight:700; color:#fff;">${srv.name}</td>
-        <td><code>${srv.ip}</code></td>
-        <td><span class="badge" style="background:rgba(5,255,161,0.15); color:var(--neon-green); border:1px solid rgba(5,255,161,0.3); padding:2px 8px; border-radius:6px; font-weight:700;">${srv.ping || '25ms'}</span></td>
-        <td><span style="color:var(--neon-green); font-size:0.85rem; font-weight:600;">● Active</span></td>
-        <td>
-          <button class="btn btn-danger-soft btn-xs btn-delete-vpn-server" data-server-id="${srv.id}" style="padding:4px 10px; font-size:0.75rem; border-radius:6px; cursor:pointer;" title="Delete this VPN server from the network">
-            🗑️ Delete
-          </button>
-        </td>
-      </tr>
-    `).join('');
+
+    // Count active machines per server
+    const serverLoad = {};
+    (state.pcs || []).forEach(p => {
+      if (p.vpnEnabled && p.vpnServerId) {
+        serverLoad[p.vpnServerId] = (serverLoad[p.vpnServerId] || 0) + 1;
+      }
+    });
+
+    tbody.innerHTML = servers.map(srv => {
+      const activePcsCount = serverLoad[srv.id] || 0;
+      const loadBadge = activePcsCount > 0 
+        ? `<span class="badge" style="background:rgba(0,243,255,0.18); color:var(--neon-blue); border:1px solid rgba(0,243,255,0.4); padding:3px 8px; border-radius:6px; font-weight:700;">🟢 ${activePcsCount} PC(s) Active</span>`
+        : `<span style="color:var(--text-muted); font-size:0.8rem;">Idle (Standby)</span>`;
+
+      return `
+        <tr>
+          <td style="font-size:1.3rem;">${srv.flag || '🌐'}</td>
+          <td style="font-weight:700; color:#fff;">${srv.name}</td>
+          <td><code>${srv.ip}</code></td>
+          <td><span class="badge" style="background:rgba(5,255,161,0.15); color:var(--neon-green); border:1px solid rgba(5,255,161,0.3); padding:2px 8px; border-radius:6px; font-weight:700;">${srv.ping || '25ms'}</span></td>
+          <td>${loadBadge}</td>
+          <td>
+            <button class="btn btn-danger-soft btn-xs btn-delete-vpn-server" data-server-id="${srv.id}" style="padding:4px 10px; font-size:0.75rem; border-radius:6px; cursor:pointer;" title="Delete this VPN server from the network">
+              🗑️ Delete
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
 
     tbody.querySelectorAll('.btn-delete-vpn-server').forEach(btn => {
       btn.onclick = () => {
