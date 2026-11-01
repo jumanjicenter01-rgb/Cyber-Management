@@ -157,6 +157,9 @@ function initSocketConnection() {
       isLocked = false;
       if (mainWindow) mainWindow.setAlwaysOnTop(false);
     }
+    if (data.action === 'reload' && mainWindow) {
+      mainWindow.reload();
+    }
   });
 
   // Kill game on command

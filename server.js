@@ -666,6 +666,19 @@ app.post('/api/power/restart', (req, res) => {
   res.json({ success: true, message: `Restart command sent to ${pc.name}` });
 });
 
+// Remote Live Reload / Soft-Update Client Stations
+app.post('/api/clients/reload', (req, res) => {
+  const { pcId } = req.body;
+  if (pcId) {
+    io.to(`pc_${pcId}`).emit('remote_command', { action: 'reload' });
+    addAudit('Station Reloaded', `Sent remote live reload command to ${pcId}`, 'info');
+  } else {
+    io.emit('remote_command', { action: 'reload' });
+    addAudit('All Stations Reloaded', 'Sent remote live reload command to all stations', 'info');
+  }
+  res.json({ success: true, message: 'Reload signal broadcast successfully' });
+});
+
 // Individual Shutdown PC
 app.post('/api/power/shutdown', (req, res) => {
   const { pcId } = req.body;

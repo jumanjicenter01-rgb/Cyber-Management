@@ -213,6 +213,8 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (data.action === 'unlock') {
       window.cyberAudio.playUnlock();
       lockScreen.classList.remove('active');
+    } else if (data.action === 'reload') {
+      window.location.reload();
     }
   });
 
