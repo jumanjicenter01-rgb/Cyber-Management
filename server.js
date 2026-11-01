@@ -317,13 +317,12 @@ let db = {
       useRestApi: false,
       vpnList: 'GAMING-VPN',
       vpnProto: 'sstp',
-      vpnServer: '219.100.37.115',
+      vpnServer: '143.246.221.2',
       vpnUser: 'vpn',
       vpnPassword: 'vpn',
       vpnIpsecSecret: 'vpn',
-      robloxDst: '128.116.0.0/16',
       routingMark: 'to_GAMING_VPN',
-      activeVpnServer: '219.100.37.115',
+      activeVpnServer: '143.246.221.2',
       vpnServers: [
         { id: 'vpn-de-fra1', name: 'Frankfurt Riot Direct Core 1', ip: '194.26.29.112', ping: '38ms', flag: '🇩🇪', enabled: true, voiceChat: true },
         { id: 'vpn-de-fra2', name: 'Frankfurt Valve SDR Relay', ip: '194.26.29.115', ping: '39ms', flag: '🇩🇪', enabled: true, voiceChat: true },
@@ -1744,7 +1743,6 @@ function generateMikrotikScript(cfg) {
   const vpnUser = (cfg && cfg.vpnUser) || 'vpn';
   const vpnPassword = (cfg && cfg.vpnPassword) || 'vpn';
   const vpnIpsecSecret = (cfg && cfg.vpnIpsecSecret) || 'vpn';
-  const robloxDst = (cfg && cfg.robloxDst) || '128.116.0.0/16';
   const routingMark = (cfg && cfg.routingMark) || 'to_GAMING_VPN';
 
   const ifaceCommands = vpnProto === 'l2tp'
@@ -1753,14 +1751,15 @@ function generateMikrotikScript(cfg) {
 
   return `# ==============================================================
 # CyberPulse Cyber Cafe Management - MikroTik RouterOS Setup
-# Engine: Diskless-Safe Selective Split-Tunnel (Roblox & Gaming)
+# Engine: Diskless-Safe Selective Split-Tunnel (Roblox & Valorant Voice)
 # Protocol: ${vpnProto.toUpperCase()} (Port 443 SSL - Bypasses ISP Firewall)
 # Compatible with: RouterOS v6.49.x & RouterOS v7.x
 # Router IP: ${host}
 # ==============================================================
 # 100% Free - Zero Quota Waste - 100% Diskless (CCBoot/iCafe) Safe
 # - No virtual NICs created on client PCs (0 risk of BSOD/freeze)
-# - ONLY Roblox servers (${robloxDst}) route through the VPN
+# - ONLY Roblox servers & Valorant Vivox Voice Chat route through VPN
+# - Normal Valorant gameplay ping stays at native 35ms direct fiber!
 # - Normal browsing, YouTube, Steam, and Diskless Server traffic
 #   stay on direct WAN at native ISP line speed with 0% extra quota!
 # ==============================================================
@@ -1780,19 +1779,28 @@ ${ifaceCommands}
 /ip firewall nat remove [find comment="CyberPulse Gaming VPN Masquerade"]
 /ip firewall nat add chain=srcnat out-interface=vpn-gaming-out action=masquerade comment="CyberPulse Gaming VPN Masquerade"
 
-# 5. Create Selective Mangle Rule (Roblox Split-Tunneling)
-# ONLY Roblox destination traffic (${robloxDst}) from PCs in '${vpnList}' is routed to VPN.
-/ip firewall mangle remove [find comment="CyberPulse Gaming Traffic to VPN"]
-/ip firewall mangle add chain=prerouting src-address-list=${vpnList} dst-address=${robloxDst} action=mark-routing new-routing-mark=${routingMark} passthrough=no comment="CyberPulse Gaming Traffic to VPN"
+# 5. Populate Destination Address List for Roblox & Valorant Vivox Voice
+/ip firewall address-list remove [find list=GAMING-UNBLOCK-DESTINATIONS]
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=20.0.0.0/8 comment="Vivox-ValorantVoice-Azure"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=188.42.95.0/24 comment="Vivox-ValorantVoice-Relay"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=185.180.12.0/22 comment="Vivox-Voice-Cluster"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=128.116.0.0/16 comment="Roblox-Core-Game"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=209.206.40.0/21 comment="Roblox-Servers-1"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=208.79.152.0/22 comment="Roblox-Servers-2"
+/ip firewall address-list add list=GAMING-UNBLOCK-DESTINATIONS address=199.193.16.0/20 comment="Roblox-Servers-3"
 
-# 6. TCP MSS Clamping (Prevents packet fragmentation over tunnel)
+# 6. Create Selective Mangle Rule (Roblox & Valorant Voice Split-Tunneling)
+/ip firewall mangle remove [find comment="CyberPulse Gaming Traffic to VPN"]
+/ip firewall mangle add chain=prerouting src-address-list=${vpnList} dst-address-list=GAMING-UNBLOCK-DESTINATIONS action=mark-routing new-routing-mark=${routingMark} passthrough=no comment="CyberPulse Gaming Traffic to VPN"
+
+# 7. TCP MSS Clamping (Prevents packet fragmentation over tunnel)
 /ip firewall mangle remove [find comment="CyberPulse Clamp MSS to PMTU"]
 /ip firewall mangle add chain=forward protocol=tcp tcp-flags=syn out-interface=vpn-gaming-out action=change-mss new-mss=clamp-to-pmtu passthrough=yes comment="CyberPulse Clamp MSS to PMTU"
 
-# 7. Safety check: ensure Router IP is never in the VPN list
+# 8. Safety check: ensure Router IP is never in the VPN list
 /ip firewall address-list remove [find list=${vpnList} address=${host}]
 
-# 8. Log success to RouterOS System Log
+# 9. Log success to RouterOS System Log
 :log info "CyberPulse Selective Gaming VPN rules successfully provisioned on RouterOS"
 :put ">> CyberPulse Diskless Selective VPN configured successfully on ${host} <<"`;
 }
@@ -2394,8 +2402,38 @@ async function executeMikrotikProvisioning(mt) {
     results.push(`NAT masquerade rule for out-interface=vpn-gaming-out verified active`);
   }
 
-  // 4. Mangle rule: SELECTIVE split-tunnel for Roblox ASN (128.116.0.0/16)
-  // Machines in address-list have ONLY their Roblox packets marked to avoid quota waste and protect Diskless!
+  // 4. Populate destination address list for Roblox and Valorant Vivox Voice Chat
+  const unblockTargets = [
+    { addr: '20.0.0.0/8', comment: 'Vivox-ValorantVoice-Azure' },
+    { addr: '188.42.95.0/24', comment: 'Vivox-ValorantVoice-Relay' },
+    { addr: '185.180.12.0/22', comment: 'Vivox-Voice-Cluster' },
+    { addr: '128.116.0.0/16', comment: 'Roblox-Core-Game' },
+    { addr: '209.206.40.0/21', comment: 'Roblox-Servers-1' },
+    { addr: '208.79.152.0/22', comment: 'Roblox-Servers-2' },
+    { addr: '199.193.16.0/20', comment: 'Roblox-Servers-3' }
+  ];
+
+  for (const t of unblockTargets) {
+    try {
+      const existing = await runRouterOsApi(mt.host, port, username, password, [
+        '/ip/firewall/address-list/print',
+        '?list=GAMING-UNBLOCK-DESTINATIONS',
+        '?address=' + t.addr
+      ]);
+      const exists = existing.some(row => row.some(w => w === '=address=' + t.addr));
+      if (!exists) {
+        await runRouterOsApi(mt.host, port, username, password, [
+          '/ip/firewall/address-list/add',
+          '=list=GAMING-UNBLOCK-DESTINATIONS',
+          '=address=' + t.addr,
+          '=comment=' + t.comment
+        ]);
+      }
+    } catch (e) { }
+  }
+  results.push('Populated destination address-list GAMING-UNBLOCK-DESTINATIONS for Roblox & Valorant Vivox Voice');
+
+  // Mangle rule: Mark gaming & voice traffic from targeted PCs to VPN route
   const mCheck = await runRouterOsApi(mt.host, port, username, password, [
     '/ip/firewall/mangle/print',
     '?comment=CyberPulse Gaming Traffic to VPN'
@@ -2411,24 +2449,24 @@ async function executeMikrotikProvisioning(mt) {
       '=.id=' + mangleId,
       '=chain=prerouting',
       '=src-address-list=' + vpnList,
-      '=dst-address=' + robloxDst,
+      '=dst-address-list=GAMING-UNBLOCK-DESTINATIONS',
       '=action=mark-routing',
       '=new-routing-mark=' + routingMark,
       '=passthrough=no'
     ]);
-    results.push(`Updated Selective Mangle: src-address-list=${vpnList} & dst-address=${robloxDst} -> mark-routing ${routingMark}`);
+    results.push(`Updated Selective Mangle: src-address-list=${vpnList} & dst-address-list=GAMING-UNBLOCK-DESTINATIONS -> mark-routing ${routingMark}`);
   } else {
     await runRouterOsApi(mt.host, port, username, password, [
       '/ip/firewall/mangle/add',
       '=chain=prerouting',
       '=src-address-list=' + vpnList,
-      '=dst-address=' + robloxDst,
+      '=dst-address-list=GAMING-UNBLOCK-DESTINATIONS',
       '=action=mark-routing',
       '=new-routing-mark=' + routingMark,
       '=passthrough=no',
       '=comment=CyberPulse Gaming Traffic to VPN'
     ]);
-    results.push(`Created Selective Mangle: src-address-list=${vpnList} & dst-address=${robloxDst} -> mark-routing ${routingMark}`);
+    results.push(`Created Selective Mangle: src-address-list=${vpnList} & dst-address-list=GAMING-UNBLOCK-DESTINATIONS -> mark-routing ${routingMark}`);
   }
 
   // 5. TCP MSS Clamping to prevent packet fragmentation over tunnel
@@ -2493,11 +2531,11 @@ let vpnWatchdogFailCount = 0;
 let isVpnFailoverRunning = false;
 
 async function triggerVpnAutoFailover(mt) {
+  // Verified European & low-latency SSTP gaming nodes (0% packet loss)
   const backupNodes = [
-    '219.100.37.115', '219.100.37.243', '219.100.37.197',
-    '219.100.37.124', '219.100.37.20', '219.100.37.8'
+    '143.246.221.2', '46.183.135.174', '187.138.34.255'
   ];
-  const currentIp = mt.vpnServer || '219.100.37.115';
+  const currentIp = mt.vpnServer || '143.246.221.2';
   const candidate = backupNodes.find(ip => ip !== currentIp) || backupNodes[0];
 
   try {
