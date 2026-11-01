@@ -145,10 +145,16 @@
             <button class="btn-power-act btn-start-all" id="btnStartSelect" title="Start Session (Selected PC)">
               <span class="power-act-icon">▶️</span>
             </button>
+            <button class="btn-power-act btn-admin-top" id="btnAdminSessionSelect" title="Open Admin Session (Free / 0 EGP)">
+              <span class="power-act-icon">👑</span>
+            </button>
+            <button class="btn-power-act btn-free-time-top" id="btnAddFreeTimeSelect" title="Add Free Bonus Time (+Mins)">
+              <span class="power-act-icon">🎁</span>
+            </button>
             <button class="btn-power-act btn-vpn-all" id="btnVpnSelect" title="Gaming VPN (Toggle / Distribute on Selected PC)">
               <span class="power-act-icon">🛡️</span>
             </button>
-            <button class="btn-power-act btn-screen-all" id="btnScreenSelect" title="Live Screen Monitor (View Selected PC)">
+            <button class="btn-power-act btn-screen-all" id="btnScreenSelect" title="Toggle In-Place Screen View (Refresh every 5s)">
               <span class="power-act-icon">👁️</span>
             </button>
             <button class="btn-power-act btn-lock-all" id="btnLockSelect" title="Lock / Unlock Selected PC(s)">
@@ -1696,8 +1702,14 @@
     <button class="ctx-item ctx-act-open" id="ctxActOpenTime">
       <span>▶️</span> Quick Start: Open Time
     </button>
+    <button class="ctx-item ctx-act-admin" id="ctxActAdminSession">
+      <span>👑</span> Open Admin Session (Free)
+    </button>
     <button class="ctx-item ctx-act-custom" id="ctxActCustomSession">
       <span>⏱️</span> Custom Session (Duration / Amount)...
+    </button>
+    <button class="ctx-item ctx-act-free-time" id="ctxActAddFreeTime">
+      <span>🎁</span> Add Free Bonus Time (+Mins)
     </button>
     <button class="ctx-item ctx-act-checkout" id="ctxActCheckout">
       <span>🧾</span> Checkout & Close Session
@@ -1749,6 +1761,14 @@
             <button class="session-type-btn active" data-stype="open">🟢 Open Time (Continuous)</button>
             <button class="session-type-btn" data-stype="fixed_time">⏱️ Fixed Duration</button>
             <button class="session-type-btn" data-stype="fixed_amount">💰 Fixed Amount (EGP)</button>
+            <button class="session-type-btn" data-stype="admin">👑 Admin / Staff (Free)</button>
+          </div>
+        </div>
+
+        <!-- Admin Free Note (Default hidden) -->
+        <div id="adminNoteSection" class="presets-section" style="display:none;">
+          <div class="info-alert" style="border-color: #10b981; color: #10b981;">
+            <span>👑</span> Free session for management, testing, or staff maintenance (0 EGP cost).
           </div>
         </div>
 
@@ -1793,6 +1813,50 @@
 
         <button class="btn btn-primary btn-block btn-lg" id="btnConfirmStartSession">
           <span>🚀</span> Confirm & Start Session Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: ADD FREE BONUS TIME                                     -->
+  <!-- ============================================================== -->
+  <div id="addFreeTimeModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🎁</span> Add Free Bonus Time to <b id="freeTimePcName">PC-01</b>
+        </div>
+        <button class="modal-close" onclick="closeModal('addFreeTimeModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="freeTimePcId">
+        
+        <div class="info-alert" style="border-color: #05ffa1; color: #05ffa1; margin-bottom: 1.2rem;">
+          <span>🎁</span> Free bonus time extends the active session without adding any cost (0 EGP).
+        </div>
+
+        <div class="form-group">
+          <label>Select Bonus Duration:</label>
+          <div class="quick-preset-btns">
+            <button type="button" class="btn-preset active" data-free-min="15">+15 Mins</button>
+            <button type="button" class="btn-preset" data-free-min="30">+30 Mins</button>
+            <button type="button" class="btn-preset" data-free-min="45">+45 Mins</button>
+            <button type="button" class="btn-preset" data-free-min="60">+1 Hour</button>
+            <button type="button" class="btn-preset" data-free-min="120">+2 Hours</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Custom Free Minutes:</label>
+          <div class="custom-amount-row">
+            <input type="number" id="customFreeMinutesInput" class="form-input form-sm" value="15" min="5" step="5">
+            <span>minutes</span>
+          </div>
+        </div>
+
+        <button class="btn btn-success btn-block btn-lg" id="btnConfirmAddFreeTime">
+          <span>🎁</span> Grant Free Time (0 EGP)
         </button>
       </div>
     </div>

@@ -361,9 +361,21 @@ setInterval(() => {
     if (pc.status === 'in_session' && pc.session) {
       pc.session.elapsedSeconds++;
 
-      // Rate per second
-      const ratePerSecond = (pc.ratePerHour / 3600);
-      pc.session.gameCost = Math.round(pc.session.elapsedSeconds * ratePerSecond * 100) / 100;
+      // If fixed time / amount, the game cost is fixed (full package value), not counting up like a meter!
+      if (pc.session.isAdmin || pc.session.type === 'admin') {
+        pc.session.gameCost = 0;
+      } else if (pc.session.type === 'fixed_time' || pc.session.type === 'fixed_amount') {
+        if (typeof pc.session.fixedAmount === 'number') {
+          pc.session.gameCost = pc.session.fixedAmount;
+        } else {
+          const totalSecs = pc.session.totalDurationSeconds || 3600;
+          pc.session.gameCost = Math.round((totalSecs / 3600) * pc.ratePerHour * 100) / 100;
+        }
+      } else {
+        // Open time accumulates dynamically based on elapsed seconds
+        const ratePerSecond = (pc.ratePerHour / 3600);
+        pc.session.gameCost = Math.round(pc.session.elapsedSeconds * ratePerSecond * 100) / 100;
+      }
 
       // Calculate total orders
       const ordersCost = (pc.orders || []).reduce((sum, o) => sum + (o.price * o.qty), 0);
@@ -685,23 +697,67 @@ app.post('/api/session/start', (req, res) => {
   if (!pc) return res.status(404).json({ error: 'Device not found' });
 
   let totalDurationSeconds = null;
-  if (type === 'fixed_time') {
-    totalDurationSeconds = (parseInt(durationMinutes) || 60) * 60;
+  let initialGameCost = 0;
+  if (type === 'admin') {
+    totalDurationSeconds = null;
+    initialGameCost = 0;
+  } else if (type === 'fixed_time') {
+    const mins = parseInt(durationMinutes) || 60;
+    totalDurationSeconds = mins * 60;
+    initialGameCost = Math.round((mins / 60) * pc.ratePerHour * 100) / 100;
   } else if (type === 'fixed_amount') {
     const amt = parseFloat(amount) || pc.ratePerHour;
     const hours = amt / pc.ratePerHour;
     totalDurationSeconds = Math.round(hours * 3600);
+    initialGameCost = amt;
   }
 
   pc.status = 'in_session';
+  pc.isAdminSession = (type === 'admin');
   pc.session = {
     type: type || 'open',
+    isAdmin: (type === 'admin'),
     startTime: Date.now(),
-    customerName: customerName || 'Guest Player',
+    customerName: type === 'admin' ? 'Admin / Staff' : (customerName || 'Guest Player'),
     notes: notes || '',
     elapsedSeconds: 0,
     totalDurationSeconds,
     remainingSeconds: totalDurationSeconds,
+    fixedAmount: initialGameCost,
+    gameCost: initialGameCost,
+    ordersCost: 0,
+    totalCost: initialGameCost,
+    warned5m: false,
+    warned1m: false,
+    expired: false
+  };
+
+  addAudit('Session Started', `Started session on ${pc.name} - Mode: ${type === 'open' ? 'Open Time' : type === 'admin' ? 'Admin / Staff (Free)' : type === 'fixed_time' ? (durationMinutes + ' mins') : (('EGP ' + amount))} - Customer: ${pc.session.customerName}`);
+
+  io.emit('pc_updated', pc);
+  io.to(`pc_${pc.id}`).emit('session_started', pc.session);
+  res.json({ success: true, pc });
+});
+
+// Start Free Admin / Staff Session
+app.post('/api/session/start-admin', (req, res) => {
+  const { pcId } = req.body;
+  const pc = db.pcs.find(p => p.id === pcId);
+  if (!pc) return res.status(404).json({ error: 'Device not found' });
+  if (pc.status === 'in_session') return res.status(400).json({ error: 'PC is already in an active session' });
+
+  pc.status = 'in_session';
+  pc.isAdminSession = true;
+  pc.session = {
+    type: 'admin',
+    isAdmin: true,
+    startTime: Date.now(),
+    customerName: 'Admin / Staff',
+    notes: 'Free Admin Session',
+    elapsedSeconds: 0,
+    totalDurationSeconds: null,
+    remainingSeconds: null,
+    fixedAmount: 0,
     gameCost: 0,
     ordersCost: 0,
     totalCost: 0,
@@ -710,11 +766,32 @@ app.post('/api/session/start', (req, res) => {
     expired: false
   };
 
-  addAudit('Session Started', `Started session on ${pc.name} - Mode: ${type === 'open' ? 'Open Time' : type === 'fixed_time' ? (durationMinutes + ' mins') : (('EGP ' + amount))} - Customer: ${customerName || 'Guest'}`);
-
+  addAudit('Admin Session Started', `Free admin session started on ${pc.name}`, 'info');
   io.emit('pc_updated', pc);
   io.to(`pc_${pc.id}`).emit('session_started', pc.session);
   res.json({ success: true, pc });
+});
+
+// Add Free Bonus Time to Active Session
+app.post('/api/session/add-free-time', (req, res) => {
+  const { pcId, minutes = 15 } = req.body;
+  const pc = db.pcs.find(p => p.id === pcId);
+  if (!pc || !pc.session) return res.status(400).json({ error: 'No active session found on this PC' });
+
+  const addSecs = (parseInt(minutes) || 15) * 60;
+  if (pc.session.type === 'open') {
+    pc.session.freeMinutesAdded = (pc.session.freeMinutesAdded || 0) + parseInt(minutes);
+  } else {
+    pc.session.totalDurationSeconds = (pc.session.totalDurationSeconds || 0) + addSecs;
+    pc.session.remainingSeconds = (pc.session.remainingSeconds || 0) + addSecs;
+  }
+  pc.session.expired = false;
+  if (pc.status === 'locked') pc.status = 'in_session';
+
+  addAudit('Free Time Granted', `Granted +${minutes} min free bonus time to ${pc.name} (${pc.session.customerName})`, 'success');
+  io.emit('pc_updated', pc);
+  io.to(`pc_${pc.id}`).emit('session_updated', pc.session);
+  res.json({ success: true, pc, message: `Added ${minutes} free minutes successfully` });
 });
 
 // End / Close Session and generate invoice
@@ -998,6 +1075,10 @@ app.delete('/api/games/:id', (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/screenshots', (req, res) => {
   res.json({ success: true, screenshots: db.screenshots });
+});
+
+app.get('/api/surveillance/snapshots', (req, res) => {
+  res.json({ success: true, snapshots: db.screenSnapshots || {} });
 });
 
 app.post('/api/screenshots/save', (req, res) => {

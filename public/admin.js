@@ -58,13 +58,16 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   };
 
-    let activeFilter = 'all';
+  let activeFilter = 'all';
   let activeRemotePcId = null;
   let activeRemoteMode = 'view_only'; // 'view_only' | 'full_control'
   let remoteScreenImg = new Image();
   let selectedStartSessionType = 'open';
   let posCart = [];
   let currentViewMode = localStorage.getItem('cyber_view_mode') || 'large';
+  let isGridScreenView = false;
+  let screenViewPollInterval = null;
+  let cachedScreenSnapshots = {};
 
   // DOM Elements
   const pcsCardsGrid = document.getElementById('pcsCardsGrid');
@@ -510,6 +513,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // [EN]
   // -------------------------------------------------------------
   socket.on('screen_frame_relay', (data) => {
+    cachedScreenSnapshots[data.pcId] = data;
+
     // 1. Update Surveillance Thumbnail
     const thumbImg = document.getElementById(`monitor_img_${data.pcId}`);
     if (thumbImg) {
@@ -520,7 +525,20 @@ document.addEventListener('DOMContentLoaded', () => {
       winTag.textContent = data.activeWindow || 'Desktop';
     }
 
-    // 2. If this PC is open in Remote Desktop Modal, draw to canvas
+    // 2. If In-Place Grid Screen View is active, update PC card's live screen feed
+    if (isGridScreenView) {
+      const cardImg = document.getElementById(`card_screen_img_${data.pcId}`);
+      const placeholder = document.getElementById(`placeholder_${data.pcId}`);
+      const cardWinTag = document.getElementById(`card_win_tag_${data.pcId}`);
+      if (cardImg && data.image) {
+        cardImg.src = data.image;
+        cardImg.style.display = 'block';
+      }
+      if (placeholder) placeholder.style.display = 'none';
+      if (cardWinTag) cardWinTag.textContent = data.activeWindow || 'Desktop';
+    }
+
+    // 3. If this PC is open in Remote Desktop Modal, draw to canvas
     if (activeRemotePcId === data.pcId) {
       remoteScreenImg.onload = () => {
         remoteScreenCtx.drawImage(remoteScreenImg, 0, 0, remoteScreenCanvas.width, remoteScreenCanvas.height);
@@ -915,6 +933,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const hardwareModelHtml = generateHardwareSvg(model, color, pc.id, stateConf.label, currentVisuals.enableStandRgb, pcState, pc);
 
+      let middleContent = hardwareModelHtml;
+      if (isGridScreenView) {
+        const shot = cachedScreenSnapshots[pc.id];
+        const shotSrc = shot && shot.image ? shot.image : '';
+        const activeWin = shot && shot.activeWindow ? shot.activeWindow : (pc.currentGame || (pc.status === 'in_session' ? 'Cyber Launcher' : 'Locked Screen'));
+        middleContent = `
+          <div class="pc-live-screen-feed-wrap" id="screen_feed_${pc.id}">
+            <img id="card_screen_img_${pc.id}" src="${shotSrc}" alt="${pc.name}" style="${shotSrc ? 'display:block;' : 'display:none;'}" onerror="this.style.display='none'; const p = document.getElementById('placeholder_${pc.id}'); if(p) p.style.display='flex';">
+            <div class="screen-empty-placeholder" id="placeholder_${pc.id}" style="${shotSrc ? 'display:none;' : 'display:flex;'}">
+              <span>👁️ Awaiting Live Screen...</span>
+            </div>
+            <div class="screen-feed-win-tag" id="card_win_tag_${pc.id}">${activeWin}</div>
+          </div>
+        `;
+      }
+
       const timerStr = (pc.status === 'in_session' && pc.session)
         ? (pc.session.type === 'open' ? formatTime(pc.session.elapsedSeconds) : formatTime(pc.session.remainingSeconds))
         : '';
@@ -929,7 +963,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       ` : '';
 
-      // PC card: Name + Status Badge on top, Hardware Icon in middle, Timer directly under hardware icon, Cost under timer
+      // PC card: Name + Status Badge on top, Hardware Icon or Live Screen in middle, Timer directly under hardware icon, Cost under timer
       const stateBadge = stateConf.badgeIcon || '⚡';
       card.innerHTML = `
         <div class="centered-name-header">
@@ -941,7 +975,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
           ${vpnBadgeHtml}
         </div>
-        ${hardwareModelHtml}
+        ${middleContent}
         <div class="pc-timer-under-device ${isDanger ? 'timer-danger' : ''}" id="timer_${pc.id}">${timerStr}</div>
         <div class="pc-cost-under-timer" id="cost_${pc.id}">${costStr}</div>
       `;
@@ -1141,7 +1175,7 @@ document.addEventListener('DOMContentLoaded', () => {
           div.className = 'queue-order-item';
           div.innerHTML = `
             <div>
-              <b>${pc.name}</b>: ${o.qty}× ${o.name} (${o.total} $)
+              <b>${pc.name}</b>: ${o.qty}× ${o.name} (${o.total} EGP)
               <br><small style="color:#888;">${o.time}</small>
             </div>
             <span class="text-green">Ready to Deliver ✔️</span>
@@ -1169,10 +1203,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${inv.pcName}</td>
         <td>${inv.customerName || 'Guest'}</td>
         <td>${inv.durationMinutes} min</td>
-        <td>${inv.gameCost} $</td>
-        <td>${inv.ordersCost} $</td>
-        <td>${inv.discount} $</td>
-        <td><b class="text-green">${inv.totalAmount} $</b></td>
+        <td>${inv.gameCost} EGP</td>
+        <td>${inv.ordersCost} EGP</td>
+        <td>${inv.discount} EGP</td>
+        <td><b class="text-green">${inv.totalAmount} EGP</b></td>
         <td><span class="badge-tag">${inv.paymentMethod}</span></td>
         <td>${new Date(inv.endTime).toLocaleTimeString('ar-EG')}</td>
       `;
@@ -1350,6 +1384,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('amountPresetsSection').style.display = defaultType === 'fixed_amount' ? 'block' : 'none';
     document.getElementById('timePresetsSection').style.display = defaultType === 'fixed_time' ? 'block' : 'none';
     document.getElementById('openTimeNoteSection').style.display = defaultType === 'open' ? 'block' : 'none';
+    const adminNote = document.getElementById('adminNoteSection');
+    if (adminNote) adminNote.style.display = defaultType === 'admin' ? 'block' : 'none';
 
     openModal('startSessionModal');
   };
@@ -1400,6 +1436,8 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('amountPresetsSection').style.display = selectedStartSessionType === 'fixed_amount' ? 'block' : 'none';
       document.getElementById('timePresetsSection').style.display = selectedStartSessionType === 'fixed_time' ? 'block' : 'none';
       document.getElementById('openTimeNoteSection').style.display = selectedStartSessionType === 'open' ? 'block' : 'none';
+      const adminNote = document.getElementById('adminNoteSection');
+      if (adminNote) adminNote.style.display = selectedStartSessionType === 'admin' ? 'block' : 'none';
     });
   });
 
@@ -1427,6 +1465,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const amount = document.getElementById('customAmountInput').value;
     const durationMinutes = document.getElementById('customMinutesInput').value;
     const sessionType = selectedStartSessionType || 'open';
+
+    if (sessionType === 'admin') {
+      closeModal('startSessionModal');
+      startAdminSession(pcId);
+      return;
+    }
 
     fetch('/api/session/start', {
       method: 'POST',
@@ -1481,7 +1525,7 @@ document.addEventListener('DOMContentLoaded', () => {
       line.className = 'receipt-row';
       line.style.fontSize = '0.85rem';
       line.style.color = '#ffb800';
-      line.innerHTML = `<span>• ${o.qty}× ${o.name}</span><span>${o.total} $</span>`;
+      line.innerHTML = `<span>• ${o.qty}× ${o.name}</span><span>${o.total} EGP</span>`;
       ordersList.appendChild(line);
     });
 
@@ -1520,7 +1564,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (res.success) {
         window.cyberAudio.playCash();
         closeModal('checkoutModal');
-        alert(`Invoice collected successfully: ${res.invoice.totalAmount} $\nInvoice ID: ${res.invoice.id}`);
         fetchState();
       } else {
         alert(res.error || 'Error occurred while closing session');
@@ -1593,8 +1636,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const expected = (state.shift.startDrawerCash || 0) + totalRev;
 
     document.getElementById('closeExpectedCash').textContent = expected.toFixed(2);
-    document.getElementById('closeGameRev').textContent = `${(state.shift.totalGameRevenue || 0).toFixed(2)} $`;
-    document.getElementById('closeCafeRev').textContent = `${(state.shift.totalCafeRevenue || 0).toFixed(2)} $`;
+    document.getElementById('closeGameRev').textContent = `${(state.shift.totalGameRevenue || 0).toFixed(2)} EGP`;
+    document.getElementById('closeCafeRev').textContent = `${(state.shift.totalCafeRevenue || 0).toFixed(2)} EGP`;
     document.getElementById('closeActualCashInput').value = expected.toFixed(2);
 
     openModal('closeShiftModal');
@@ -1615,7 +1658,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (res.success) {
         window.cyberAudio.playCash();
         closeModal('closeShiftModal');
-        alert(`Shift closed successfully!\nDrawer discrepancy: ${res.closedShift.difference} $`);
+        alert(`Shift closed successfully!\nDrawer discrepancy: ${res.closedShift.difference} EGP`);
         fetchState();
       }
     });
@@ -1978,15 +2021,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Live Screen on Selected PC
+  // Live Screen Toggle on In-Place Grid (Refresh every 5s)
   const btnScreenSelect = document.getElementById('btnScreenSelect');
   if (btnScreenSelect) {
     btnScreenSelect.addEventListener('click', () => {
-      if (selectedPcs.size === 0) {
-        return alert('Please select a PC to view screen!');
+      isGridScreenView = !isGridScreenView;
+      btnScreenSelect.classList.toggle('screen-view-active', isGridScreenView);
+
+      if (isGridScreenView) {
+        window.cyberAudio?.playUnlock?.();
+        fetchLiveScreenSnapshots();
+        if (screenViewPollInterval) clearInterval(screenViewPollInterval);
+        screenViewPollInterval = setInterval(fetchLiveScreenSnapshots, 5000);
+      } else {
+        window.cyberAudio?.playClick?.();
+        if (screenViewPollInterval) clearInterval(screenViewPollInterval);
+        screenViewPollInterval = null;
       }
-      const firstId = Array.from(selectedPcs)[0];
-      openRemoteModal(firstId);
+      renderPcsGrid();
     });
   }
 
@@ -2067,16 +2119,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ipEl) ipEl.textContent = pc.ip || '10.10.10.101';
 
     const ctxActOpen = document.getElementById('ctxActOpenTime');
+    const ctxActAdmin = document.getElementById('ctxActAdminSession');
     const ctxActCust = document.getElementById('ctxActCustomSession');
+    const ctxActFree = document.getElementById('ctxActAddFreeTime');
     const ctxActCheck = document.getElementById('ctxActCheckout');
 
     if (pc.status === 'in_session') {
       if (ctxActOpen) ctxActOpen.style.display = 'none';
+      if (ctxActAdmin) ctxActAdmin.style.display = 'none';
       if (ctxActCust) ctxActCust.style.display = 'none';
+      if (ctxActFree) ctxActFree.style.display = 'flex';
       if (ctxActCheck) ctxActCheck.style.display = 'flex';
     } else {
       if (ctxActOpen) ctxActOpen.style.display = 'flex';
+      if (ctxActAdmin) ctxActAdmin.style.display = 'flex';
       if (ctxActCust) ctxActCust.style.display = 'flex';
+      if (ctxActFree) ctxActFree.style.display = 'none';
       if (ctxActCheck) ctxActCheck.style.display = 'none';
     }
 
@@ -2115,12 +2173,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const ctxActAdminSession = document.getElementById('ctxActAdminSession');
+  if (ctxActAdminSession) {
+    ctxActAdminSession.addEventListener('click', () => {
+      const pcId = activeContextMenuPcId;
+      hidePcContextMenu();
+      if (pcId) startAdminSession(pcId);
+    });
+  }
+
   const ctxActCustomSession = document.getElementById('ctxActCustomSession');
   if (ctxActCustomSession) {
     ctxActCustomSession.addEventListener('click', () => {
       const pcId = activeContextMenuPcId;
       hidePcContextMenu();
       if (pcId) openStartSessionModal(pcId, 'fixed_time');
+    });
+  }
+
+  const ctxActAddFreeTime = document.getElementById('ctxActAddFreeTime');
+  if (ctxActAddFreeTime) {
+    ctxActAddFreeTime.addEventListener('click', () => {
+      const pcId = activeContextMenuPcId;
+      hidePcContextMenu();
+      if (pcId) openAddFreeTimeModal(pcId);
     });
   }
 
@@ -2356,6 +2432,138 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       openTransferModal(activePcId);
     });
+  }
+
+  // Top Action: Open Admin Session (Free / 0 EGP)
+  const btnAdminSessionSelect = document.getElementById('btnAdminSessionSelect');
+  if (btnAdminSessionSelect) {
+    btnAdminSessionSelect.addEventListener('click', () => {
+      if (selectedPcs.size === 0) {
+        return alert('Please click on a PC card to select it first, then click Open Admin Session!');
+      }
+      const pcId = Array.from(selectedPcs)[0];
+      startAdminSession(pcId);
+    });
+  }
+
+  // Top Action: Add Free Bonus Time to Active Session
+  const btnAddFreeTimeSelect = document.getElementById('btnAddFreeTimeSelect');
+  if (btnAddFreeTimeSelect) {
+    btnAddFreeTimeSelect.addEventListener('click', () => {
+      if (selectedPcs.size === 0) {
+        return alert('Please click on an active PC to select it first, then click Add Free Time!');
+      }
+      const pcId = Array.from(selectedPcs)[0];
+      openAddFreeTimeModal(pcId);
+    });
+  }
+
+  window.startAdminSession = function(pcId) {
+    const pc = state.pcs.find(p => p.id === pcId);
+    if (!pc) return;
+    if (pc.status === 'in_session') {
+      alert(`Station ${pc.name} is already active in a session!`);
+      return;
+    }
+
+    fetch('/api/session/start-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pcId })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        window.cyberAudio?.playUnlock?.();
+        const localPc = state.pcs.find(p => p.id === pcId);
+        if (localPc) {
+          localPc.status = res.pc.status;
+          localPc.isAdminSession = true;
+          localPc.session = res.pc.session;
+          renderPcsGrid();
+        }
+        fetchState();
+      } else {
+        alert(res.error || 'Failed to start Admin session');
+      }
+    })
+    .catch(err => {
+      alert('Network error while starting Admin session: ' + err.message);
+    });
+  };
+
+  window.openAddFreeTimeModal = function(pcId) {
+    const pc = state.pcs.find(p => p.id === pcId);
+    if (!pc || !pc.session) {
+      alert(`Selected station (${pcId}) does not have an active session to add free time!`);
+      return;
+    }
+
+    document.getElementById('freeTimePcId').value = pc.id;
+    document.getElementById('freeTimePcName').textContent = pc.name;
+    document.getElementById('customFreeMinutesInput').value = 15;
+    document.querySelectorAll('[data-free-min]').forEach(b => b.classList.toggle('active', b.dataset.freeMin === '15'));
+    openModal('addFreeTimeModal');
+  };
+
+  document.querySelectorAll('[data-free-min]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-free-min]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('customFreeMinutesInput').value = btn.dataset.freeMin;
+    });
+  });
+
+  const btnConfirmAddFreeTime = document.getElementById('btnConfirmAddFreeTime');
+  if (btnConfirmAddFreeTime) {
+    btnConfirmAddFreeTime.addEventListener('click', () => {
+      const pcId = document.getElementById('freeTimePcId').value;
+      const minutes = parseInt(document.getElementById('customFreeMinutesInput').value) || 15;
+
+      fetch('/api/session/add-free-time', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pcId, minutes })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success) {
+          window.cyberAudio?.playCash?.();
+          closeModal('addFreeTimeModal');
+          fetchState();
+        } else {
+          alert(res.error || 'Failed to add free time');
+        }
+      })
+      .catch(err => {
+        alert('Network error while adding free time: ' + err.message);
+      });
+    });
+  }
+
+  function fetchLiveScreenSnapshots() {
+    fetch('/api/surveillance/snapshots')
+      .then(r => r.json())
+      .then(res => {
+        if (res.success && res.snapshots) {
+          cachedScreenSnapshots = res.snapshots;
+          state.pcs.forEach(pc => {
+            const shot = cachedScreenSnapshots[pc.id];
+            const img = document.getElementById(`card_screen_img_${pc.id}`);
+            const placeholder = document.getElementById(`placeholder_${pc.id}`);
+            const winTag = document.getElementById(`card_win_tag_${pc.id}`);
+            if (shot && shot.image) {
+              if (img) {
+                img.src = shot.image;
+                img.style.display = 'block';
+              }
+              if (placeholder) placeholder.style.display = 'none';
+              if (winTag) winTag.textContent = shot.activeWindow || pc.currentGame || 'Desktop';
+            }
+          });
+        }
+      })
+      .catch(() => {});
   }
 
   // Quick jump to Visual Settings
