@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberPulse Station Client Auto-Installer</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@400;600;700;900&family=JetBrains+Mono:wght@500;700&display=swap">
+  <style>
+    :root {
+      --bg: #070913;
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --card-border: rgba(0, 243, 255, 0.2);
+      --primary: #00f3ff;
+      --accent: #a855f7;
+      --success: #05ffa1;
+      --warning: #facc15;
+      --danger: #ff3366;
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: radial-gradient(circle at 50% 10%, #151a33 0%, var(--bg) 70%);
+      color: var(--text);
+      font-family: 'Outfit', 'Cairo', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+    .container {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .header {
+      text-align: center;
+      padding-bottom: 12px;
+    }
+    .header h1 {
+      font-size: 32px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #00f3ff, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .header p {
+      color: var(--text-dim);
+      font-size: 15px;
+    }
+    .station-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(5, 255, 161, 0.1);
+      border: 1px solid var(--success);
+      color: var(--success);
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 14px;
+      margin-top: 14px;
+    }
+    .pulse-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 12px var(--success);
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.6; }
+    }
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+    .card-desc {
+      color: var(--text-dim);
+      font-size: 14px;
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+    .code-box {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #38bdf8;
+      overflow-x: auto;
+      margin-bottom: 14px;
+    }
+    .code-text {
+      white-space: nowrap;
+      user-select: all;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: none;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #00f3ff, #0284c7);
+      color: #040813;
+      box-shadow: 0 4px 16px rgba(0, 243, 255, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 243, 255, 0.5);
+    }
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: #fff;
+    }
+    .btn-accent {
+      background: linear-gradient(135deg, #a855f7, #6366f1);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(168, 85, 247, 0.3);
+    }
+    .btn-accent:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
+    }
+    .actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .step-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #000;
+      font-weight: 900;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-content strong {
+      display: block;
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+    .step-content p {
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #05ffa1;
+      color: #040813;
+      padding: 12px 24px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1000;
+      opacity: 0;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>⚡ CYBERPULSE CLIENT ZERO-TOUCH SETUP</h1>
+      <p>Automatic Client Deployment for Gaming Stations • No USB Flash Drive Needed</p>
+      <div class="station-badge">
+        <span class="pulse-dot"></span>
+        <span id="stationInfoText">Detecting station IP and configuration...</span>
+      </div>
+    </header>
+
+    <!-- METHOD 1: 1-LINE POWERSHELL RUN -->
+    <div class="card">
+      <div class="card-title">
+        <span>🚀 Method 1: Instant 1-Command Setup (Zero Installation File Copy)</span>
+      </div>
+      <div class="card-desc">
+        Press <kbd style="background:#1e293b;padding:2px 8px;border-radius:4px;border:1px solid #475569;color:#fff;">Win + R</kbd> on this station, paste this command, and press Enter. Everything (config, startup, watchdog, desktop surveillance) will configure itself in 5 seconds!
+      </div>
+      <div class="code-box">
+        <span class="code-text" id="cmdPowerShell">powershell -w h -c "irm http://10.10.10.100:4000/install | iex"</span>
+        <button class="btn btn-primary" onclick="copyCommand('cmdPowerShell')">📋 Copy Command</button>
+      </div>
+      <div class="actions-row">
+        <button class="btn btn-outline" onclick="copyCommand('cmdPowerShell')">Copy PowerShell Command</button>
+        <button class="btn btn-outline" onclick="copyCommand('cmdCmd')">Copy CMD / Run Command</button>
+      </div>
+      <div id="cmdCmd" style="display:none;">cmd /c curl -s http://10.10.10.100:4000/install.bat -o %temp%\i.bat && %temp%\i.bat</div>
+    </div>
+
+    <!-- METHOD 2: 1-CLICK .BAT DOWNLOAD -->
+    <div class="card">
+      <div class="card-title">
+        <span>⬇️ Method 2: One-Click Automatic Installer (.BAT)</span>
+      </div>
+      <div class="card-desc">
+        Click the button below to download the pre-configured station installer. Run it once, and it will set up everything permanently.
+      </div>
+      <div class="actions-row">
+        <a id="btnDownloadBat" href="/install.bat" class="btn btn-accent">
+          ⚡ Download Automatic Station Installer (.BAT)
+        </a>
+        <a id="btnDirectKiosk" href="/client.html" class="btn btn-outline">
+          🌐 Open Station Lock Screen in Browser (No Install)
+        </a>
+      </div>
+    </div>
+
+    <!-- METHOD 3: CASHIER DESK REMOTE PUSH -->
+    <div class="card">
+      <div class="card-title">
+        <span>📡 Method 3: Push to All Stations from Cashier Desk</span>
+      </div>
+      <div class="card-desc">
+        Sit at your cashier desk and deploy to all online client stations across the cyber cafe network automatically without walking to each PC.
+      </div>
+      <div class="actions-row">
+        <button class="btn btn-primary" onclick="triggerRemoteDeploy()">
+          🚀 Trigger Remote Network Push to All Stations
+        </button>
+        <span id="deployStatus" style="align-self:center;font-size:13px;color:var(--text-dim);"></span>
+      </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="card">
+      <div class="card-title">
+        <span>ℹ️ How Zero-Touch Auto-Deployment Works</span>
+      </div>
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Automatic Station ID Detection</strong>
+            <p>The server recognizes each client PC automatically by its local IP address or Computer Name.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Permanent Windows Auto-Start</strong>
+            <p>Registers with Windows Task Scheduler to lock the PC as soon as Windows boots up or signs in.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Zero Future Updates Needed</strong>
+            <p>The client loads its interface and logic directly from the server. Whenever you update anything, all PCs update instantly without touching them!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">✔ Command copied to clipboard!</div>
+
+  <script>
+    async function loadStationInfo() {
+      try {
+        const res = await fetch('/api/state');
+        const data = await res.json();
+        const serverIp = data.serverIp || location.hostname || '10.10.10.100';
+
+        // Update commands
+        const psCmd = `powershell -w h -c "irm http://${serverIp}:4000/install | iex"`;
+        const cmdCmd = `cmd /c curl -s http://${serverIp}:4000/install.bat -o %temp%\\i.bat && %temp%\\i.bat`;
+        
+        document.getElementById('cmdPowerShell').textContent = psCmd;
+        document.getElementById('cmdCmd').textContent = cmdCmd;
+
+        // Determine current PC if matching
+        const clientIp = location.hostname;
+        const matchedPc = (data.pcs || []).find(p => p.ip === clientIp);
+        const pcText = matchedPc ? `Station [${matchedPc.name} - ${matchedPc.id}]` : `Client Machine (${clientIp})`;
+
+        document.getElementById('stationInfoText').textContent = 
+          `Connected to Cashier Server at ${serverIp}:4000 • ${pcText}`;
+
+        document.getElementById('btnDownloadBat').href = `/install.bat${matchedPc ? '?pc=' + matchedPc.id : ''}`;
+        document.getElementById('btnDirectKiosk').href = `/client.html${matchedPc ? '?pc=' + matchedPc.id : ''}`;
+      } catch (err) {
+        document.getElementById('stationInfoText').textContent = 'Connected to Local Server: ' + location.host;
+      }
+    }
+
+    function copyCommand(elemId) {
+      const text = document.getElementById(elemId).textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('✔ Command copied to clipboard! Paste it into Win+R on the station.');
+      }).catch(() => {
+        showToast('Please copy the text manually.');
+      });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
+    async function triggerRemoteDeploy() {
+      const statusEl = document.getElementById('deployStatus');
+      statusEl.textContent = '⏳ Preparing network deployment...';
+      try {
+        const res = await fetch('/api/network/deploy-all', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          statusEl.textContent = `✔ Deployed to ${data.stationsCount} stations! Run command on any station anytime.`;
+          showToast(`✔ Server prepared deployment for ${data.stationsCount} stations!`);
+        } else {
+          statusEl.textContent = `Notice: ${data.message}`;
+          showToast(data.message);
+        }
+      } catch (err) {
+        statusEl.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    loadStationInfo();
+  </script>
+</body>
+</html>

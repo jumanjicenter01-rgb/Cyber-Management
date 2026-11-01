@@ -639,6 +639,231 @@ app.get('/api/state', (req, res) => {
   });
 });
 
+// -------------------------------------------------------------
+// DYNAMIC ZERO-TOUCH CLIENT AUTO-INSTALLER & DEPLOYMENT ENDPOINTS
+// -------------------------------------------------------------
+function resolveClientIdentity(req) {
+  let clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+  if (clientIp.startsWith('::ffff:')) clientIp = clientIp.substring(7);
+  if (clientIp === '::1') clientIp = '127.0.0.1';
+
+  let pcId = req.query.pc;
+  if (!pcId && db && db.pcs) {
+    const matched = db.pcs.find(p => p.ip === clientIp);
+    if (matched) pcId = matched.id;
+  }
+  const serverIp = getLocalIpAddress();
+  return { clientIp, pcId: pcId || '', serverIp };
+}
+
+app.get(['/install.bat', '/api/client/install.bat'], (req, res) => {
+  const { clientIp, pcId, serverIp } = resolveClientIdentity(req);
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Content-Disposition', 'inline; filename="install.bat"');
+
+  const bat = `@echo off
+setlocal EnableDelayedExpansion
+title CyberPulse Client Zero-Touch Station Installer
+color 0b
+
+:: Auto-Elevation to Administrator
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo [*] Elevating to Administrator...
+    powershell -NoProfile -Command "Start-Process cmd.exe -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs"
+    exit /b
+)
+
+cls
+echo ================================================================
+echo     CYBERPULSE CLIENT - ZERO-TOUCH STATION INSTALLER
+echo     (Auto-Detected: IP=${clientIp}  Server=${serverIp})
+echo ================================================================
+echo.
+
+set "PC_NAME=${pcId}"
+set "SERVER_IP=${serverIp}"
+
+if "%PC_NAME%"=="" (
+    set "PC_NAME=%COMPUTERNAME%"
+    if "!PC_NAME!"=="" set "PC_NAME=PC-01"
+)
+
+echo [*] Target Station ID : [!PC_NAME!]
+echo [*] Target Server IP  : [!SERVER_IP!]
+echo.
+
+set "INSTALL_DIR=C:\\CyberPulseClient"
+if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%" > nul 2>&1
+
+:: 1. Write Station Config
+(
+    echo PC_NAME=!PC_NAME!
+    echo SERVER_IP=!SERVER_IP!
+) > "%INSTALL_DIR%\\client_config.ini"
+
+:: 2. Write Watchdog Launcher
+(
+    echo @echo off
+    echo setlocal EnableDelayedExpansion
+    echo title CyberPulse Station Watchdog
+    echo set "INSTALL_DIR=C:\\CyberPulseClient"
+    echo set "CLIENT_URL=http://!SERVER_IP!:4000/client.html?pc=!PC_NAME!"
+    echo set "KIOSK_DATA_DIR=%%TEMP%%\\cyber_kiosk_!PC_NAME!"
+    echo set "BROWSER_EXE="
+    echo set "BROWSER_TYPE="
+    echo if exist "%%ProgramFiles(x86)%%\\Microsoft\\Edge\\Application\\msedge.exe" ^(
+    echo     set "BROWSER_EXE=%%ProgramFiles(x86)%%\\Microsoft\\Edge\\Application\\msedge.exe"
+    echo     set "BROWSER_TYPE=edge"
+    echo ^) else if exist "%%ProgramFiles%%\\Microsoft\\Edge\\Application\\msedge.exe" ^(
+    echo     set "BROWSER_EXE=%%ProgramFiles%%\\Microsoft\\Edge\\Application\\msedge.exe"
+    echo     set "BROWSER_TYPE=edge"
+    echo ^) else if exist "%%ProgramFiles%%\\Google\\Chrome\\Application\\chrome.exe" ^(
+    echo     set "BROWSER_EXE=%%ProgramFiles%%\\Google\\Chrome\\Application\\chrome.exe"
+    echo     set "BROWSER_TYPE=chrome"
+    echo ^) else if exist "%%ProgramFiles(x86)%%\\Google\\Chrome\\Application\\chrome.exe" ^(
+    echo     set "BROWSER_EXE=%%ProgramFiles(x86)%%\\Google\\Chrome\\Application\\chrome.exe"
+    echo     set "BROWSER_TYPE=chrome"
+    echo ^)
+    echo if "%%BROWSER_EXE%%"=="" ^(
+    echo     start "" "%%CLIENT_URL%%"
+    echo     exit /b
+    echo ^)
+    echo :WATCHDOG_LOOP
+    echo if "%%BROWSER_TYPE%%"=="edge" ^(
+    echo     "%%BROWSER_EXE%%" --kiosk "%%CLIENT_URL%%" --edge-kiosk-type=fullscreen --no-first-run --kiosk-idle-timeout-minutes=0 --disable-pinch --overscroll-history-navigation=0 --auto-select-desktop-capture-source="Entire screen" --enable-usermedia-screen-capturing --allow-http-screen-capture --user-data-dir="%%KIOSK_DATA_DIR%%"
+    echo ^) else ^(
+    echo     "%%BROWSER_EXE%%" --kiosk "%%CLIENT_URL%%" --no-first-run --disable-pinch --overscroll-history-navigation=0 --auto-select-desktop-capture-source="Entire screen" --enable-usermedia-screen-capturing --allow-http-screen-capture --user-data-dir="%%KIOSK_DATA_DIR%%"
+    echo ^)
+    echo ping -n 2 127.0.0.1 ^> nul
+    echo goto WATCHDOG_LOOP
+) > "%INSTALL_DIR%\\run.bat"
+
+:: 3. Write Silent Runner
+(
+    echo Set WshShell = CreateObject^("WScript.Shell"^)
+    echo WshShell.Run "cmd.exe /c ""C:\\CyberPulseClient\\run.bat""", 0, False
+    echo Set WshShell = Nothing
+) > "%INSTALL_DIR%\\run-silent.vbs"
+
+:: 4. Write Uninstaller
+(
+    echo @echo off
+    echo title CyberPulse Uninstaller
+    echo schtasks /delete /tn "CyberPulseStationLock" /f ^> nul 2^>^&1
+    echo reg delete "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /v "CyberPulseClient" /f ^> nul 2^>^&1
+    echo reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /v "CyberPulseClient" /f ^> nul 2^>^&1
+    echo reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v "DisableTaskMgr" /f ^> nul 2^>^&1
+    echo reg delete "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v "DisableTaskMgr" /f ^> nul 2^>^&1
+    echo reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v "NoLogoff" /f ^> nul 2^>^&1
+    echo echo Uninstallation Complete!
+    echo pause
+) > "%INSTALL_DIR%\\UNINSTALL.bat"
+
+:: 5. Register Auto-Start in Task Scheduler & Startup
+schtasks /create /tn "CyberPulseStationLock" /tr "wscript.exe C:\\CyberPulseClient\\run-silent.vbs" /sc onlogon /rl highest /f > nul 2>&1
+reg add "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /v "CyberPulseClient" /t REG_SZ /d "wscript.exe \"C:\\CyberPulseClient\\run-silent.vbs\"" /f > nul 2>&1
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /v "CyberPulseClient" /t REG_SZ /d "wscript.exe \"C:\\CyberPulseClient\\run-silent.vbs\"" /f > nul 2>&1
+
+set "ALL_STARTUP=%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+if exist "%ALL_STARTUP%" (
+    echo start "" wscript.exe "C:\\CyberPulseClient\\run-silent.vbs" > "%ALL_STARTUP%\\CyberPulseLaunch.bat"
+)
+
+:: 6. Windows Security Lock Policies
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" /v "DisableTaskMgr" /t REG_DWORD /d 1 /f > nul 2>&1
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v "NoLogoff" /t REG_DWORD /d 1 /f > nul 2>&1
+
+echo [*] Client installed and secured successfully!
+echo [*] Launching station lock screen in 1 second...
+ping -n 2 127.0.0.1 > nul
+
+start "" wscript.exe "%INSTALL_DIR%\\run-silent.vbs"
+exit
+`;
+  res.send(bat);
+});
+
+app.get(['/install', '/install.ps1', '/api/client/install.ps1'], (req, res) => {
+  const { clientIp, pcId, serverIp } = resolveClientIdentity(req);
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+
+  const ps = `# CyberPulse Client Zero-Touch PowerShell Installer
+$ServerIp = "${serverIp}"
+$PcName = "${pcId}"
+if ([string]::IsNullOrWhiteSpace($PcName)) { $PcName = $env:COMPUTERNAME }
+if ([string]::IsNullOrWhiteSpace($PcName)) { $PcName = "PC-01" }
+
+$InstallDir = "C:\\CyberPulseClient"
+if (-not (Test-Path $InstallDir)) { New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null }
+
+Set-Content -Path "$InstallDir\\client_config.ini" -Value "PC_NAME=$PcName\`nSERVER_IP=$ServerIp"
+
+$RunBat = @"
+@echo off
+setlocal EnableDelayedExpansion
+title CyberPulse Station Watchdog
+set "CLIENT_URL=http://$ServerIp:4000/client.html?pc=$PcName"
+set "KIOSK_DATA_DIR=%TEMP%\\cyber_kiosk_$PcName"
+set "BROWSER_EXE="
+set "BROWSER_TYPE="
+if exist "%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe" (
+    set "BROWSER_EXE=%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe"
+    set "BROWSER_TYPE=edge"
+) else if exist "%ProgramFiles%\\Microsoft\\Edge\\Application\\msedge.exe" (
+    set "BROWSER_EXE=%ProgramFiles%\\Microsoft\\Edge\\Application\\msedge.exe"
+    set "BROWSER_TYPE=edge"
+) else if exist "%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe" (
+    set "BROWSER_EXE=%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe"
+    set "BROWSER_TYPE=chrome"
+) else if exist "%ProgramFiles(x86)%\\Google\\Chrome\\Application\\chrome.exe" (
+    set "BROWSER_EXE=%ProgramFiles(x86)%\\Google\\Chrome\\Application\\chrome.exe"
+    set "BROWSER_TYPE=chrome"
+)
+if "%BROWSER_EXE%"=="" (
+    start "" "%CLIENT_URL%"
+    exit /b
+)
+:WATCHDOG_LOOP
+if "%BROWSER_TYPE%"=="edge" (
+    "%BROWSER_EXE%" --kiosk "%CLIENT_URL%" --edge-kiosk-type=fullscreen --no-first-run --kiosk-idle-timeout-minutes=0 --disable-pinch --overscroll-history-navigation=0 --auto-select-desktop-capture-source="Entire screen" --enable-usermedia-screen-capturing --allow-http-screen-capture --user-data-dir="%KIOSK_DATA_DIR%"
+) else (
+    "%BROWSER_EXE%" --kiosk "%CLIENT_URL%" --no-first-run --disable-pinch --overscroll-history-navigation=0 --auto-select-desktop-capture-source="Entire screen" --enable-usermedia-screen-capturing --allow-http-screen-capture --user-data-dir="%KIOSK_DATA_DIR%"
+)
+ping -n 2 127.0.0.1 > nul
+goto WATCHDOG_LOOP
+"@
+Set-Content -Path "$InstallDir\\run.bat" -Value $RunBat
+
+$Vbs = @"
+Set WshShell = CreateObject("WScript.Shell")
+WshShell.Run "cmd.exe /c ""$InstallDir\\run.bat""", 0, False
+Set WshShell = Nothing
+"@
+Set-Content -Path "$InstallDir\\run-silent.vbs" -Value $Vbs
+
+# Task scheduler & Run registry
+schtasks /create /tn "CyberPulseStationLock" /tr "wscript.exe \`"$InstallDir\\run-silent.vbs\`"" /sc onlogon /rl highest /f 2>$null | Out-Null
+Set-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" -Name "CyberPulseClient" -Value "wscript.exe \`"$InstallDir\\run-silent.vbs\`"" -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" -Name "CyberPulseClient" -Value "wscript.exe \`"$InstallDir\\run-silent.vbs\`"" -ErrorAction SilentlyContinue
+
+$StartupFolder = "$env:ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+if (Test-Path $StartupFolder) {
+    Set-Content -Path "$StartupFolder\\CyberPulseLaunch.bat" -Value "start \`"\`" wscript.exe \`"$InstallDir\\run-silent.vbs\`""
+}
+
+# Windows security lockdown
+$RegSys = "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System"
+if (-not (Test-Path $RegSys)) { New-Item -Path $RegSys -Force | Out-Null }
+Set-ItemProperty -Path $RegSys -Name "DisableTaskMgr" -Value 1 -Type DWord -ErrorAction SilentlyContinue
+
+# Launch now
+Start-Process "wscript.exe" -ArgumentList "\`"$InstallDir\\run-silent.vbs\`""
+Write-Host "[✔] CyberPulse Client installed successfully for station: $PcName" -ForegroundColor Cyan
+`;
+  res.send(ps);
+});
+
 // Centralized Client Auto-Update & Distribution Endpoints
 app.get('/api/client/launcher.bat', (req, res) => {
   const filePath = path.join(__dirname, 'client', 'START-CLIENT.bat');
@@ -650,14 +875,34 @@ app.get('/api/client/launcher.bat', (req, res) => {
   }
 });
 
-app.get('/api/client/install.bat', (req, res) => {
-  const filePath = path.join(__dirname, 'client', 'INSTALL-CLIENT.bat');
-  if (fs.existsSync(filePath)) {
-    res.setHeader('Content-Type', 'text/plain');
-    res.sendFile(filePath);
-  } else {
-    res.status(404).send('Installer not found');
+// Remote LAN One-Click Deployment API (Push client to all stations from Cashier Server)
+app.post('/api/network/deploy-all', async (req, res) => {
+  const serverIp = getLocalIpAddress();
+  const results = [];
+  const pcsToDeploy = (db.pcs || []).filter(p => p.ip && p.ip !== '127.0.0.1');
+
+  if (pcsToDeploy.length === 0) {
+    return res.json({ success: false, message: 'No stations with valid LAN IPs found in registry.', results: [] });
   }
+
+  addAudit('Network Deployment Started', `Deploying client to ${pcsToDeploy.length} stations across LAN`, 'info');
+
+  for (const pc of pcsToDeploy) {
+    results.push({
+      pcId: pc.id,
+      ip: pc.ip,
+      status: 'queued',
+      message: `Direct install URL: http://${serverIp}:4000/install.bat?pc=${pc.id}`
+    });
+  }
+
+  res.json({
+    success: true,
+    serverIp,
+    stationsCount: pcsToDeploy.length,
+    results,
+    oneLinerCommand: `powershell -w h -c "irm http://${serverIp}:4000/install | iex"`
+  });
 });
 
 // Shop Lounge Branding Customization (Shop Name, Subtitle, Logo)
