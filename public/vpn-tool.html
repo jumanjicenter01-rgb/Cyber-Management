@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MikroTik Gaming VPN Controller</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Outfit:wght@400;600;700;900&family=JetBrains+Mono:wght@500;700&display=swap">
+  <style>
+    :root {
+      --bg: #070a14;
+      --card-bg: rgba(15, 23, 42, 0.85);
+      --card-border: rgba(0, 243, 255, 0.22);
+      --primary: #00f3ff;
+      --success: #05ffa1;
+      --danger: #ff3366;
+      --warning: #facc15;
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: radial-gradient(circle at 50% 0%, #111a36 0%, var(--bg) 75%);
+      color: var(--text);
+      font-family: 'Cairo', 'Outfit', sans-serif;
+      min-height: 100vh;
+      padding: 16px;
+      user-select: none;
+    }
+    .app-wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+    }
+    .brand-title {
+      font-size: 19px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #00f3ff, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 0.5px;
+    }
+    .router-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(5, 255, 161, 0.1);
+      border: 1px solid rgba(5, 255, 161, 0.3);
+      color: var(--success);
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* Card */
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #fff;
+    }
+    .badge-count {
+      background: rgba(0, 243, 255, 0.15);
+      color: var(--primary);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Target IP Input */
+    .input-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      display: block;
+    }
+    .ip-input-wrap {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .ip-input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1.5px solid rgba(0, 243, 255, 0.3);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #00f3ff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 700;
+      direction: ltr;
+      text-align: left;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .ip-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 14px rgba(0, 243, 255, 0.3);
+      background: rgba(0, 0, 0, 0.75);
+    }
+    .quick-chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .quick-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      color: #cbd5e1;
+      cursor: pointer;
+      direction: ltr;
+      transition: all 0.15s;
+    }
+    .quick-chip:hover {
+      background: rgba(0, 243, 255, 0.15);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Main Action Buttons */
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 16px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      border: none;
+      transition: all 0.18s ease;
+    }
+    .btn-connect {
+      background: linear-gradient(135deg, #05ffa1, #0284c7);
+      color: #040813;
+      box-shadow: 0 4px 16px rgba(5, 255, 161, 0.25);
+    }
+    .btn-connect:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(5, 255, 161, 0.4);
+    }
+    .btn-disconnect {
+      background: linear-gradient(135deg, #ff3366, #991b1b);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(255, 51, 102, 0.25);
+    }
+    .btn-disconnect:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 51, 102, 0.4);
+    }
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 11px;
+      border-radius: 6px;
+    }
+
+    /* Active List Table */
+    .active-table-wrap {
+      max-height: 180px;
+      overflow-y: auto;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.4);
+    }
+    .active-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 12px;
+    }
+    .active-row:last-child { border-bottom: none; }
+    .active-ip {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--primary);
+      direction: ltr;
+    }
+    .active-comment {
+      color: var(--text-dim);
+      font-size: 11px;
+      max-width: 160px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      direction: ltr;
+    }
+    .btn-row-del {
+      background: rgba(255, 51, 102, 0.15);
+      border: 1px solid rgba(255, 51, 102, 0.4);
+      color: #ff3366;
+      cursor: pointer;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      transition: all 0.15s;
+    }
+    .btn-row-del:hover {
+      background: #ff3366;
+      color: #fff;
+    }
+    .empty-state {
+      text-align: center;
+      color: var(--text-dim);
+      padding: 24px;
+      font-size: 12px;
+    }
+
+    /* Collapsible Settings */
+    .accordion-toggle {
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      margin-top: 4px;
+    }
+    .accordion-toggle:hover { color: #fff; }
+    .settings-panel {
+      display: none;
+      padding-top: 10px;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .settings-panel.open { display: flex; }
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .field-label {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .field-input {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      direction: ltr;
+      outline: none;
+    }
+    .field-input:focus {
+      border-color: var(--primary);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #05ffa1;
+      color: #040813;
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      opacity: 0;
+      z-index: 9999;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .toast.error {
+      background: #ff3366;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-wrap">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand-title">
+        <span>⚡ MIKROTIK VPN</span>
+      </div>
+      <div class="router-status-badge" id="routerBadge">
+        <span class="status-dot"></span>
+        <span id="routerStatusText">فحص الروتر...</span>
+      </div>
+    </header>
+
+    <!-- Main IP Control Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>🎯 توجيه وفصل أي جهاز عبر الـ VPN</span>
+        <span class="badge-count" id="vpnListNameBadge">GAMING-VPN</span>
+      </div>
+
+      <label class="input-label" for="targetIpInput">أدخل عنوان IP الجهاز:</label>
+      <div class="ip-input-wrap">
+        <input type="text" id="targetIpInput" class="ip-input" placeholder="10.10.10.115" autofocus>
+      </div>
+
+      <!-- Quick Stations in Arena -->
+      <div class="quick-chips-row" id="arenaChipsRow">
+        <span style="font-size:11px;color:var(--text-dim);align-self:center;">أجهزة السايبر:</span>
+        <span class="quick-chip" onclick="setIp('10.10.10.115', 'PC15')">PC15 (10.10.10.115)</span>
+      </div>
+
+      <!-- Main Action Buttons -->
+      <div class="btn-row">
+        <button class="btn btn-connect" id="btnConnect" onclick="connectTargetIp()">
+          <span>🟢 توصيل بالـ VPN</span>
+        </button>
+        <button class="btn btn-disconnect" id="btnDisconnect" onclick="disconnectTargetIp()">
+          <span>🔴 فصل من الـ VPN</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Active VPN IPs in MikroTik -->
+    <div class="card">
+      <div class="card-title">
+        <span>📋 الأجهزة المتصلة حالياً بالـ VPN في الروتر</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="badge-count" id="activeCountBadge">0</span>
+          <button class="btn-sm" style="background:none;border:none;color:var(--primary);cursor:pointer;" onclick="loadActiveVpnIps()" title="تحديث القائمة">🔄</button>
+        </div>
+      </div>
+
+      <div class="active-table-wrap" id="activeTableWrap">
+        <div class="empty-state" id="emptyStateText">جارِ قراءة القائمة من الميكروتك...</div>
+      </div>
+
+      <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
+        <button class="btn-sm btn-disconnect" style="font-size:11px;padding:4px 10px;" onclick="disconnectAllIps()">
+          <span>🧹 فصل الكل من الـ VPN</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Router Settings Accordion -->
+    <div class="card" style="padding: 10px 16px;">
+      <button class="accordion-toggle" onclick="toggleSettingsAccordion()">
+        <span>⚙️ إعدادات اتصال مايكروتك (MikroTik Connection)</span>
+        <span id="accArrow">▼</span>
+      </button>
+
+      <div class="settings-panel" id="settingsPanel">
+        <div class="settings-grid">
+          <div class="field-group">
+            <span class="field-label">Router IP / Host:</span>
+            <input type="text" id="mtHost" class="field-input" value="10.10.10.1">
+          </div>
+          <div class="field-group">
+            <span class="field-label">API Port:</span>
+            <input type="text" id="mtPort" class="field-input" value="8728">
+          </div>
+          <div class="field-group">
+            <span class="field-label">Username:</span>
+            <input type="text" id="mtUser" class="field-input" value="admin">
+          </div>
+          <div class="field-group">
+            <span class="field-label">Password:</span>
+            <input type="password" id="mtPass" class="field-input" value="0184255">
+          </div>
+        </div>
+        <div class="field-group" style="margin-top: 4px;">
+          <span class="field-label">VPN Address-List:</span>
+          <input type="text" id="mtList" class="field-input" value="GAMING-VPN">
+        </div>
+        <button class="btn btn-connect" style="margin-top: 6px; font-size: 12px; padding: 8px;" onclick="testAndSaveSettings()">
+          <span>🔄 فحص وحفظ الاتصال بالروتر</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">✔ تم تنفيذ العملية بنجاح</div>
+
+  <script>
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.className = 'toast show' + (isError ? ' error' : '');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function setIp(ip, name) {
+      document.getElementById('targetIpInput').value = ip;
+      showToast(`تم اختيار ${name || ip}`);
+    }
+
+    function toggleSettingsAccordion() {
+      const panel = document.getElementById('settingsPanel');
+      const arrow = document.getElementById('accArrow');
+      panel.classList.toggle('open');
+      arrow.textContent = panel.classList.contains('open') ? '▲' : '▼';
+    }
+
+    function getSettings() {
+      return {
+        host: document.getElementById('mtHost').value.trim() || '10.10.10.1',
+        port: parseInt(document.getElementById('mtPort').value.trim()) || 8728,
+        username: document.getElementById('mtUser').value.trim() || 'admin',
+        password: document.getElementById('mtPass').value.trim() || '',
+        listName: document.getElementById('mtList').value.trim() || 'GAMING-VPN'
+      };
+    }
+
+    async function loadActiveVpnIps() {
+      const s = getSettings();
+      const wrap = document.getElementById('activeTableWrap');
+      const badge = document.getElementById('activeCountBadge');
+      const routerStatus = document.getElementById('routerStatusText');
+      const routerBadge = document.getElementById('routerBadge');
+
+      try {
+        const query = new URLSearchParams(s).toString();
+        const res = await fetch('/api/mikrotik/tool/active-vpn-ips?' + query);
+        const data = await res.json();
+
+        if (data.success && data.connected) {
+          routerStatus.textContent = `${s.host}:${s.port} (متصل)`;
+          routerBadge.style.color = 'var(--success)';
+          badge.textContent = data.count || 0;
+
+          if (!data.ips || data.ips.length === 0) {
+            wrap.innerHTML = '<div class="empty-state">لا توجد أجهزة متصلة بالـ VPN حالياً</div>';
+            return;
+          }
+
+          wrap.innerHTML = data.ips.map(item => `
+            <div class="active-row">
+              <span class="active-ip">${item.address}</span>
+              <span class="active-comment">${item.comment || 'Gaming VPN'}</span>
+              <button class="btn-row-del" onclick="disconnectIpDirect('${item.address}')">✕ فصل</button>
+            </div>
+          `).join('');
+        } else {
+          routerStatus.textContent = 'غير متصل بالروتر';
+          routerBadge.style.color = 'var(--danger)';
+          wrap.innerHTML = `<div class="empty-state" style="color:var(--danger);">فشل الاتصال بالروتر: ${data.error || 'تأكد من إعدادات IP والباسورد'}</div>`;
+        }
+      } catch (err) {
+        routerStatus.textContent = 'فشل الاتصال';
+        routerBadge.style.color = 'var(--danger)';
+        wrap.innerHTML = `<div class="empty-state" style="color:var(--danger);">${err.message}</div>`;
+      }
+    }
+
+    async function connectTargetIp() {
+      const ip = document.getElementById('targetIpInput').value.trim();
+      if (!ip) return showToast('يرجى كتابة عنوان IP أولاً', true);
+
+      const s = getSettings();
+      const btn = document.getElementById('btnConnect');
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+
+      try {
+        const res = await fetch('/api/mikrotik/tool/connect-ip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ip, ...s })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`✔ تم توجيه الجهاز ${ip} إلى الـ VPN بنجاح!`);
+          loadActiveVpnIps();
+        } else {
+          showToast(`خطأ: ${data.error}`, true);
+        }
+      } catch (err) {
+        showToast(`خطأ: ${err.message}`, true);
+      } finally {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    }
+
+    async function disconnectTargetIp() {
+      const ip = document.getElementById('targetIpInput').value.trim();
+      if (!ip) return showToast('يرجى كتابة عنوان IP أولاً', true);
+      disconnectIpDirect(ip);
+    }
+
+    async function disconnectIpDirect(ip) {
+      const s = getSettings();
+      try {
+        const res = await fetch('/api/mikrotik/tool/disconnect-ip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ip, ...s })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`✔ تم فصل ${ip} من الـ VPN واستعادة النت العادي!`);
+          loadActiveVpnIps();
+        } else {
+          showToast(`خطأ: ${data.error}`, true);
+        }
+      } catch (err) {
+        showToast(`خطأ: ${err.message}`, true);
+      }
+    }
+
+    async function disconnectAllIps() {
+      if (!confirm('هل أنت متأكد من فصل جميع الأجهزة من الـ VPN دفعة واحدة؟')) return;
+      const s = getSettings();
+      try {
+        const res = await fetch('/api/mikrotik/tool/disconnect-all', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(s)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('✔ تم فصل جميع الأجهزة من الـ VPN بنجاح!');
+          loadActiveVpnIps();
+        } else {
+          showToast(`خطأ: ${data.error}`, true);
+        }
+      } catch (err) {
+        showToast(`خطأ: ${err.message}`, true);
+      }
+    }
+
+    async function testAndSaveSettings() {
+      const s = getSettings();
+      showToast('جارِ فحص الاتصال بالروتر...');
+      try {
+        const res = await fetch('/api/mikrotik/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(s)
+        });
+        const data = await res.json();
+        if (data.success && data.connected) {
+          showToast(`✔ متصل بنجاح: ${data.model || 'MikroTik'} (${data.routerOsVersion || 'v7'})`);
+          loadActiveVpnIps();
+        } else {
+          showToast(`فشل الاتصال: ${data.error || data.message}`, true);
+        }
+      } catch (err) {
+        showToast(`فشل: ${err.message}`, true);
+      }
+    }
+
+    async function loadArenaStations() {
+      try {
+        const res = await fetch('/api/state');
+        const data = await res.json();
+        if (data.pcs && data.pcs.length > 0) {
+          const chipsRow = document.getElementById('arenaChipsRow');
+          const pcsWithIp = data.pcs.filter(p => p.ip && p.ip !== '127.0.0.1');
+          if (pcsWithIp.length > 0) {
+            chipsRow.innerHTML = '<span style="font-size:11px;color:var(--text-dim);align-self:center;">أجهزة السايبر:</span>' + 
+              pcsWithIp.map(p => `
+                <span class="quick-chip" onclick="setIp('${p.ip}', '${p.name}')">${p.name} (${p.ip})</span>
+              `).join('');
+          }
+        }
+      } catch (err) {}
+    }
+
+    // Initialize
+    loadArenaStations();
+    loadActiveVpnIps();
+    setInterval(loadActiveVpnIps, 5000);
+  </script>
+</body>
+</html>

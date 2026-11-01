@@ -2659,6 +2659,184 @@ app.post('/api/mikrotik/vpn/toggle', async (req, res) => {
     return res.json({ success: true, pc });
   }
 });
+// -------------------------------------------------------------
+// STANDALONE MIKROTIK DESKTOP VPN CONTROLLER ENDPOINTS
+// -------------------------------------------------------------
+app.get('/api/mikrotik/tool/active-vpn-ips', async (req, res) => {
+  const mt = (db.settings && db.settings.mikrotik) || {};
+  const host = req.query.host || mt.host || '10.10.10.1';
+  const port = parseInt(req.query.port) || mt.port || 8728;
+  const username = req.query.username || mt.username || 'admin';
+  const password = req.query.password || mt.password || '';
+  const listName = req.query.listName || mt.vpnList || 'GAMING-VPN';
+
+  try {
+    const listRes = await runRouterOsApi(
+      host, port, username, password,
+      ['/ip/firewall/address-list/print', '?list=' + listName],
+      3000
+    );
+
+    const ips = [];
+    for (const sent of listRes) {
+      if (sent[0] === '!re') {
+        const item = {};
+        for (const word of sent) {
+          if (word.startsWith('=.id=')) item.id = word.replace('=.id=', '');
+          if (word.startsWith('=address=')) item.address = word.replace('=address=', '');
+          if (word.startsWith('=list=')) item.list = word.replace('=list=', '');
+          if (word.startsWith('=comment=')) item.comment = word.replace('=comment=', '');
+          if (word.startsWith('=dynamic=')) item.dynamic = word.replace('=dynamic=', '');
+        }
+        if (item.address) ips.push(item);
+      }
+    }
+
+    res.json({ success: true, connected: true, host, port, listName, count: ips.length, ips });
+  } catch (err) {
+    res.status(500).json({ success: false, connected: false, error: err.message, ips: [] });
+  }
+});
+
+app.post('/api/mikrotik/tool/connect-ip', async (req, res) => {
+  const { ip, comment } = req.body;
+  if (!ip || !ip.trim()) return res.status(400).json({ error: 'IP address is required' });
+
+  const targetIp = ip.trim();
+  const mt = (db.settings && db.settings.mikrotik) || {};
+  const host = req.body.host || mt.host || '10.10.10.1';
+  const port = parseInt(req.body.port) || mt.port || 8728;
+  const username = req.body.username || mt.username || 'admin';
+  const password = req.body.password || mt.password || '';
+  const listName = req.body.listName || mt.vpnList || 'GAMING-VPN';
+  const entryComment = comment || `CyberVPN-Manual-${targetIp}`;
+
+  try {
+    const existing = await runRouterOsApi(
+      host, port, username, password,
+      ['/ip/firewall/address-list/print', '?address=' + targetIp, '?list=' + listName],
+      3000
+    );
+
+    let existingId = null;
+    for (const sent of existing) {
+      const idWord = sent.find(w => w.startsWith('=.id='));
+      if (idWord) existingId = idWord.replace('=.id=', '');
+    }
+
+    if (existingId) {
+      await runRouterOsApi(
+        host, port, username, password,
+        ['/ip/firewall/address-list/set', '=.id=' + existingId, '=comment=' + entryComment],
+        3000
+      );
+    } else {
+      await runRouterOsApi(
+        host, port, username, password,
+        ['/ip/firewall/address-list/add', '=list=' + listName, '=address=' + targetIp, '=comment=' + entryComment],
+        3000
+      );
+    }
+
+    const matchedPc = (db.pcs || []).find(p => p.ip === targetIp);
+    if (matchedPc) {
+      matchedPc.vpnEnabled = true;
+      matchedPc.vpnServer = 'Gaming VPN Route';
+      io.emit('pc_updated', matchedPc);
+    }
+
+    addAudit('MikroTik Desktop Tool', `Added IP ${targetIp} to RouterOS VPN list ${listName}`, 'success');
+    res.json({ success: true, message: `IP ${targetIp} successfully routed to ${listName} on MikroTik!`, ip: targetIp });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/mikrotik/tool/disconnect-ip', async (req, res) => {
+  const { ip } = req.body;
+  if (!ip || !ip.trim()) return res.status(400).json({ error: 'IP address is required' });
+
+  const targetIp = ip.trim();
+  const mt = (db.settings && db.settings.mikrotik) || {};
+  const host = req.body.host || mt.host || '10.10.10.1';
+  const port = parseInt(req.body.port) || mt.port || 8728;
+  const username = req.body.username || mt.username || 'admin';
+  const password = req.body.password || mt.password || '';
+  const listName = req.body.listName || mt.vpnList || 'GAMING-VPN';
+
+  try {
+    const existing = await runRouterOsApi(
+      host, port, username, password,
+      ['/ip/firewall/address-list/print', '?address=' + targetIp, '?list=' + listName],
+      3000
+    );
+
+    let removedCount = 0;
+    for (const sent of existing) {
+      const idWord = sent.find(w => w.startsWith('=.id='));
+      if (idWord) {
+        const entryId = idWord.replace('=.id=', '');
+        await runRouterOsApi(
+          host, port, username, password,
+          ['/ip/firewall/address-list/remove', '=.id=' + entryId],
+          3000
+        );
+        removedCount++;
+      }
+    }
+
+    const matchedPc = (db.pcs || []).find(p => p.ip === targetIp);
+    if (matchedPc) {
+      matchedPc.vpnEnabled = false;
+      matchedPc.vpnServer = null;
+      io.emit('pc_updated', matchedPc);
+    }
+
+    addAudit('MikroTik Desktop Tool', `Removed IP ${targetIp} from RouterOS list ${listName}`, 'info');
+    res.json({ success: true, message: `IP ${targetIp} removed from ${listName}. Normal internet restored!`, removedCount });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/mikrotik/tool/disconnect-all', async (req, res) => {
+  const mt = (db.settings && db.settings.mikrotik) || {};
+  const host = req.body.host || mt.host || '10.10.10.1';
+  const port = parseInt(req.body.port) || mt.port || 8728;
+  const username = req.body.username || mt.username || 'admin';
+  const password = req.body.password || mt.password || '';
+  const listName = req.body.listName || mt.vpnList || 'GAMING-VPN';
+
+  try {
+    const existing = await runRouterOsApi(
+      host, port, username, password,
+      ['/ip/firewall/address-list/print', '?list=' + listName],
+      3000
+    );
+
+    let removedCount = 0;
+    for (const sent of existing) {
+      const idWord = sent.find(w => w.startsWith('=.id='));
+      if (idWord) {
+        const entryId = idWord.replace('=.id=', '');
+        await runRouterOsApi(
+          host, port, username, password,
+          ['/ip/firewall/address-list/remove', '=.id=' + entryId],
+          3000
+        );
+        removedCount++;
+      }
+    }
+
+    (db.pcs || []).forEach(p => { p.vpnEnabled = false; p.vpnServer = null; });
+    io.emit('state_updated', { pcs: db.pcs });
+
+    addAudit('MikroTik Desktop Tool', `Disconnected ALL IPs from ${listName} (${removedCount} entries)`, 'warning');
+    res.json({ success: true, message: `All ${removedCount} devices disconnected from VPN!`, removedCount });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // Bulk distribute VPN across selected PCs
 app.post('/api/mikrotik/vpn/bulk-distribute', async (req, res) => {
