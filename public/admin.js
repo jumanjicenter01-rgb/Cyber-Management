@@ -1031,14 +1031,16 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       }
 
-      const isElapsedType = pc.session.type === 'open' || pc.session.type === 'admin' || pc.isAdminSession;
+      const isElapsedType = pc.session ? (pc.session.type === 'open' || pc.session.type === 'admin' || pc.isAdminSession) : false;
       let timerStr = (pc.status === 'in_session' && pc.session)
         ? (isElapsedType ? formatTime(pc.session.elapsedSeconds) : formatTime(pc.session.remainingSeconds))
         : '';
       if (pc.session && pc.session.isPaused) {
         timerStr = `⏸️ ${timerStr} (PAUSED)`;
       }
-      const costDisplayVal = (pc.session.type === 'admin' || pc.isAdminSession) ? '0.00' : (pc.session.totalCost || 0).toFixed(2);
+      const costDisplayVal = (pc.session && (pc.session.type === 'admin' || pc.isAdminSession)) 
+        ? '0.00' 
+        : ((pc.session && pc.session.totalCost) ? pc.session.totalCost.toFixed(2) : '0.00');
       const costStr = (pc.status === 'in_session' && pc.session)
         ? `<span class="cost-num">${costDisplayVal}</span> <small>EGP</small>`
         : '';

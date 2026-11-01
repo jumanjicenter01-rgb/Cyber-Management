@@ -59,7 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.emit('register_role', {
       role: 'client',
       pcId,
-      hostname: window.location.hostname || pcId,
+      pcName: pcId,
+      hostname: pcId,
       specs: `${navigator.hardwareConcurrency || 8} Cores • Gaming Client`
     });
 

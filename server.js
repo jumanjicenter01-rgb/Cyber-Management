@@ -2182,22 +2182,30 @@ io.on('connection', (socket) => {
       socket.pcId = targetId;
       socket.join(`pc_${targetId}`);
 
+      const isIp = (s) => /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/.test(String(s || '').trim());
+      let cleanName = (data.pcName && !isIp(data.pcName)) ? String(data.pcName).trim() : targetId;
+
       let pc = db.pcs.find(p => p.id.toLowerCase() === targetId.toLowerCase());
       if (pc) {
         pc.isOnline = true;
         pc.ip = data.ip || clientIp;
         pc.lastActive = Date.now();
+        if (isIp(pc.name) || !pc.name) {
+          pc.name = cleanName;
+        }
         if (data.specs) pc.specs = data.specs;
         if (data.mac) pc.mac = data.mac;
         io.emit('pc_online_status', { pcId: pc.id, isOnline: true, ip: pc.ip });
         io.emit('pc_updated', pc);
+        io.emit('state_updated', { pcs: db.pcs });
+        saveData();
         addAudit('Station Connected', `${pc.name} [${pc.id}] connected from IP: ${pc.ip}`, 'info');
       } else {
         // AUTO-DISCOVER NEW NETWORK DEVICE!
         const autoNum = db.pcs.length + 1;
         const newPc = {
           id: targetId,
-          name: data.pcName || data.hostname || targetId,
+          name: cleanName,
           ip: data.ip || clientIp,
           mac: data.mac || '00:00:00:00:00:00',
           zone: data.zone || 'Standard',
