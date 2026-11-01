@@ -2525,7 +2525,7 @@ add name="cyberpulse_voucher_cleaner" interval=1h start-time=startup on-event="/
 }
 
 async function provisionMikrotikHotspotProfiles(mt) {
-  if (!mt || !mt.host) throw new Error('عنوان راوتر المايكروتك غير مسجل في الإعدادات');
+  if (!mt || !mt.host) throw new Error('MikroTik router address is not configured in settings');
 
   const printRes = await runRouterOsApi(
     mt.host,
@@ -2672,12 +2672,12 @@ async function issueHotspotVoucher({ gigabytes, speedProfile, price, customerNam
           '=profile=' + profile,
           '=limit-bytes-total=' + limitBytes.toString(),
           '=limit-uptime=' + validityDays + 'd',
-          '=comment=' + `CyberPulse-باقة ${gb} جيجا (${gb} GB)`
+          '=comment=' + `CyberPulse-${gb}GB-Voucher`
         ]
       );
     } catch (mtErr) {
       console.error('MikroTik Hotspot Add User Error:', mtErr.message);
-      throw new Error(`تعذر إنشاء الكارت على راوتر المايكروتك: ${mtErr.message}`);
+      throw new Error(`Failed to create voucher on MikroTik router: ${mtErr.message}`);
     }
   }
 
@@ -2745,7 +2745,7 @@ async function issueHotspotVoucher({ gigabytes, speedProfile, price, customerNam
       totalAmount: unitPrice,
       paymentMethod: 'Cash',
       endTime: now.toISOString(),
-      items: [{ name: `كارت واي فاي ${gb} جيجا (${profile})`, price: unitPrice, quantity: 1 }]
+      items: [{ name: `WiFi Voucher ${gb}GB (${profile})`, price: unitPrice, quantity: 1 }]
     };
     if (!db.invoices) db.invoices = [];
     db.invoices.unshift(inv);
@@ -2847,7 +2847,7 @@ app.post('/api/mikrotik/hotspot/profiles/provision', async (req, res) => {
   try {
     const results = await provisionMikrotikHotspotProfiles(mt);
     addAudit('Hotspot Profiles Provisioned', 'Provisioned 2M, 4M, 8M, 10M speed profiles in MikroTik Hotspot', 'success');
-    res.json({ success: true, results, message: 'تم تسطيب وتثبيت بروفايلات السرعة الأربعة بنجاح في راوتر المايكروتك!' });
+    res.json({ success: true, results, message: 'All 4 MikroTik speed profiles installed and configured successfully!' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

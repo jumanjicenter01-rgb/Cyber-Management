@@ -343,8 +343,8 @@ function generateStationScreen(pc) {
 
       <!-- PROMO / BANNER -->
       <rect x="40" y="75" width="880" height="100" rx="12" fill="rgba(30, 41, 59, 0.6)" stroke="rgba(0, 243, 255, 0.3)" stroke-width="1.5"/>
-      <text x="70" y="115" fill="#ffffff" font-family="'Cairo', sans-serif" font-weight="900" font-size="22">مرحباً بك في ساحة الألعاب الاحترافية</text>
-      <text x="70" y="145" fill="#38bdf8" font-family="'Cairo', sans-serif" font-size="14">اختر لعبتك المفضلة الآن واستمتع بمعدل إطارات 144Hz فائق السرعة وشبكة ألياف ضوئية منخفضة البينج</text>
+      <text x="70" y="115" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-weight="900" font-size="22">WELCOME TO CYBERPULSE ESPORTS ARENA</text>
+      <text x="70" y="145" fill="#38bdf8" font-family="'Segoe UI', sans-serif" font-size="14">Select your favorite game • 144Hz ultra-smooth display • Low-ping fiber gaming network</text>
       
       <!-- QUICK LAUNCH GAME TILES -->
       <text x="40" y="205" fill="#94a3b8" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="13">POPULAR TITLES (CLICK TO PLAY)</text>
@@ -437,7 +437,7 @@ function generateStationScreen(pc) {
         <text x="175" y="60" fill="#ff3366" font-family="sans-serif" font-size="30" text-anchor="middle">🔒</text>
 
         <text x="175" y="110" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-weight="900" font-size="22" text-anchor="middle">STATION ${escapeXml(pcId)}</text>
-        <text x="175" y="135" fill="#f43f5e" font-family="'Cairo', sans-serif" font-weight="bold" font-size="13" text-anchor="middle">الجهاز مقفل حالياً - يرجى بدء الجلسة</text>
+        <text x="175" y="135" fill="#f43f5e" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="13" text-anchor="middle">STATION LOCKED • PLEASE START SESSION</text>
 
         <g transform="translate(115, 155)">
           <circle cx="20" cy="15" r="8" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
@@ -446,7 +446,7 @@ function generateStationScreen(pc) {
           <circle cx="110" cy="15" r="8" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
         </g>
 
-        <text x="175" y="208" fill="#94a3b8" font-family="'Cairo', sans-serif" font-size="12" text-anchor="middle">اطلب من الكاشير فتح الجهاز أو استخدم كارت العضوية</text>
+        <text x="175" y="208" fill="#94a3b8" font-family="'Segoe UI', sans-serif" font-size="12" text-anchor="middle">Please contact cashier or use membership card to unlock</text>
       </g>
     `;
   } else {
@@ -510,7 +510,7 @@ function generateStationScreen(pc) {
         <circle cx="180" cy="40" r="8" fill="#05ffa1"/>
         
         <text x="180" y="80" fill="#ffffff" font-family="'Segoe UI', sans-serif" font-weight="900" font-size="22" text-anchor="middle">STATION ${escapeXml(pcId)} • READY</text>
-        <text x="180" y="105" fill="#05ffa1" font-family="'Cairo', sans-serif" font-weight="bold" font-size="14" text-anchor="middle">الجهاز متاح للعب الآن</text>
+        <text x="180" y="105" fill="#05ffa1" font-family="'Segoe UI', sans-serif" font-weight="bold" font-size="14" text-anchor="middle">STATION AVAILABLE • READY TO PLAY</text>
         <text x="180" y="128" fill="#94a3b8" font-family="'Segoe UI', sans-serif" font-size="12" text-anchor="middle">${escapeXml(specs)}</text>
       </g>
 

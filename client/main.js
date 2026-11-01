@@ -112,23 +112,24 @@ function createWindow() {
 
       const sources = await desktopCapturer.getSources({
         types: ['screen'],
-        thumbnailSize: { width: 960, height: 540 }
+        thumbnailSize: { width: 1280, height: 720 }
       });
 
       if (sources.length > 0) {
-        const thumbnail = sources[0].thumbnail.toJPEG(60);
+        const thumbnail = sources[0].thumbnail.toJPEG(65);
         const base64Image = `data:image/jpeg;base64,${thumbnail.toString('base64')}`;
 
         socket.emit('screen_frame', {
           pcId: config.pcId,
           image: base64Image,
-          activeWindow: isLocked ? 'Locked Screen' : (currentActiveProcess ? currentActiveProcess.name : 'Desktop')
+          activeWindow: isLocked ? 'Locked Screen' : (currentActiveProcess ? currentActiveProcess.name : 'Desktop'),
+          isRealStream: true
         });
       }
     } catch (err) {
       // Ignore background capture errors
     }
-  }, 400); // 2.5 frames per second live background monitor
+  }, 350);
 }
 
 function initSocketConnection() {

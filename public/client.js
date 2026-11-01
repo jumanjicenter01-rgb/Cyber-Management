@@ -465,26 +465,111 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Loop to send screen frames to server (10 FPS for smooth monitoring)
-  setInterval(() => {
-    // Always render frame to screenCaptureCanvas
-    renderScreenFrame();
-    
-    // Broadcast snapshot & execute client-side word filter inspection
-    const activeWin = activeGame ? activeGame.title : (pcState && pcState.status === 'in_session' ? 'Game Launcher' : 'Locked Screen');
-    checkClientWordFilter(activeWin);
+  const isElectronApp = !!(window.process && window.process.type) || (typeof window.require !== 'undefined') || navigator.userAgent.toLowerCase().includes('electron');
 
-    if (socket && socket.connected) {
-      const frameData = screenCaptureCanvas.toDataURL('image/jpeg', 0.6);
-      socket.emit('screen_frame', {
-        pcId,
-        image: frameData,
-        activeWindow: activeWin
-      });
+  // Real Desktop Screen Streaming via Web MediaDevices (for full Windows / Alt-Tab / games streaming)
+  const realDesktopVideo = document.createElement('video');
+  realDesktopVideo.autoplay = true;
+  realDesktopVideo.playsInline = true;
+  realDesktopVideo.muted = true;
+  let realDesktopStream = null;
+  let isSharingRealDesktop = false;
+
+  async function toggleRealDesktopCapture() {
+    if (isElectronApp) return;
+
+    if (isSharingRealDesktop) {
+      if (realDesktopStream) {
+        realDesktopStream.getTracks().forEach(t => t.stop());
+      }
+      isSharingRealDesktop = false;
+      realDesktopStream = null;
+      updateRealScreenBtnUI(false);
+      return;
     }
-  }, 300);
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      alert('Screen capture API is not supported in this browser. Please use Chrome, Edge, or the native client.');
+      return;
+    }
+
+    try {
+      realDesktopStream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          cursor: 'always',
+          displaySurface: 'monitor',
+          frameRate: { ideal: 15, max: 30 }
+        },
+        audio: false
+      });
+
+      realDesktopVideo.srcObject = realDesktopStream;
+      await realDesktopVideo.play();
+      isSharingRealDesktop = true;
+      updateRealScreenBtnUI(true);
+
+      realDesktopStream.getVideoTracks()[0].onended = () => {
+        isSharingRealDesktop = false;
+        realDesktopStream = null;
+        updateRealScreenBtnUI(false);
+      };
+    } catch (err) {
+      console.warn('Real desktop capture permission cancelled or error:', err);
+    }
+  }
+
+  function updateRealScreenBtnUI(active) {
+    const btn = document.getElementById('btnShareRealScreen');
+    const txt = document.getElementById('btnShareRealScreenText');
+    if (!btn) return;
+    if (active) {
+      btn.classList.add('active');
+      if (txt) txt.textContent = 'Live Screen Active (Full Desktop)';
+    } else {
+      btn.classList.remove('active');
+      if (txt) txt.textContent = 'Stream Real Screen';
+    }
+  }
+
+  const btnShareRealScreen = document.getElementById('btnShareRealScreen');
+  if (btnShareRealScreen) {
+    if (isElectronApp) {
+      btnShareRealScreen.style.display = 'none';
+    } else {
+      btnShareRealScreen.addEventListener('click', toggleRealDesktopCapture);
+    }
+  }
+
+  // Loop to send screen frames to server (Only if running in web browser; Electron handles its own native screen capture)
+  if (!isElectronApp) {
+    setInterval(() => {
+      // Render frame to screenCaptureCanvas
+      renderScreenFrame();
+      
+      const activeWin = isSharingRealDesktop 
+        ? 'Real Windows Desktop' 
+        : (activeGame ? activeGame.title : (pcState && pcState.status === 'in_session' ? 'Cyber Launcher' : 'Locked Screen'));
+      checkClientWordFilter(activeWin);
+
+      if (socket && socket.connected) {
+        const frameData = screenCaptureCanvas.toDataURL('image/jpeg', 0.65);
+        socket.emit('screen_frame', {
+          pcId,
+          image: frameData,
+          activeWindow: activeWin,
+          isRealStream: isSharingRealDesktop
+        });
+      }
+    }, 350);
+  }
 
   function renderScreenFrame() {
+    if (isSharingRealDesktop && realDesktopVideo.videoWidth > 0) {
+      // Stream 100% REAL WINDOWS DESKTOP! (Chrome, Alt-Tab, Games, YouTube, EVERYTHING!)
+      screenCaptureCtx.drawImage(realDesktopVideo, 0, 0, screenCaptureCanvas.width, screenCaptureCanvas.height);
+      return;
+    }
+
     screenCaptureCtx.fillStyle = '#07090e';
     screenCaptureCtx.fillRect(0, 0, screenCaptureCanvas.width, screenCaptureCanvas.height);
 
@@ -493,36 +578,40 @@ document.addEventListener('DOMContentLoaded', () => {
       screenCaptureCtx.drawImage(gameCanvas, 0, 0, screenCaptureCanvas.width, screenCaptureCanvas.height);
       // Overlay game title
       screenCaptureCtx.fillStyle = 'rgba(0,0,0,0.6)';
-      screenCaptureCtx.fillRect(10, 10, 240, 40);
+      screenCaptureCtx.fillRect(10, 10, 260, 40);
       screenCaptureCtx.fillStyle = '#00f3ff';
-      screenCaptureCtx.font = '16px Cairo';
+      screenCaptureCtx.font = '16px Segoe UI';
       screenCaptureCtx.fillText(`🎮 ${activeGame.title} (FPS: 144)`, 20, 35);
     } else if (pcState && pcState.status === 'in_session') {
-      // Launcher mode preview
+      // High-Fidelity Launcher Preview
       screenCaptureCtx.fillStyle = '#0f172a';
       screenCaptureCtx.fillRect(0, 0, screenCaptureCanvas.width, screenCaptureCanvas.height);
       screenCaptureCtx.fillStyle = '#00f3ff';
       screenCaptureCtx.font = 'bold 24px Orbitron';
-      screenCaptureCtx.fillText(`CYBERPULSE LAUNCHER - ${pcId}`, 30, 50);
+      screenCaptureCtx.fillText(`CYBERPULSE ARENA - ${pcId}`, 30, 50);
 
       screenCaptureCtx.fillStyle = '#05ffa1';
-      screenCaptureCtx.font = '20px Cairo';
-      screenCaptureCtx.fillText(`Time: \${hudTimer.textContent} | Cost: \${hudTotalCost.textContent} EGP`, 30, 90);
+      screenCaptureCtx.font = '18px Segoe UI';
+      screenCaptureCtx.fillText(`Time: ${hudTimer.textContent} | Cost: ${hudTotalCost.textContent} EGP`, 30, 85);
 
-      // Draw mock game tiles
+      screenCaptureCtx.fillStyle = '#f59e0b';
+      screenCaptureCtx.font = 'bold 15px Segoe UI';
+      screenCaptureCtx.fillText(`Click "Stream Real Screen" in top bar to broadcast full Windows desktop / Alt-Tab`, 30, 120);
+
+      // Draw game tiles
       for (let i = 0; i < 4; i++) {
         screenCaptureCtx.fillStyle = '#1e293b';
-        screenCaptureCtx.fillRect(30 + (i * 180), 120, 160, 220);
+        screenCaptureCtx.fillRect(30 + (i * 180), 145, 160, 195);
         screenCaptureCtx.strokeStyle = '#334155';
-        screenCaptureCtx.strokeRect(30 + (i * 180), 120, 160, 220);
+        screenCaptureCtx.strokeRect(30 + (i * 180), 145, 160, 195);
       }
     } else {
       // Locked screen preview
       screenCaptureCtx.fillStyle = '#05070c';
       screenCaptureCtx.fillRect(0, 0, screenCaptureCanvas.width, screenCaptureCanvas.height);
       screenCaptureCtx.fillStyle = '#ff0055';
-      screenCaptureCtx.font = 'bold 32px Cairo';
-      screenCaptureCtx.fillText(`🔒 \${pcId} - LOCKED`, screenCaptureCanvas.width / 2 - 120, screenCaptureCanvas.height / 2);
+      screenCaptureCtx.font = 'bold 30px Segoe UI';
+      screenCaptureCtx.fillText(`🔒 ${pcId} - LOCKED`, screenCaptureCanvas.width / 2 - 120, screenCaptureCanvas.height / 2);
     }
   }
 

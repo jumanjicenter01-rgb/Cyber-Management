@@ -967,16 +967,16 @@ document.addEventListener('DOMContentLoaded', () => {
       pcsCardsGrid.innerHTML = `
         <div class="empty-pcs-state" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4.5rem 2rem; background: rgba(13, 17, 27, 0.7); border: 2px dashed rgba(0, 243, 255, 0.35); border-radius: 20px; text-align: center; margin: 1.5rem 0;">
           <div style="font-size: 3.8rem; margin-bottom: 1rem; filter: drop-shadow(0 0 15px rgba(0,243,255,0.6));">📡</div>
-          <h3 style="font-family: 'Cairo', 'Orbitron', sans-serif; color: #00f3ff; font-size: 1.5rem; margin-bottom: 0.6rem; font-weight: 700;">في انتظار اتصال الأجهزة من الشبكة...</h3>
+          <h3 style="font-family: 'Orbitron', 'Segoe UI', sans-serif; color: #00f3ff; font-size: 1.5rem; margin-bottom: 0.6rem; font-weight: 700;">Waiting for Stations to Connect...</h3>
           <p style="color: #94a3b8; font-size: 1rem; max-width: 550px; line-height: 1.7; margin-bottom: 1.8rem;">
-            تم مسح جميع الأجهزة الوهمية بنجاح! بمجرد تشغيل ملف <code>START-CLIENT.bat</code> أو فتح رابط الكلاينت على أي جهاز في الصالة، سيتم التقاطه وإضافته هنا فوراً وبشكل تلقائي.
+            All stations cleared. Once <code>START-CLIENT.bat</code> or the client URL is opened on any arena PC, it will be automatically detected and registered here instantly.
           </p>
           <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
             <button class="btn btn-primary" id="btnEmptyAddPc" style="padding: 0.7rem 1.4rem; font-size: 0.95rem;">
-              <span>➕</span> إضافة جهاز يدوياً
+              <span>➕</span> Add Station Manually
             </button>
             <button class="btn btn-secondary" id="btnEmptyRefresh" style="padding: 0.7rem 1.4rem; font-size: 0.95rem;">
-              <span>🔄</span> فحص الشبكة الآن
+              <span>🔄</span> Scan Network LAN
             </button>
           </div>
         </div>
@@ -997,7 +997,7 @@ document.addEventListener('DOMContentLoaded', () => {
       pcsCardsGrid.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #64748b;">
           <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🔍</div>
-          <div style="font-size: 1.1rem; color: #94a3b8;">لا توجد أجهزة مطابقة للفلتر المحدد (${activeFilter})</div>
+          <div style="font-size: 1.1rem; color: #94a3b8;">No stations found matching filter (${activeFilter})</div>
         </div>
       `;
       return;
@@ -1079,14 +1079,14 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
 
             <div class="screen-hover-overlay">
-              <button class="screen-hover-act-btn btn-hover-zoom" onclick="event.stopPropagation(); openRemoteModal('${pc.id}')" title="فتح شاشة الجهاز بالكامل والتحكم المباشر (Full Remote Screen / Interactive Control)">
-                <span>🔍 تكبير وتحكم</span>
+              <button class="screen-hover-act-btn btn-hover-zoom" onclick="event.stopPropagation(); openRemoteModal('${pc.id}')" title="Full Remote Desktop & Interactive Control">
+                <span>🔍 Zoom & Control</span>
               </button>
-              <button class="screen-hover-act-btn btn-hover-shot" onclick="event.stopPropagation(); saveQuickCardSnapshot('${pc.id}')" title="التقاط سكرين شوت وحفظها في أرشيف الأمان (Quick Snapshot)">
-                <span>📸 لقطة سريعة</span>
+              <button class="screen-hover-act-btn btn-hover-shot" onclick="event.stopPropagation(); saveQuickCardSnapshot('${pc.id}')" title="Take Instant Snapshot & Save to Archive">
+                <span>📸 Quick Snapshot</span>
               </button>
-              <button class="screen-hover-act-btn btn-hover-msg" onclick="event.stopPropagation(); quickCardMessage('${pc.id}')" title="إرسال تنبيه أو رسالة فورية لشاشة هذا الجهاز (Send Toast)">
-                <span>💬 رسالة للشاشة</span>
+              <button class="screen-hover-act-btn btn-hover-msg" onclick="event.stopPropagation(); quickCardMessage('${pc.id}')" title="Send Instant Screen Alert Toast">
+                <span>💬 Screen Alert</span>
               </button>
             </div>
           </div>
@@ -2555,12 +2555,12 @@ document.addEventListener('DOMContentLoaded', () => {
       fetchLiveScreenSnapshots();
       if (screenViewPollInterval) clearInterval(screenViewPollInterval);
       screenViewPollInterval = setInterval(fetchLiveScreenSnapshots, 2500);
-      showToast('Live Screens Activated 📺', 'عرض الشاشات الحية للأجهزة مفعل الآن مباشرة في كروت الواجهة');
+      showToast('Live Screens Activated 📺', 'Live screen feeds are now active directly on station cards');
     } else {
       window.cyberAudio?.playClick?.();
       if (screenViewPollInterval) clearInterval(screenViewPollInterval);
       screenViewPollInterval = null;
-      showToast('Hardware Icons Mode 🖥️', 'تم التحويل إلى وضع الأيقونات وموديلات الشاشات');
+      showToast('Hardware Icons Mode 🖥️', 'Switched to hardware icons mode');
     }
 
     renderPcsGrid();
@@ -2608,21 +2608,21 @@ document.addEventListener('DOMContentLoaded', () => {
       body: JSON.stringify({
         pcId,
         image: imageData,
-        note: `لقطة شاشة سريعة من الواجهة الرئيسية (${pcId})`
+        note: `Quick dashboard snapshot (${pcId})`
       })
     })
     .then(r => r.json())
     .then(res => {
       if (res.success) {
         window.cyberAudio?.playCash?.();
-        showToast('📸 Snapshot Saved', `تم حفظ لقطة شاشة ${pcId} في أرشيف الأمان والمراقبة بنجاح.`);
+        showToast('📸 Snapshot Saved', `Snapshot of ${pcId} saved to surveillance archive successfully.`);
       }
     });
   };
 
   // Quick Card Actions: Send Toast Message to Screen
   window.quickCardMessage = function(pcId) {
-    const msg = prompt(`أدخل الرسالة التي تريد إظهارها فوراً على شاشة جهاز ${pcId}:`, 'يرجى الالتزام بالتعليمات والهدوء داخل الصالة');
+    const msg = prompt(`Enter message to broadcast on ${pcId} screen:`, 'Please observe arena rules and keep quiet.');
     if (!msg || !msg.trim()) return;
 
     socket.emit('admin_send_message', {
@@ -2631,7 +2631,7 @@ document.addEventListener('DOMContentLoaded', () => {
       level: 'warning'
     });
     window.cyberAudio?.playClick?.();
-    showToast('💬 Message Sent', `تم إرسال الرسالة إلى شاشة ${pcId} بنجاح.`);
+    showToast('💬 Message Sent', `Message dispatched to ${pcId} screen successfully.`);
   };
 
   // Auto-init screen view if saved in preferences
@@ -2893,7 +2893,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!pcId) return;
       const pc = state.pcs.find(p => p.id === pcId);
       const name = pc ? pc.name : pcId;
-      if (confirm(`هل أنت متأكد من رغبتك في إزالة الجهاز [${name}] نهائياً من الصالة؟`)) {
+      if (confirm(`Are you sure you want to remove station [${name}] from arena?`)) {
         try {
           const res = await fetch(`/api/pcs/${pcId}`, { method: 'DELETE' });
           const data = await res.json();
@@ -2966,7 +2966,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnClearPcsTop = document.getElementById('btnClearPcsTop');
   if (btnClearPcsTop) {
     btnClearPcsTop.addEventListener('click', async () => {
-      if (confirm('هل أنت متأكد من مسح جميع الأجهزة المسجلة/الوهمية؟\n\nستكون القائمة فارغة في انتظار التقاط الأجهزة الحقيقية بمجرد اتصالها بالشبكة.')) {
+      if (confirm('Are you sure you want to clear all registered stations?\n\nThe list will be cleared and real arena PCs will auto-connect as soon as they are active.')) {
         try {
           const res = await fetch('/api/pcs/clear-all', { method: 'POST' });
           const data = await res.json();
@@ -2976,7 +2976,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateShiftSummary();
             renderPcsGrid();
             renderSurveillanceGrid();
-            showToast('All Stations Cleared 🧹', 'تم مسح الأجهزة بنجاح، في انتظار اتصال الأجهزة من الشبكة.');
+            showToast('All Stations Cleared 🧹', 'Stations cleared. Waiting for arena devices to connect.');
           }
         } catch (err) {
           showToast('Error', 'Failed to clear stations');
@@ -2986,7 +2986,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function scanNetworkLan() {
-    showToast('Network Scanner 📡', 'جاري فحص الشبكة المحلية وتلقيط الأجهزة...');
+    showToast('Network Scanner 📡', 'Scanning local LAN for active stations...');
     try {
       const res = await fetch('/api/network/scan', { method: 'POST' });
       const data = await res.json();
@@ -2997,15 +2997,15 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSurveillanceGrid();
         if (window.cyberAudio) window.cyberAudio.playUnlock();
         if (data.newlyAddedCount > 0) {
-          showToast('Scan Successful ⚡', `تم اكتشاف وتسجيل ${data.newlyAddedCount} جهاز جديد من الصالة!`);
+          showToast('Scan Successful ⚡', `Discovered and registered ${data.newlyAddedCount} new station(s)!`);
         } else if (data.discoveredCount > 0) {
-          showToast('Network Verified ✔', `تم فحص أجهزة الشبكة (${data.discoveredCount} جهاز نشط).`);
+          showToast('Network Verified ✔', `Verified LAN stations (${data.discoveredCount} active stations).`);
         } else {
-          showToast('Scan Finished ℹ️', 'لم يتم العثور على أجهزة جديدة حالياً. تأكد من فتح أجهزة الصالة.');
+          showToast('Scan Finished ℹ️', 'No new stations found. Ensure station PCs are powered on.');
         }
       }
     } catch (err) {
-      showToast('Error', 'فشل في فحص الشبكة: ' + err.message);
+      showToast('Error', 'Network scan failed: ' + err.message);
     }
   }
   window.scanNetworkLan = scanNetworkLan;
@@ -4166,11 +4166,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ok && data.connected) {
           updateMikrotikStatusUI({ connected: true, model: data.model });
           window.cyberAudio?.playUnlock?.();
-          alert(`تم الاتصال براوتر المايكروتك بنجاح!\nالموديل: ${data.model}\nالحالة: متصل وجاهز للتهيئة.`);
+          alert(`Successfully connected to MikroTik router!\nModel: ${data.model}\nStatus: Connected and ready.`);
         } else {
           updateMikrotikStatusUI({ connected: false });
           window.cyberAudio?.playWarning?.();
-          alert(`فشل الاتصال براوتر المايكروتك على ${payload.host}:${payload.port}.\nالخطأ: ${data.error || data.message || 'Connection refused or timed out'}\nتأكد من عنوان IP والمنفذ واسم المستخدم وكلمة المرور.`);
+          alert(`Failed to connect to MikroTik router at ${payload.host}:${payload.port}.\nError: ${data.error || data.message || 'Connection refused or timed out'}\nPlease verify IP address, port, username and password.`);
         }
       })
       .catch(err => {
@@ -4202,7 +4202,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!state.settings) state.settings = {};
           state.settings.mikrotik = res.mikrotik;
           window.cyberAudio?.playCash?.();
-          alert('تم حفظ إعدادات راوتر المايكروتك ونفق الألعاب بنجاح.');
+          alert('MikroTik router settings and VPN configuration saved successfully.');
         }
       })
       .catch(err => {
@@ -4216,7 +4216,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnProvisionMikrotikVpn) {
     btnProvisionMikrotikVpn.addEventListener('click', () => {
       btnProvisionMikrotikVpn.disabled = true;
-      btnProvisionMikrotikVpn.innerHTML = '<span>⏳</span> جاري التهيئة على المايكروتك...';
+      btnProvisionMikrotikVpn.innerHTML = '<span>⏳</span> Provisioning MikroTik rules...';
 
       const payload = getMikrotikPayload();
 
@@ -4230,29 +4230,29 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(r => r.json().then(data => ({ ok: r.ok, data })))
         .then(({ ok, data }) => {
           btnProvisionMikrotikVpn.disabled = false;
-          btnProvisionMikrotikVpn.innerHTML = '<span>⚡</span> تهيئة وتثبيت القواعد في المايكروتك تلقائياً';
+          btnProvisionMikrotikVpn.innerHTML = '<span>⚡</span> Auto-Provision Rules on MikroTik';
           if (ok && data.success) {
             if (provisionLogBox) {
               provisionLogBox.style.display = 'block';
               const logLines = (data.executedResults || []).map(item => `<div>✔ ${item}</div>`).join('');
               provisionLogBox.innerHTML = `
-                <div style="color:var(--neon-green); font-weight:bold; margin-bottom:0.6rem;">🛡️ [SUCCESS] تم تهيئة المايكروتك للديسكلس وروبلوكس بنجاح:</div>
+                <div style="color:var(--neon-green); font-weight:bold; margin-bottom:0.6rem;">🛡️ [SUCCESS] MikroTik Diskless & Gaming Rules Provisioned Successfully:</div>
                 <div style="color:#05ffa1; font-size:0.78rem; line-height:1.6; margin-bottom:0.8rem;">${logLines}</div>
                 <div style="color:var(--neon-cyan); font-size:0.75rem; border-top:1px solid rgba(0,243,255,0.2); padding-top:0.5rem;">
-                  <b>الملاحظات:</b> أجهزة الديسكلس آمنة تماماً. فقط حركة سيرفرات روبلوكس ستمر عبر النفق، بينما التصفح العادي وتحميلات الألعاب تمر بالسرعة القصوى المباشرة.
+                  <b>Notes:</b> Diskless boot traffic remains 100% direct and secure. Only targeted game traffic routes via tunnel, while normal browsing and game downloads operate at full direct line speed.
                 </div>
               `;
             }
             window.cyberAudio?.playUnlock?.();
-            alert('تمت تهيئة وتثبيت قواعد المايكروتك بنجاح!');
+            alert('MikroTik rules provisioned and configured successfully!');
           } else {
             window.cyberAudio?.playWarning?.();
-            alert('فشل في تهيئة المايكروتك: ' + (data.error || 'خطأ في الاتصال بالراوتر'));
+            alert('Failed to provision MikroTik: ' + (data.error || 'Connection error'));
           }
         })
         .catch(err => {
           btnProvisionMikrotikVpn.disabled = false;
-          btnProvisionMikrotikVpn.innerHTML = '<span>⚡</span> تهيئة وتثبيت القواعد في المايكروتك تلقائياً';
+          btnProvisionMikrotikVpn.innerHTML = '<span>⚡</span> Auto-Provision Rules on MikroTik';
           alert('Error during provisioning: ' + err.message);
         });
     });
@@ -4261,7 +4261,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnCopyMikrotikScript) {
     btnCopyMikrotikScript.addEventListener('click', () => {
       btnCopyMikrotikScript.disabled = true;
-      btnCopyMikrotikScript.innerHTML = '<span>⏳</span> جاري توليد الكود...';
+      btnCopyMikrotikScript.innerHTML = '<span>⏳</span> Generating script...';
 
       const payload = getMikrotikPayload();
 
@@ -4275,7 +4275,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(r => r.json())
       .then(res => {
         btnCopyMikrotikScript.disabled = false;
-        btnCopyMikrotikScript.innerHTML = '<span>📋</span> عرض ونسخ كود التيرمنال للمايكروتك';
+        btnCopyMikrotikScript.innerHTML = '<span>📋</span> View & Copy Terminal Script';
         if (res.success && res.script) {
           const textarea = document.getElementById('mikrotikScriptTextarea');
           if (textarea) textarea.value = res.script;
@@ -4283,12 +4283,12 @@ document.addEventListener('DOMContentLoaded', () => {
           if (fb) fb.style.display = 'none';
           openModal('mikrotikScriptModal');
         } else {
-          alert('تعذر استخراج كود التيرمنال');
+          alert('Failed to generate terminal script');
         }
       })
       .catch(err => {
         btnCopyMikrotikScript.disabled = false;
-        btnCopyMikrotikScript.innerHTML = '<span>📋</span> عرض ونسخ كود التيرمنال للمايكروتك';
+        btnCopyMikrotikScript.innerHTML = '<span>📋</span> View & Copy Terminal Script';
         alert('Failed to generate script: ' + err.message);
       });
     });
@@ -4300,11 +4300,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const fb = document.getElementById('copyScriptFeedback');
       if (textarea) {
         navigator.clipboard.writeText(textarea.value).then(() => {
-          btnCopyScriptModal.innerHTML = '<span>✅</span> تم النسخ إلى الحافظة!';
+          btnCopyScriptModal.innerHTML = '<span>✅</span> Copied to Clipboard!';
           if (fb) fb.style.display = 'inline';
           window.cyberAudio?.playClick?.();
           setTimeout(() => {
-            btnCopyScriptModal.innerHTML = '<span>📄</span> نسخ الكود بالكامل (Copy Script)';
+            btnCopyScriptModal.innerHTML = '<span>📄</span> Copy Entire Script';
           }, 2500);
         });
       }
@@ -4373,7 +4373,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('btnRefreshVouchersLive');
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<span>⏳</span> جاري التحديث...';
+      btn.innerHTML = '<span>⏳</span> Syncing...';
     }
 
     fetch('/api/mikrotik/hotspot/vouchers')
@@ -4381,7 +4381,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(res => {
         if (btn) {
           btn.disabled = false;
-          btn.innerHTML = '<span>🔄</span> تحديث الاستهلاك المباشر';
+          btn.innerHTML = '<span>🔄</span> Sync Live Traffic';
         }
         if (res.success && Array.isArray(res.vouchers)) {
           state.vouchers = res.vouchers;
@@ -4391,7 +4391,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(err => {
         if (btn) {
           btn.disabled = false;
-          btn.innerHTML = '<span>🔄</span> تحديث الاستهلاك المباشر';
+          btn.innerHTML = '<span>🔄</span> Sync Live Traffic';
         }
         console.error('Failed to sync vouchers live:', err);
       });
@@ -4409,7 +4409,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!tbody) return;
 
     if (!vouchers || vouchers.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="padding:1.8rem; text-align:center; color:var(--text-muted);">لا توجد كروت واي فاي مصدرة حالياً. اضغط على زر <b>🎫 إصدار كارت واي فاي</b> للبدء.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="padding:1.8rem; text-align:center; color:var(--text-muted);">No WiFi vouchers issued yet. Click <b>🎫 Issue WiFi Voucher</b> to generate one.</td></tr>`;
       return;
     }
 
@@ -4419,15 +4419,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const limitBytes = v.limitBytesTotal || (v.gigabytes * 1073741824);
       const pct = Math.min(100, Math.max(0, Math.round((usedBytes / limitBytes) * 100)));
 
-      let statusBadge = `<span class="badge-voucher-status active">● نشط</span>`;
+      let statusBadge = `<span class="badge-voucher-status active">● Active</span>`;
       if (v.status === 'depleted') {
-        statusBadge = `<span class="badge-voucher-status depleted">⚠ انتهت الكوتة</span>`;
+        statusBadge = `<span class="badge-voucher-status depleted">⚠ Depleted</span>`;
       } else if (v.status === 'expired') {
-        statusBadge = `<span class="badge-voucher-status expired">⏱ منتهي (30 يوم)</span>`;
+        statusBadge = `<span class="badge-voucher-status expired">⏱ Expired (30d)</span>`;
       }
 
       const speedLabel = (v.speedProfile || 'profile_4m').replace('profile_', '').toUpperCase();
-      const createdDateStr = v.createdAt ? new Date(v.createdAt).toLocaleDateString('ar-EG', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+      const createdDateStr = v.createdAt ? new Date(v.createdAt).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
 
       return `
         <tr>
@@ -4457,15 +4457,15 @@ document.addEventListener('DOMContentLoaded', () => {
           </td>
           <td style="font-size:0.76rem; color:var(--text-muted);">${createdDateStr}</td>
           <td>
-            <span style="font-size:0.78rem; color:#94a3b8;">30 يوم <small style="color:var(--neon-cyan);">(جهاز 1)</small></span>
+            <span style="font-size:0.78rem; color:#94a3b8;">30 Days <small style="color:var(--neon-cyan);">(1 Device)</small></span>
           </td>
           <td>${statusBadge}</td>
           <td>
             <div style="display:flex; gap:0.35rem; justify-content:center;">
-              <button class="btn btn-secondary-soft btn-xs btn-show-ticket" data-code="${v.code}" style="padding:4px 8px; font-size:0.75rem; border-radius:5px;" title="عرض وطباعة التذكرة">
-                🎫 طباعة
+              <button class="btn btn-secondary-soft btn-xs btn-show-ticket" data-code="${v.code}" style="padding:4px 8px; font-size:0.75rem; border-radius:5px;" title="View & Print Ticket">
+                🎫 Print
               </button>
-              <button class="btn btn-danger-soft btn-xs btn-delete-voucher" data-code="${v.code}" style="padding:4px 8px; font-size:0.75rem; border-radius:5px;" title="حذف الكارت من المايكروتك">
+              <button class="btn btn-danger-soft btn-xs btn-delete-voucher" data-code="${v.code}" style="padding:4px 8px; font-size:0.75rem; border-radius:5px;" title="Delete Voucher from MikroTik">
                 🗑️
               </button>
             </div>
@@ -4486,7 +4486,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tbody.querySelectorAll('.btn-delete-voucher').forEach(b => {
       b.onclick = () => {
         const code = b.dataset.code;
-        if (!confirm(`هل أنت متأكد من حذف وإلغاء كارت الواي فاي (${code}) من المايكروتك فوراً؟`)) return;
+        if (!confirm(`Are you sure you want to delete and revoke WiFi Voucher (${code}) from MikroTik router immediately?`)) return;
         fetch(`/api/mikrotik/hotspot/voucher/${code}`, { method: 'DELETE' })
           .then(r => r.json())
           .then(res => {
@@ -4495,10 +4495,10 @@ document.addEventListener('DOMContentLoaded', () => {
               renderHotspotVouchersTable(state.vouchers);
               window.cyberAudio?.playClick?.();
             } else {
-              alert('فشل في حذف الكارت: ' + (res.error || 'خطأ'));
+              alert('Failed to delete voucher: ' + (res.error || 'Error'));
             }
           })
-          .catch(err => alert('خطأ في الاتصال: ' + err.message));
+          .catch(err => alert('Network error: ' + err.message));
       };
     });
   }
@@ -4599,25 +4599,25 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnProvisionHotspotProfiles) {
     btnProvisionHotspotProfiles.addEventListener('click', () => {
       btnProvisionHotspotProfiles.disabled = true;
-      btnProvisionHotspotProfiles.innerHTML = '<span>⏳</span> جاري تسطيب البروفايلات في المايكروتك...';
+      btnProvisionHotspotProfiles.innerHTML = '<span>⏳</span> Installing profiles on MikroTik...';
 
       fetch('/api/mikrotik/hotspot/profiles/provision', { method: 'POST' })
         .then(r => r.json().then(data => ({ ok: r.ok, data })))
         .then(({ ok, data }) => {
           btnProvisionHotspotProfiles.disabled = false;
-          btnProvisionHotspotProfiles.innerHTML = '<span>⚡</span> تسطيب البروفايلات في المايكروتك الآن';
+          btnProvisionHotspotProfiles.innerHTML = '<span>⚡</span> Install Profiles on MikroTik Now';
           if (ok && data.success) {
             window.cyberAudio?.playUnlock?.();
-            alert(`✅ تم تسطيب وتحديث بروفايلات السرعة الأربعة في المايكروتك بنجاح!\n\n1. profile_2m (2 Mbps)\n2. profile_4m (4 Mbps)\n3. profile_8m (8 Mbps)\n4. profile_10m (10 Mbps)\n\nتم تفعيل: ربط الكارت بجهاز 1 فقط (shared-users=1) والحذف التلقائي بعد 30 يوم أو انتهاء الكوتة.`);
+            alert(`✅ All 4 speed profiles installed and configured on MikroTik successfully!\n\n1. profile_2m (2 Mbps)\n2. profile_4m (4 Mbps)\n3. profile_8m (8 Mbps)\n4. profile_10m (10 Mbps)\n\nRules active: 1 device binding (shared-users=1) and auto-removal upon 30 days or quota depletion.`);
           } else {
             window.cyberAudio?.playWarning?.();
-            alert('فشل تسطيب البروفايلات: ' + (data.error || 'خطأ في الاتصال بالراوتر'));
+            alert('Failed to install profiles: ' + (data.error || 'Connection error'));
           }
         })
         .catch(err => {
           btnProvisionHotspotProfiles.disabled = false;
-          btnProvisionHotspotProfiles.innerHTML = '<span>⚡</span> تسطيب البروفايلات في المايكروتك الآن';
-          alert('خطأ أثناء التسطيب: ' + err.message);
+          btnProvisionHotspotProfiles.innerHTML = '<span>⚡</span> Install Profiles on MikroTik Now';
+          alert('Error during profile provisioning: ' + err.message);
         });
     });
   }
@@ -4636,10 +4636,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (fb) fb.style.display = 'none';
             openModal('hotspotScriptModal');
           } else {
-            alert('تعذر استخراج كود التيرمنال');
+            alert('Failed to generate terminal script');
           }
         })
-        .catch(err => alert('خطأ في توليد الكود: ' + err.message));
+        .catch(err => alert('Error generating script: ' + err.message));
     });
   }
 
@@ -4668,7 +4668,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const loginUrl = document.getElementById('mtHotspotLoginUrl')?.value?.trim() || 'http://10.10.10.1/login';
 
       btnSaveHotspotSettings.disabled = true;
-      btnSaveHotspotSettings.innerHTML = '<span>💾</span> جاري الحفظ...';
+      btnSaveHotspotSettings.innerHTML = '<span>💾</span> Saving...';
 
       fetch('/api/mikrotik/hotspot/settings', {
         method: 'POST',
@@ -4678,18 +4678,18 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(r => r.json())
       .then(res => {
         btnSaveHotspotSettings.disabled = false;
-        btnSaveHotspotSettings.innerHTML = '<span>💾</span> حفظ إعدادات كروت الواي فاي';
+        btnSaveHotspotSettings.innerHTML = '<span>💾</span> Save WiFi Settings';
         if (res.success) {
           if (!state.settings) state.settings = {};
           state.settings.hotspot = res.hotspot;
           window.cyberAudio?.playCash?.();
-          alert('تم حفظ إعدادات كروت الواي فاي بنجاح (ستبقى ثابتة لكل الكروت القادمة لحين تغييرها).');
+          alert('WiFi voucher settings saved successfully (persisted for all future vouchers).');
         }
       })
       .catch(err => {
         btnSaveHotspotSettings.disabled = false;
-        btnSaveHotspotSettings.innerHTML = '<span>💾</span> حفظ إعدادات كروت الواي فاي';
-        alert('فشل حفظ الإعدادات: ' + err.message);
+        btnSaveHotspotSettings.innerHTML = '<span>💾</span> Save WiFi Settings';
+        alert('Failed to save settings: ' + err.message);
       });
     });
   }
@@ -4718,7 +4718,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const submitBtn = document.getElementById('btnSubmitIssueVoucher');
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span>⏳</span> جاري الاتصال بالمايكروتك وإصدار الكارت...';
+        submitBtn.innerHTML = '<span>⏳</span> Connecting to MikroTik and issuing voucher...';
       }
 
       fetch('/api/mikrotik/hotspot/voucher/issue', {
@@ -4730,7 +4730,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(({ ok, data }) => {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.innerHTML = '<span>⚡</span> إصدار وطباعة الكارت الآن';
+          submitBtn.innerHTML = '<span>⚡</span> Issue & Print Voucher Now';
         }
 
         if (ok && data.success && data.voucher) {
@@ -4745,15 +4745,15 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         } else {
           window.cyberAudio?.playWarning?.();
-          alert('فشل إصدار الكارت: ' + (data.error || 'خطأ غير معروف'));
+          alert('Failed to issue voucher: ' + (data.error || 'Unknown error'));
         }
       })
       .catch(err => {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.innerHTML = '<span>⚡</span> إصدار وطباعة الكارت الآن';
+          submitBtn.innerHTML = '<span>⚡</span> Issue & Print Voucher Now';
         }
-        alert('خطأ أثناء إصدار الكارت: ' + err.message);
+        alert('Error during voucher issuance: ' + err.message);
       });
     });
   }

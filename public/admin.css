@@ -1352,7 +1352,10 @@ body {
 
 .monitor-pc-name { font-family: var(--font-cyber); font-weight: 700; color: #fff; }
 .monitor-screen-feed {
-  height: 180px;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  min-height: 170px;
   background: #000;
   display: flex;
   align-items: center;
@@ -1361,7 +1364,13 @@ body {
   overflow: hidden;
 }
 
-.monitor-screen-feed img { width: 100%; height: 100%; object-fit: cover; }
+.monitor-screen-feed img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+  display: block;
+}
 .monitor-empty-text { color: var(--text-muted); font-size: 0.8rem; text-align: center; }
 
 .monitor-overlay-hover {
@@ -2826,9 +2835,11 @@ select option:checked {
 .pc-live-screen-feed-wrap {
   width: 100%;
   max-width: 290px;
-  height: 155px;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  min-height: 155px;
   margin: 0.35rem auto 0.6rem auto;
-  background: radial-gradient(circle at center, #0f172a 0%, #030712 100%);
+  background: #000;
   border: 2px solid rgba(0, 243, 255, 0.35);
   border-radius: 12px;
   position: relative;
@@ -2853,7 +2864,8 @@ select option:checked {
 .pc-live-screen-feed-wrap img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  background: #000;
   display: block;
 }
 
