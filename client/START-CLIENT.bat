@@ -70,6 +70,22 @@ if /i "%USER_CHOICE%"=="R" (
 set "CLIENT_URL=http://%SERVER_IP%:4000/client.html?pc=%PC_NAME%"
 set "KIOSK_DATA_DIR=%TEMP%\cyber_kiosk_%PC_NAME%"
 
+:: Register Auto-Start on Windows Login
+if exist "%SCRIPT_DIR%START-CLIENT-SILENT.vbs" (
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "CyberPulseClient" /t REG_SZ /d "wscript.exe \"%SCRIPT_DIR%START-CLIENT-SILENT.vbs\"" /f > nul 2>&1
+) else (
+    reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "CyberPulseClient" /t REG_SZ /d "\"%SCRIPT_DIR%START-CLIENT.bat\"" /f > nul 2>&1
+)
+
+set "STARTUP_FOLDER=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
+if exist "%STARTUP_FOLDER%" (
+    if exist "%SCRIPT_DIR%START-CLIENT-SILENT.vbs" (
+        (echo @echo off & echo start "" wscript.exe "%SCRIPT_DIR%START-CLIENT-SILENT.vbs") > "%STARTUP_FOLDER%\CyberPulseLaunch.bat"
+    ) else (
+        (echo @echo off & echo call "%SCRIPT_DIR%START-CLIENT.bat") > "%STARTUP_FOLDER%\CyberPulseLaunch.bat"
+    )
+)
+
 :: Find Microsoft Edge or Google Chrome
 set "BROWSER_EXE="
 set "BROWSER_TYPE="

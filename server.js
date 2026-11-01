@@ -569,6 +569,27 @@ app.get('/api/state', (req, res) => {
   });
 });
 
+// Centralized Client Auto-Update & Distribution Endpoints
+app.get('/api/client/launcher.bat', (req, res) => {
+  const filePath = path.join(__dirname, 'client', 'START-CLIENT.bat');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'text/plain');
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('Launcher not found');
+  }
+});
+
+app.get('/api/client/install.bat', (req, res) => {
+  const filePath = path.join(__dirname, 'client', 'INSTALL-CLIENT.bat');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'text/plain');
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('Installer not found');
+  }
+});
+
 // Shop Lounge Branding Customization (Shop Name, Subtitle, Logo)
 app.get('/api/settings/branding', (req, res) => {
   res.json({
