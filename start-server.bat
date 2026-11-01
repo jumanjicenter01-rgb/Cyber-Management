@@ -14,5 +14,7 @@ echo.
 echo Keep this window running while the lounge is open!
 echo =======================================================
 echo.
-node server.js
+set "NODE_EXE=node"
+if exist "C:\Program Files\nodejs\node.exe" set "NODE_EXE=C:\Program Files\nodejs\node.exe"
+"%NODE_EXE%" server.js
 pause
