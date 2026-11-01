@@ -285,6 +285,112 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ==============================================================
+  // REVENUE MASKING & EYE PASSWORD UNLOCK SYSTEM
+  // ==============================================================
+  let isRevenueRevealed = false;
+  const revenueAuthModal = document.getElementById('revenueAuthModal');
+  const revenueAuthForm = document.getElementById('revenueAuthForm');
+  const revenuePasswordInput = document.getElementById('revenuePasswordInput');
+  const revenueAuthErrorMessage = document.getElementById('revenueAuthErrorMessage');
+  const btnCloseRevenueAuth = document.getElementById('btnCloseRevenueAuth');
+  const btnCancelRevenueAuth = document.getElementById('btnCancelRevenueAuth');
+  const btnToggleRevenuePassVisibility = document.getElementById('btnToggleRevenuePassVisibility');
+
+  function openRevenueAuthModal() {
+    if (revenueAuthModal) {
+      revenueAuthModal.classList.add('active');
+      if (revenueAuthErrorMessage) revenueAuthErrorMessage.style.display = 'none';
+      if (revenuePasswordInput) {
+        revenuePasswordInput.value = '';
+        setTimeout(() => revenuePasswordInput.focus(), 150);
+      }
+    }
+  }
+
+  function closeRevenueAuthModal() {
+    if (revenueAuthModal) {
+      revenueAuthModal.classList.remove('active');
+    }
+    if (revenueAuthErrorMessage) revenueAuthErrorMessage.style.display = 'none';
+  }
+
+  if (btnCloseRevenueAuth) btnCloseRevenueAuth.addEventListener('click', closeRevenueAuthModal);
+  if (btnCancelRevenueAuth) btnCancelRevenueAuth.addEventListener('click', closeRevenueAuthModal);
+
+  if (btnToggleRevenuePassVisibility && revenuePasswordInput) {
+    btnToggleRevenuePassVisibility.addEventListener('click', () => {
+      const isPass = revenuePasswordInput.type === 'password';
+      revenuePasswordInput.type = isPass ? 'text' : 'password';
+      btnToggleRevenuePassVisibility.textContent = isPass ? '🔒' : '👁️';
+    });
+  }
+
+  function handleRevenueToggleClick() {
+    if (isRevenueRevealed) {
+      isRevenueRevealed = false;
+      if (state && state.shift) updateShiftStats(state.shift);
+      window.cyberAudio?.playClick?.();
+      showToast('🔒 تم إخفاء مبالغ الإيرادات');
+    } else {
+      openRevenueAuthModal();
+    }
+  }
+
+  ['pillGameRevenue', 'pillCafeRevenue', 'pillDrawerCash', 'eyeIconGameRev', 'eyeIconCafeRev', 'eyeIconDrawerCash'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleRevenueToggleClick();
+      });
+    }
+  });
+
+  if (revenueAuthForm) {
+    revenueAuthForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const password = (revenuePasswordInput ? revenuePasswordInput.value : '').trim();
+      if (!password) {
+        if (revenueAuthErrorMessage) {
+          revenueAuthErrorMessage.textContent = 'يرجى إدخال كلمة المرور!';
+          revenueAuthErrorMessage.style.display = 'block';
+        }
+        return;
+      }
+
+      fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success) {
+            isRevenueRevealed = true;
+            closeRevenueAuthModal();
+            window.cyberAudio?.playCash?.();
+            if (state && state.shift) updateShiftStats(state.shift);
+            showToast('✅ تم تأكيد الهوية وإظهار الإيرادات');
+          } else {
+            if (revenueAuthErrorMessage) {
+              revenueAuthErrorMessage.textContent = res.error || 'كلمة المرور غير صحيحة!';
+              revenueAuthErrorMessage.style.display = 'block';
+            }
+            window.cyberAudio?.playWarning?.();
+            if (revenuePasswordInput) revenuePasswordInput.select();
+          }
+        })
+        .catch(() => {
+          if (revenueAuthErrorMessage) {
+            revenueAuthErrorMessage.textContent = 'خطأ في الاتصال بالسيرفر!';
+            revenueAuthErrorMessage.style.display = 'block';
+          }
+        });
+    });
+  }
+
+
   checkMasterAuth();
 
   // Connect Socket.io
@@ -450,9 +556,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const cafeRev = (shift.totalCafeRevenue || 0);
     const totalCash = (shift.startDrawerCash || 0) + gameRev + cafeRev;
 
-    document.getElementById('gameRevenue').textContent = gameRev.toFixed(2);
-    document.getElementById('cafeRevenue').textContent = cafeRev.toFixed(2);
-    document.getElementById('totalDrawerCash').textContent = totalCash.toFixed(2);
+    const gameEl = document.getElementById('gameRevenue');
+    const cafeEl = document.getElementById('cafeRevenue');
+    const drawerEl = document.getElementById('totalDrawerCash');
+    const eyeGame = document.getElementById('eyeIconGameRev');
+    const eyeCafe = document.getElementById('eyeIconCafeRev');
+    const eyeDrawer = document.getElementById('eyeIconDrawerCash');
+
+    const eyeIcon = isRevenueRevealed ? '👁️' : '🔒';
+    if (eyeGame) eyeGame.textContent = eyeIcon;
+    if (eyeCafe) eyeCafe.textContent = eyeIcon;
+    if (eyeDrawer) eyeDrawer.textContent = eyeIcon;
+
+    if (gameEl) gameEl.textContent = isRevenueRevealed ? gameRev.toFixed(2) : '••••';
+    if (cafeEl) cafeEl.textContent = isRevenueRevealed ? cafeRev.toFixed(2) : '••••';
+    if (drawerEl) drawerEl.textContent = isRevenueRevealed ? totalCash.toFixed(2) : '••••';
   }
 
   // 1. Render PC Grid
@@ -485,11 +603,12 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="monitor-ambient-glow" style="background: radial-gradient(circle, ${color}35 0%, transparent 70%);"></div>
           <svg class="real-curved-monitor-svg" viewBox="0 0 360 160" fill="none">
             <defs>
-              <radialGradient id="uwGlass_${uid}" cx="50%" cy="40%" r="80%">
-                <stop offset="0%" stop-color="${color}" stop-opacity="0.25" />
-                <stop offset="45%" stop-color="${color}" stop-opacity="0.08" />
-                <stop offset="85%" stop-color="#080e1a" stop-opacity="0.95" />
-                <stop offset="100%" stop-color="#02050b" stop-opacity="1" />
+              <radialGradient id="uwGlass_${uid}" cx="50%" cy="38%" r="85%">
+                <stop offset="0%" stop-color="${color}" stop-opacity="0.95" />
+                <stop offset="35%" stop-color="${color}" stop-opacity="0.75" />
+                <stop offset="70%" stop-color="${color}" stop-opacity="0.45" />
+                <stop offset="92%" stop-color="#04121a" stop-opacity="0.95" />
+                <stop offset="100%" stop-color="#020810" stop-opacity="1" />
               </radialGradient>
               <linearGradient id="rainbow_${uid}" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stop-color="#ff0055" />
@@ -616,18 +735,19 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
     } else {
-      // Default: 1000R Curved Monitor
+      // Default: 1000R Curved Monitor - Rich, Vibrant, Saturated Display
       return `
         <div class="real-curved-monitor-wrapper ${isMini ? 'mini-wrapper' : ''}" ${pcClickAttr}>
-          <div class="monitor-ambient-glow" style="background: radial-gradient(circle, ${color}35 0%, transparent 70%);"></div>
+          <div class="monitor-ambient-glow" style="background: radial-gradient(ellipse at 50% 50%, ${color}77 0%, ${color}25 50%, transparent 75%); filter: blur(16px);"></div>
           <div class="stand-rgb-desk-glow"></div>
           <svg class="real-curved-monitor-svg" viewBox="0 0 320 185" fill="none">
             <defs>
-              <radialGradient id="curvScreen_${uid}" cx="50%" cy="45%" r="75%">
-                <stop offset="0%" stop-color="${color}" stop-opacity="0.25" />
-                <stop offset="40%" stop-color="${color}" stop-opacity="0.08" />
-                <stop offset="80%" stop-color="#080e1a" stop-opacity="0.95" />
-                <stop offset="100%" stop-color="#02050b" stop-opacity="1" />
+              <radialGradient id="curvScreen_${uid}" cx="50%" cy="38%" r="85%">
+                <stop offset="0%" stop-color="${color}" stop-opacity="0.95" />
+                <stop offset="35%" stop-color="${color}" stop-opacity="0.75" />
+                <stop offset="70%" stop-color="${color}" stop-opacity="0.45" />
+                <stop offset="92%" stop-color="#04121a" stop-opacity="0.95" />
+                <stop offset="100%" stop-color="#020810" stop-opacity="1" />
               </radialGradient>
               <linearGradient id="rainbow_${uid}" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stop-color="#ff0055"><animate attributeName="stop-color" values="#ff0055;#00f3ff;#05ffa1;#ffb800;#bd00ff;#ff0055" dur="3.5s" repeatCount="indefinite" /></stop>
@@ -636,26 +756,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 <stop offset="100%" stop-color="#05ffa1"><animate attributeName="stop-color" values="#05ffa1;#ffb800;#bd00ff;#ff0055;#00f3ff;#05ffa1" dur="3.5s" repeatCount="indefinite" /></stop>
               </linearGradient>
               <linearGradient id="flare_${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32" />
-                <stop offset="45%" stop-color="#ffffff" stop-opacity="0.06" />
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.12" />
+                <stop offset="50%" stop-color="#ffffff" stop-opacity="0.02" />
                 <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
               </linearGradient>
               <linearGradient id="metal_${uid}" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stop-color="#1e293b" /><stop offset="50%" stop-color="#475569" /><stop offset="100%" stop-color="#1e293b" />
               </linearGradient>
             </defs>
-            <ellipse cx="160" cy="65" rx="36" ry="36" class="monitor-rear-ring" stroke="${color}" stroke-width="4.5" fill="none" style="filter: drop-shadow(0 0 8px ${color});" />
+            <ellipse cx="160" cy="65" rx="36" ry="36" class="monitor-rear-ring" stroke="${color}" stroke-width="4.5" fill="none" style="filter: drop-shadow(0 0 10px ${color});" />
             <polygon points="152,70 168,70 165,138 155,138" fill="url(#metal_${uid})" stroke="#0f172a" stroke-width="1.5" />
             <ellipse cx="160" cy="112" rx="3.5" ry="7" fill="#0b0f19" stroke="#334155" stroke-width="1" />
             <line x1="158" y1="140" x2="82" y2="165" class="stand-rgb-strip-left" stroke="${enableStandRgb ? `url(#rainbow_${uid})` : color}" stroke-width="3.5" stroke-linecap="round" />
             <line x1="162" y1="140" x2="238" y2="165" class="stand-rgb-strip-right" stroke="${enableStandRgb ? `url(#rainbow_${uid})` : color}" stroke-width="3.5" stroke-linecap="round" />
             <circle cx="160" cy="140" r="3.2" class="stand-rgb-core" fill="${enableStandRgb ? `url(#rainbow_${uid})` : color}" />
-            <path class="monitor-outer-bezel" d="M 14,20 Q 160,8 306,20 L 301,118 Q 160,126 19,118 Z" fill="#0c101a" stroke="${color}" stroke-width="3.5" stroke-linejoin="round" style="filter: drop-shadow(0 0 10px ${color});" />
-            <path class="monitor-screen-glass" d="M 17,23 Q 160,11 303,23 L 298,114 Q 160,122 22,114 Z" fill="url(#curvScreen_${uid})" />
+            <path class="monitor-outer-bezel" d="M 14,20 Q 160,8 306,20 L 301,118 Q 160,126 19,118 Z" fill="#080e18" stroke="${color}" stroke-width="3.5" stroke-linejoin="round" style="filter: drop-shadow(0 0 12px ${color});" />
+            <path class="monitor-screen-glass" d="M 17,23 Q 160,11 303,23 L 298,114 Q 160,122 22,114 Z" fill="url(#curvScreen_${uid})" style="filter: drop-shadow(0 0 12px ${color});" />
+            <!-- High-Contrast Saturated Cyber Gaming Display Graphics -->
+            <g class="monitor-screen-gaming-hud" pointer-events="none">
+              <path d="M 22,86 Q 160,68 298,86" stroke="${color}" stroke-width="2.5" opacity="0.95" fill="none" style="filter: drop-shadow(0 0 8px ${color});" />
+              <path d="M 38,96 Q 160,82 282,96" stroke="${color}" stroke-width="1.5" opacity="0.75" fill="none" />
+              <polygon points="160,38 178,51 172,74 160,82 148,74 142,51" stroke="#ffffff" stroke-width="2" fill="${color}" fill-opacity="0.6" style="filter: drop-shadow(0 0 10px #ffffff) drop-shadow(0 0 16px ${color});" />
+              <circle cx="160" cy="59" r="4.5" fill="#ffffff" style="filter: drop-shadow(0 0 8px #ffffff);" />
+              <line x1="85" y1="28" x2="160" y2="82" stroke="${color}" stroke-width="1.2" opacity="0.45" />
+              <line x1="235" y1="28" x2="160" y2="82" stroke="${color}" stroke-width="1.2" opacity="0.45" />
+            </g>
             <path d="M 17,23 Q 160,11 303,23 L 300,60 Q 160,42 20,60 Z" fill="url(#flare_${uid})" pointer-events="none" />
             <path class="monitor-bottom-chin" d="M 19,113 Q 160,121 301,113 L 300,118 Q 160,126 20,118 Z" fill="#111827" stroke="#1e293b" stroke-width="1.5" />
-            <circle cx="160" cy="116" r="2.2" class="monitor-power-dot" fill="${color}" style="filter: drop-shadow(0 0 6px ${color});" />
-            <path d="M 28,121 Q 160,129 292,121" class="monitor-underglow-beam" stroke="${color}" stroke-width="4" stroke-linecap="round" style="filter: drop-shadow(0 0 12px ${color});" />
+            <circle cx="160" cy="116" r="2.5" class="monitor-power-dot" fill="${color}" style="filter: drop-shadow(0 0 8px ${color});" />
+            <path d="M 28,121 Q 160,129 292,121" class="monitor-underglow-beam" stroke="${color}" stroke-width="4.5" stroke-linecap="round" style="filter: drop-shadow(0 0 16px ${color});" />
           </svg>
           <div class="screen-content-overlay">
             ${overlayContent}
@@ -748,16 +877,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
           <div class="pc-actions-toolbar">
             <button class="btn-card-action btn-vpn-toggle ${pc.vpnEnabled ? 'vpn-active' : ''}" onclick="togglePcVPN('${pc.id}')" title="Toggle Load-Balanced Gaming VPN">
-              <span>${pc.vpnEnabled ? '🛡️ VPN ON' : '⚡ VPN'}</span>
+              <span>${pc.vpnEnabled ? '🛡️' : '⚡'}</span> <span class="btn-lbl">${pc.vpnEnabled ? 'VPN ON' : 'VPN'}</span>
             </button>
-            <button class="btn-card-action btn-screen-view" onclick="openRemoteModal('${pc.id}')">
-              <span>👁️</span> Live Stream
+            <button class="btn-card-action btn-screen-view" onclick="openRemoteModal('${pc.id}')" title="Live Stream View">
+              <span>👁️</span> <span class="btn-lbl">Stream</span>
             </button>
-            <button class="btn-card-action btn-more-options" onclick="toggleLockPc('${pc.id}')">
-              <span>🔒</span> Lock PC
+            <button class="btn-card-action btn-more-options" onclick="toggleLockPc('${pc.id}')" title="Lock PC">
+              <span>🔒</span> <span class="btn-lbl">Lock</span>
             </button>
-            <button class="btn-card-action btn-checkout-card" onclick="openCheckoutModal('${pc.id}')">
-              <span>🧾</span> Checkout
+            <button class="btn-card-action btn-checkout-card" onclick="openCheckoutModal('${pc.id}')" title="Checkout & Bill">
+              <span>🧾</span> <span class="btn-lbl">Bill</span>
             </button>
           </div>
         `;
@@ -766,17 +895,17 @@ document.addEventListener('DOMContentLoaded', () => {
           ${hardwareModelHtml}
 
           <div class="pc-actions-toolbar">
-            <button class="btn-card-action btn-start-quick" onclick="openStartSessionModal('${pc.id}')">
-              <span>⚡</span> Start Session
+            <button class="btn-card-action btn-start-quick" onclick="openStartSessionModal('${pc.id}')" title="Start Session">
+              <span>⚡</span> <span class="btn-lbl">Start</span>
             </button>
             <button class="btn-card-action btn-vpn-toggle ${pc.vpnEnabled ? 'vpn-active' : ''}" onclick="togglePcVPN('${pc.id}')" title="Toggle Load-Balanced Gaming VPN">
-              <span>${pc.vpnEnabled ? '🛡️ VPN ON' : '⚡ VPN'}</span>
+              <span>${pc.vpnEnabled ? '🛡️' : '⚡'}</span> <span class="btn-lbl">${pc.vpnEnabled ? 'VPN ON' : 'VPN'}</span>
             </button>
-            <button class="btn-card-action btn-screen-view" onclick="openRemoteModal('${pc.id}')">
-              <span>👁️</span> View Screen
+            <button class="btn-card-action btn-screen-view" onclick="openRemoteModal('${pc.id}')" title="View Screen">
+              <span>👁️</span> <span class="btn-lbl">Screen</span>
             </button>
-            <button class="btn-card-action btn-more-options" onclick="toggleLockPc('${pc.id}')">
-              <span>${pc.status === 'locked' ? '🔓 Unlock PC' : '🔒 Lock PC'}</span>
+            <button class="btn-card-action btn-more-options" onclick="toggleLockPc('${pc.id}')" title="${pc.status === 'locked' ? 'Unlock PC' : 'Lock PC'}">
+              <span>${pc.status === 'locked' ? '🔓' : '🔒'}</span> <span class="btn-lbl">${pc.status === 'locked' ? 'Unlock' : 'Lock'}</span>
             </button>
           </div>
         `;

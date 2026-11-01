@@ -42,26 +42,29 @@
             <span class="stat-val highlight-cyan"><span id="activePcsCount">0</span> / <span id="totalPcsCount">9</span></span>
           </div>
         </div>
-        <div class="stat-pill">
+        <div class="stat-pill stat-money-pill" id="pillGameRevenue" title="انقر لإظهار أو إخفاء المبالغ">
           <span class="stat-icon">💰</span>
           <div>
             <span class="stat-label">Game Revenue:</span>
-            <span class="stat-val text-green"><span id="gameRevenue">0.00</span> <small style="font-size:0.75rem;">EGP</small></span>
+            <span class="stat-val text-green" id="gameRevenueContainer"><span id="gameRevenue">••••</span> <small style="font-size:0.75rem;">EGP</small></span>
           </div>
+          <span class="revenue-eye-badge" id="eyeIconGameRev" title="إظهار / إخفاء المبالغ">🔒</span>
         </div>
-        <div class="stat-pill">
+        <div class="stat-pill stat-money-pill" id="pillCafeRevenue" title="انقر لإظهار أو إخفاء المبالغ">
           <span class="stat-icon">🍔</span>
           <div>
             <span class="stat-label">Cafe Revenue:</span>
-            <span class="stat-val text-amber"><span id="cafeRevenue">0.00</span> <small style="font-size:0.75rem;">EGP</small></span>
+            <span class="stat-val text-amber" id="cafeRevenueContainer"><span id="cafeRevenue">••••</span> <small style="font-size:0.75rem;">EGP</small></span>
           </div>
+          <span class="revenue-eye-badge" id="eyeIconCafeRev" title="إظهار / إخفاء المبالغ">🔒</span>
         </div>
-        <div class="stat-pill drawer-pill">
+        <div class="stat-pill drawer-pill stat-money-pill" id="pillDrawerCash" title="انقر لإظهار أو إخفاء المبالغ">
           <span class="stat-icon">💵</span>
           <div>
             <span class="stat-label">Expected Drawer Cash:</span>
-            <span class="stat-val text-green font-bold"><span id="totalDrawerCash">250.00</span> <small style="font-size:0.75rem;">EGP</small></span>
+            <span class="stat-val text-green font-bold" id="drawerCashContainer"><span id="totalDrawerCash">••••</span> <small style="font-size:0.75rem;">EGP</small></span>
           </div>
+          <span class="revenue-eye-badge" id="eyeIconDrawerCash" title="إظهار / إخفاء المبالغ">🔒</span>
         </div>
       </div>
 
@@ -1774,8 +1777,40 @@
     </div>
   </div>
 
+  <!-- ============================================================== -->
+  <!-- MODAL: REVENUE PIN/PASSWORD UNLOCK GATE                       -->
+  <!-- ============================================================== -->
+  <div id="revenueAuthModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 440px; text-align: center; border: 1px solid var(--neon-cyan); box-shadow: 0 0 35px rgba(0, 243, 255, 0.25);">
+      <div class="modal-header" style="justify-content: center; position: relative; border-bottom: 1px solid var(--border-subtle); padding: 1.2rem;">
+        <div style="font-size: 2.2rem; filter: drop-shadow(0 0 10px var(--neon-cyan));">🔐</div>
+        <button class="modal-close" id="btnCloseRevenueAuth" style="position: absolute; right: 1.2rem; top: 1.2rem; background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.6rem 2rem 2rem;">
+        <h3 style="font-family: var(--font-cyber); font-size: 1.2rem; color: #fff; margin-bottom: 0.4rem; letter-spacing: 1px;">خزينة الإيرادات والمالية</h3>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.4rem;">أدخل كلمة مرور الأدمن لإظهار أرقام الإيرادات والخزينة</p>
+        
+        <form id="revenueAuthForm" onsubmit="return false;">
+          <div class="form-group" style="text-align: left; margin-bottom: 1.2rem;">
+            <label style="font-size: 0.8rem; color: var(--text-muted); display:block; margin-bottom:0.4rem;">Master Password / كلمة المرور:</label>
+            <div class="auth-input-wrap" style="position: relative; display: flex; align-items: center;">
+              <input type="password" id="revenuePasswordInput" class="form-input form-lg" placeholder="••••••••" autocomplete="current-password" style="width: 100%; padding-right: 44px; text-align: center; font-size: 1.15rem; letter-spacing: 2px;">
+              <button type="button" class="btn-toggle-pass" id="btnToggleRevenuePassVisibility" style="position: absolute; right: 12px; background: none; border: none; cursor: pointer; font-size: 1.1rem; color: var(--text-muted);">👁️</button>
+            </div>
+            <div id="revenueAuthErrorMessage" class="auth-error-text" style="display:none; color: var(--neon-pink); font-size: 0.82rem; margin-top: 0.6rem; text-align: center; font-weight:600;"></div>
+          </div>
+          
+          <div style="display: flex; gap: 0.8rem; margin-top: 1.5rem;">
+            <button type="button" class="btn btn-secondary" id="btnCancelRevenueAuth" style="flex: 1; padding: 0.7rem;">إلغاء</button>
+            <button type="submit" class="btn btn-primary" id="btnSubmitRevenueAuth" style="flex: 2; padding: 0.7rem; font-weight: 700;">
+              <span>👁️</span> إظهار المبالغ
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
-  <!-- MODAL: VIEW MIKROTIK ROUTEROS SCRIPT -->
   <div id="mikrotikScriptModal" class="modal-overlay">
     <div class="modal-box modal-wide">
       <div class="modal-header">

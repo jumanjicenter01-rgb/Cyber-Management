@@ -221,18 +221,29 @@ body {
 .shift-stats-bar {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
 .stat-pill {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border-subtle);
-  padding: 0.4rem 0.9rem;
-  border-radius: 8px;
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
+  box-sizing: border-box;
+  padding: 0 0.85rem;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   gap: 0.6rem;
   font-size: 0.8rem;
+  transition: all 0.25s ease;
+}
+
+.stat-pill:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .drawer-pill {
@@ -240,9 +251,40 @@ body {
   border-color: rgba(5, 255, 161, 0.3);
 }
 
-.stat-icon { font-size: 1.2rem; }
-.stat-label { color: var(--text-muted); display: block; font-size: 0.7rem; }
-.stat-val { font-family: var(--font-cyber); font-size: 0.95rem; font-weight: 700; color: #fff; }
+.stat-money-pill {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+
+.stat-money-pill:hover {
+  border-color: var(--neon-cyan) !important;
+  box-shadow: 0 0 14px rgba(0, 243, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+.revenue-eye-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.8rem;
+  margin-left: 2px;
+  transition: all 0.2s ease;
+}
+
+.stat-money-pill:hover .revenue-eye-badge {
+  background: var(--neon-cyan);
+  color: #000;
+  transform: scale(1.08);
+}
+
+.stat-icon { font-size: 1.25rem; line-height: 1; }
+.stat-label { color: var(--text-muted); display: block; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.1; }
+.stat-val { font-family: var(--font-cyber); font-size: 0.95rem; font-weight: 700; color: #fff; line-height: 1.2; }
 
 .highlight-cyan { color: var(--neon-cyan); }
 .text-green { color: var(--neon-green); }
@@ -253,7 +295,30 @@ body {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.header-actions .btn {
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  box-sizing: border-box !important;
+  border-radius: 10px !important;
+  padding: 0 1rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+  transition: all 0.25s ease !important;
+}
+
+.header-actions .btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
 }
 
 /* ============================================================== */
@@ -616,8 +681,11 @@ body {
 .pc-card.status-available .monitor-outer-bezel {
   stroke: var(--neon-green);
   stroke-width: 3.5;
-  filter: drop-shadow(0 0 7px rgba(5, 255, 161, 0.75));
-  fill: #051a14;
+  filter: drop-shadow(0 0 10px rgba(5, 255, 161, 0.85));
+  fill: #061510;
+}
+.pc-card.status-available .monitor-screen-glass {
+  filter: drop-shadow(0 0 16px rgba(5, 255, 161, 0.85)) !important;
 }
 .pc-card.status-available .monitor-bottom-chin {
   stroke: var(--neon-green);
@@ -625,22 +693,22 @@ body {
 }
 .pc-card.status-available .monitor-underglow-beam {
   stroke: var(--neon-green);
-  filter: drop-shadow(0 0 8px var(--neon-green)) drop-shadow(0 4px 14px var(--neon-green));
+  filter: drop-shadow(0 0 10px var(--neon-green)) drop-shadow(0 4px 18px var(--neon-green));
 }
 .pc-card.status-available .monitor-rear-ring {
   stroke: var(--neon-green);
-  filter: drop-shadow(0 0 6px var(--neon-green));
-  opacity: 0.75;
+  filter: drop-shadow(0 0 8px var(--neon-green));
+  opacity: 0.85;
 }
 .pc-card.status-available .monitor-power-dot {
   fill: var(--neon-green);
-  filter: drop-shadow(0 0 4px var(--neon-green));
+  filter: drop-shadow(0 0 6px var(--neon-green));
 }
 .pc-card.status-available .monitor-ambient-glow {
-  background: radial-gradient(ellipse at 50% 70%, rgba(5, 255, 161, 0.3) 0%, transparent 70%);
+  background: radial-gradient(ellipse at 50% 60%, rgba(5, 255, 161, 0.5) 0%, rgba(5, 255, 161, 0.15) 50%, transparent 75%) !important;
 }
 
-/* 2. IN SESSION ( 🔵🟣 -        */
+/* 2. IN SESSION ( 🔵🟣 - Active ) */
 .pc-card.status-in_session {
   border-color: rgba(0, 243, 255, 0.35);
   box-shadow: 0 0 20px rgba(0, 243, 255, 0.12);
@@ -662,8 +730,11 @@ body {
 .pc-card.status-in_session .monitor-outer-bezel {
   stroke: var(--neon-cyan);
   stroke-width: 3.5;
-  filter: drop-shadow(0 0 8px rgba(0, 243, 255, 0.85));
-  fill: #041924;
+  filter: drop-shadow(0 0 10px rgba(0, 243, 255, 0.85));
+  fill: #041420;
+}
+.pc-card.status-in_session .monitor-screen-glass {
+  filter: drop-shadow(0 0 16px rgba(0, 243, 255, 0.85)) !important;
 }
 .pc-card.status-in_session .monitor-bottom-chin {
   stroke: var(--neon-cyan);
@@ -671,7 +742,7 @@ body {
 }
 .pc-card.status-in_session .monitor-underglow-beam {
   stroke: var(--neon-cyan);
-  filter: drop-shadow(0 0 10px var(--neon-cyan)) drop-shadow(0 4px 16px var(--neon-cyan));
+  filter: drop-shadow(0 0 12px var(--neon-cyan)) drop-shadow(0 4px 18px var(--neon-cyan));
 }
 .pc-card.status-in_session .monitor-rear-ring {
   stroke: var(--neon-cyan);
@@ -680,13 +751,13 @@ body {
 }
 .pc-card.status-in_session .monitor-power-dot {
   fill: var(--neon-cyan);
-  filter: drop-shadow(0 0 4px var(--neon-cyan));
+  filter: drop-shadow(0 0 6px var(--neon-cyan));
 }
 .pc-card.status-in_session .monitor-ambient-glow {
-  background: radial-gradient(ellipse at 50% 70%, rgba(0, 243, 255, 0.35) 0%, transparent 70%);
+  background: radial-gradient(ellipse at 50% 60%, rgba(0, 243, 255, 0.5) 0%, rgba(0, 243, 255, 0.15) 50%, transparent 75%) !important;
 }
 
-/* 3. TIME ENDING WARNING (  🟡 -      */
+/* 3. TIME ENDING WARNING ( 🟡 - Warning ) */
 .pc-card.status-warning {
   border-color: rgba(255, 184, 0, 0.45);
 }
@@ -707,8 +778,11 @@ body {
 .pc-card.status-warning .monitor-outer-bezel {
   stroke: var(--neon-amber);
   stroke-width: 3.5;
-  filter: drop-shadow(0 0 8px rgba(255, 184, 0, 0.85));
-  fill: #1f1504;
+  filter: drop-shadow(0 0 10px rgba(255, 184, 0, 0.85));
+  fill: #1c1202;
+}
+.pc-card.status-warning .monitor-screen-glass {
+  filter: drop-shadow(0 0 16px rgba(255, 184, 0, 0.85)) !important;
 }
 .pc-card.status-warning .monitor-bottom-chin {
   stroke: var(--neon-amber);
@@ -716,7 +790,7 @@ body {
 }
 .pc-card.status-warning .monitor-underglow-beam {
   stroke: var(--neon-amber);
-  filter: drop-shadow(0 0 10px var(--neon-amber));
+  filter: drop-shadow(0 0 12px var(--neon-amber));
 }
 .pc-card.status-warning .monitor-rear-ring {
   stroke: var(--neon-amber);
@@ -724,12 +798,13 @@ body {
 }
 .pc-card.status-warning .monitor-power-dot {
   fill: var(--neon-amber);
+  filter: drop-shadow(0 0 6px var(--neon-amber));
 }
 .pc-card.status-warning .monitor-ambient-glow {
-  background: radial-gradient(ellipse at 50% 70%, rgba(255, 184, 0, 0.3) 0%, transparent 70%);
+  background: radial-gradient(ellipse at 50% 60%, rgba(255, 184, 0, 0.5) 0%, rgba(255, 184, 0, 0.15) 50%, transparent 75%) !important;
 }
 
-/* 4. LOCKED / TIME FINISHED ( 🔴 -     */
+/* 4. LOCKED / TIME FINISHED ( 🔴 - Locked ) */
 .pc-card.status-locked {
   border-color: rgba(255, 0, 85, 0.35);
 }
@@ -750,8 +825,11 @@ body {
 .pc-card.status-locked .monitor-outer-bezel {
   stroke: var(--neon-pink);
   stroke-width: 3.5;
-  filter: drop-shadow(0 0 8px rgba(255, 0, 85, 0.8));
-  fill: #1a040b;
+  filter: drop-shadow(0 0 10px rgba(255, 0, 85, 0.85));
+  fill: #1a030a;
+}
+.pc-card.status-locked .monitor-screen-glass {
+  filter: drop-shadow(0 0 16px rgba(255, 0, 85, 0.85)) !important;
 }
 .pc-card.status-locked .monitor-bottom-chin {
   stroke: var(--neon-pink);
@@ -759,7 +837,7 @@ body {
 }
 .pc-card.status-locked .monitor-underglow-beam {
   stroke: var(--neon-pink);
-  filter: drop-shadow(0 0 10px var(--neon-pink));
+  filter: drop-shadow(0 0 12px var(--neon-pink));
 }
 .pc-card.status-locked .monitor-rear-ring {
   stroke: var(--neon-pink);
@@ -767,6 +845,7 @@ body {
 }
 .pc-card.status-locked .monitor-power-dot {
   fill: var(--neon-pink);
+  filter: drop-shadow(0 0 6px var(--neon-pink));
 }
 .pc-card.status-locked .monitor-ambient-glow {
   background: radial-gradient(ellipse at 50% 70%, rgba(255, 0, 85, 0.25) 0%, transparent 70%);
@@ -1988,11 +2067,11 @@ select option:checked {
 
 /* 4. Small Icons */
 .pc-cards-grid.view-small {
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
-  gap: 0.9rem !important;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)) !important;
+  gap: 0.85rem !important;
 }
 .pc-cards-grid.view-small .curved-screen-frame {
-  height: 75px !important;
+  height: 80px !important;
 }
 .pc-cards-grid.view-small .centered-title {
   font-size: 1.1rem !important;
@@ -2008,16 +2087,17 @@ select option:checked {
   display: none !important;
 }
 .pc-cards-grid.view-small .pc-card {
-  padding: 0.75rem !important;
-  gap: 0.5rem !important;
+  padding: 0.85rem !important;
+  gap: 0.6rem !important;
 }
 .pc-cards-grid.view-small .pc-actions-toolbar {
-  grid-template-columns: 1fr !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 0.4rem !important;
 }
 .pc-cards-grid.view-small .btn-card-action {
   grid-column: span 1 !important;
-  font-size: 0.72rem !important;
-  padding: 0.38rem !important;
+  font-size: 0.76rem !important;
+  padding: 0.45rem 0.3rem !important;
 }
 
 /* 5. List View */
@@ -3947,11 +4027,18 @@ select option:checked {
 .pc-cards-grid.view-list .pc-actions-toolbar .btn-card-action {
   grid-column: span 1 !important;
   width: 100% !important;
-  font-size: 0.8rem !important;
-  padding: 0.55rem 0.35rem !important;
+  min-width: 0 !important;
+  font-size: 0.78rem !important;
+  padding: 0.48rem 0.3rem !important;
   text-align: center !important;
   justify-content: center !important;
   white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  border-radius: 7px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
 }
 
 .btn-start-quick {
