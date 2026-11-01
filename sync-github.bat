@@ -21,7 +21,7 @@ for /f "tokens=1-2 delims=: " %%a in ("%time%") do set current_time=%%a:%%b
 
 echo.
 echo [3/3] جاري الرفع إلى GitHub (Push)...
-"%GIT_EXE%" push origin main
+"%GIT_EXE%" push -u origin main
 
 echo.
 if %errorlevel% equ 0 (
