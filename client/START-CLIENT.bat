@@ -22,8 +22,8 @@ if "%PC_NAME%"=="" (
     set /p PC_NAME="Enter Station Name / ID [Press Enter for %COMPUTERNAME%]: "
     if "%PC_NAME%"=="" set "PC_NAME=%COMPUTERNAME%"
     
-    set /p SERVER_IP="Enter Cashier Server IP (e.g. 192.168.1.100 or localhost) [Default: localhost]: "
-    if "%SERVER_IP%"=="" set "SERVER_IP=localhost"
+    set /p SERVER_IP="Enter Cashier Server IP (e.g. 10.10.10.100) [Press Enter for 10.10.10.100]: "
+    if "%SERVER_IP%"=="" set "SERVER_IP=10.10.10.100"
     
     (
         echo PC_NAME=%PC_NAME%
