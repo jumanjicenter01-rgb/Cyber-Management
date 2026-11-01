@@ -2189,6 +2189,70 @@ async function executeMikrotikProvisioning(mt) {
   return results;
 }
 
+// -------------------------------------------------------------
+// MIKROTIK GAMING TUNNEL AUTO-HEALING & FAILOVER WATCHDOG
+// -------------------------------------------------------------
+let vpnWatchdogFailCount = 0;
+let isVpnFailoverRunning = false;
+
+async function triggerVpnAutoFailover(mt) {
+  const backupNodes = [
+    '219.100.37.115', '219.100.37.243', '219.100.37.197',
+    '219.100.37.124', '219.100.37.20', '219.100.37.8'
+  ];
+  const currentIp = mt.vpnServer || '219.100.37.115';
+  const candidate = backupNodes.find(ip => ip !== currentIp) || backupNodes[0];
+
+  try {
+    mt.vpnServer = candidate;
+    mt.activeVpnServer = candidate;
+    await executeMikrotikProvisioning(mt);
+    addAudit('VPN Auto-Failover Triggered', `Auto-switched gaming tunnel to healthy node: ${candidate}`, 'info');
+    console.log(`[MikroTik Watchdog] Successfully switched tunnel to healthy node ${candidate}`);
+  } catch (e) {
+    console.error('[MikroTik Watchdog] Failover error:', e.message);
+  }
+}
+
+async function checkMikrotikTunnelHealth() {
+  const mt = (db.settings && db.settings.mikrotik) || {};
+  if (!mt.host) return;
+
+  const hasActiveVpnPcs = db.pcs && db.pcs.some(p => p.vpnEnabled);
+  if (!hasActiveVpnPcs) return;
+
+  try {
+    const proto = (mt.vpnProto || 'sstp').toLowerCase();
+    const cmd = proto === 'l2tp' 
+      ? ['/interface/l2tp-client/print', '?name=vpn-gaming-out']
+      : ['/interface/sstp-client/print', '?name=vpn-gaming-out'];
+
+    const check = await runRouterOsApi(mt.host, mt.port || 8728, mt.username || 'admin', mt.password || '', cmd, 3000);
+    const isRunning = check[0] && check[0].some(w => w === '=running=true');
+
+    if (isRunning) {
+      vpnWatchdogFailCount = 0;
+      return;
+    }
+
+    vpnWatchdogFailCount++;
+    console.log(`[MikroTik Watchdog] Tunnel 'vpn-gaming-out' down (count: ${vpnWatchdogFailCount}/2)`);
+
+    if (vpnWatchdogFailCount >= 2 && !isVpnFailoverRunning) {
+      isVpnFailoverRunning = true;
+      console.log('[MikroTik Watchdog] Tunnel down for 2 checks, triggering auto-failover...');
+      await triggerVpnAutoFailover(mt);
+      vpnWatchdogFailCount = 0;
+      isVpnFailoverRunning = false;
+    }
+  } catch (err) {
+    // Router query timed out, ignore
+  }
+}
+
+// Check tunnel health every 60 seconds
+setInterval(checkMikrotikTunnelHealth, 60000);
+
 app.post('/api/mikrotik/provision-vpn', async (req, res) => {
   const mt = db.settings.mikrotik;
 
