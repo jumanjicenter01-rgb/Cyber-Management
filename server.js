@@ -1486,6 +1486,82 @@ app.post('/api/mikrotik/test', async (req, res) => {
   }
 });
 
+// Real RouterOS Provisioning Executor via native API Port 8728
+async function executeMikrotikProvisioning(mt) {
+  if (!mt || !mt.host) throw new Error('MikroTik host IP is not configured');
+  const vpnList = mt.vpnList || 'GAMING-VPN';
+  const port = mt.port || 8728;
+  const username = mt.username || 'admin';
+  const password = mt.password || '';
+
+  const results = [];
+
+  // 1. Mangle rule: Mark routing to_GAMING_VPN for machines in address-list
+  const mCheck = await runRouterOsApi(mt.host, port, username, password, [
+    '/ip/firewall/mangle/print',
+    '?comment=CyberPulse Gaming Traffic to VPN'
+  ]);
+  if (!mCheck.some(s => s[0] === '!re')) {
+    await runRouterOsApi(mt.host, port, username, password, [
+      '/ip/firewall/mangle/add',
+      '=chain=prerouting',
+      '=src-address-list=' + vpnList,
+      '=action=mark-routing',
+      '=new-routing-mark=to_GAMING_VPN',
+      '=passthrough=no',
+      '=comment=CyberPulse Gaming Traffic to VPN'
+    ]);
+    results.push(`Added Mangle rule: prerouting src-address-list=${vpnList} -> mark-routing to_GAMING_VPN`);
+  } else {
+    results.push(`Mangle mark-routing rule already active on RouterOS`);
+  }
+
+  // 2. NAT Masquerade rule: Masquerade outgoing traffic for machines in address-list
+  const nCheck = await runRouterOsApi(mt.host, port, username, password, [
+    '/ip/firewall/nat/print',
+    '?comment=CyberPulse Gaming VPN Masquerade'
+  ]);
+  if (!nCheck.some(s => s[0] === '!re')) {
+    await runRouterOsApi(mt.host, port, username, password, [
+      '/ip/firewall/nat/add',
+      '=chain=srcnat',
+      '=src-address-list=' + vpnList,
+      '=action=masquerade',
+      '=comment=CyberPulse Gaming VPN Masquerade'
+    ]);
+    results.push(`Added NAT rule: srcnat src-address-list=${vpnList} -> masquerade`);
+  } else {
+    results.push(`NAT masquerade rule already active on RouterOS`);
+  }
+
+  // 3. Address list header entry
+  const aCheck = await runRouterOsApi(mt.host, port, username, password, [
+    '/ip/firewall/address-list/print',
+    '?list=' + vpnList,
+    '?address=' + mt.host
+  ]);
+  if (!aCheck.some(s => s[0] === '!re')) {
+    await runRouterOsApi(mt.host, port, username, password, [
+      '/ip/firewall/address-list/add',
+      '=list=' + vpnList,
+      '=address=' + mt.host,
+      '=comment=CyberPulse Gaming VPN Gateway'
+    ]);
+    results.push(`Initialized address-list ${vpnList} on RouterOS`);
+  } else {
+    results.push(`Address-list ${vpnList} active on RouterOS`);
+  }
+
+  // 4. Log to RouterOS system log
+  await runRouterOsApi(mt.host, port, username, password, [
+    '/log/info',
+    '=message=CyberPulse Gaming VPN rules successfully provisioned on RouterOS'
+  ]);
+  results.push(`Logged provisioning success event to RouterOS system log`);
+
+  return results;
+}
+
 app.post('/api/mikrotik/provision-vpn', async (req, res) => {
   const mt = db.settings.mikrotik;
 
@@ -1500,15 +1576,25 @@ app.post('/api/mikrotik/provision-vpn', async (req, res) => {
     });
   }
 
-  mt.lastProvisioned = new Date().toISOString();
-  const script = generateMikrotikScript(mt);
-  addAudit('MikroTik VPN Provisioned', `Provisioned Gaming VPN tunnel & address-list rules on ${mt.host}`, 'success');
-  res.json({
-    success: true,
-    connected: true,
-    script,
-    message: 'VPN interface, routing table, and address-list rules provisioned on MikroTik!'
-  });
+  try {
+    const executedResults = await executeMikrotikProvisioning(mt);
+    mt.lastProvisioned = new Date().toISOString();
+    const script = generateMikrotikScript(mt);
+    addAudit('MikroTik VPN Provisioned', `Provisioned Gaming VPN rules directly on RouterOS at ${mt.host}`, 'success');
+    res.json({
+      success: true,
+      connected: true,
+      script,
+      executedResults,
+      message: 'Gaming VPN firewall rules, NAT, and address-list were successfully transmitted and provisioned directly on your MikroTik router!'
+    });
+  } catch (err) {
+    addAudit('MikroTik Provisioning Error', `Failed to execute commands on ${mt.host}: ${err.message}`, 'warning');
+    res.status(500).json({
+      success: false,
+      error: `Failed to execute commands on MikroTik RouterOS at ${mt.host}: ${err.message}`
+    });
+  }
 });
 
 let vpnRoundRobinIdx = 0;

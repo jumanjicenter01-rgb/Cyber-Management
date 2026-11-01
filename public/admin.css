@@ -2381,7 +2381,8 @@ select option:checked {
   gap: 0.45rem;
   flex-wrap: nowrap;
   flex: 1;
-  justify-content: center;
+  justify-content: flex-start;
+  margin-left: 0.5rem;
 }
 
 .btn-power-act {
@@ -2439,6 +2440,55 @@ select option:checked {
   background: #9d4edd;
   color: #fff;
   box-shadow: 0 0 15px rgba(157, 78, 221, 0.5);
+}
+
+.btn-screen-all {
+  background: rgba(157, 78, 221, 0.12);
+  color: #d896ff;
+  border-color: rgba(157, 78, 221, 0.3);
+}
+.btn-screen-all:hover {
+  background: #9d4edd;
+  color: #fff;
+  box-shadow: 0 0 15px rgba(157, 78, 221, 0.5);
+}
+
+.btn-checkout-all {
+  background: rgba(5, 255, 161, 0.12);
+  color: var(--neon-green);
+  border-color: rgba(5, 255, 161, 0.3);
+}
+.btn-checkout-all:hover {
+  background: var(--neon-green);
+  color: #000;
+  box-shadow: 0 0 15px rgba(5, 255, 161, 0.5);
+}
+
+.pc-state-indicator-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 6px rgba(0, 243, 255, 0.5));
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: 0.3rem;
+  vertical-align: middle;
+}
+.pc-card:hover .pc-state-indicator-badge {
+  transform: scale(1.25);
+}
+
+.state-badge-group {
+  margin-top: 0.4rem;
+}
+.state-badge-select {
+  background: rgba(15, 23, 42, 0.95) !important;
+  border: 1px solid var(--border-neon) !important;
+  color: var(--neon-cyan) !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  padding: 0.35rem 0.6rem !important;
 }
 
 .btn-wol-all {
@@ -3036,7 +3086,7 @@ select option:checked {
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 0.25rem 0.55rem;
-  margin-left: 0;
+  margin-left: auto;
   flex-shrink: 0;
 }
 

@@ -586,16 +586,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // UNIVERSAL HARDWARE SVG GENERATOR (Curved, UltraWide, Tower, Laptop)
   // -------------------------------------------------------------
   const defaultStateVisuals = {
-    maintenance: { model: 'curved_monitor', color: '#ff9900', label: 'MAINTENANCE' },
-    idle: { model: 'curved_monitor', color: '#a855f7', label: 'IDLE STANDBY' },
-    openTime: { model: 'curved_monitor', color: '#00f3ff', label: 'OPEN PLAY' },
-    fixedTime: { model: 'curved_monitor', color: '#6366f1', label: 'FIXED TIME' },
-    member: { model: 'ultrawide', color: '#ffd700', label: 'VIP MEMBER' },
-    admin: { model: 'gaming_tower', color: '#10b981', label: 'ADMIN / STAFF' },
-    disconnected: { model: 'curved_monitor', color: '#ef4444', label: 'NO SIGNAL' },
-    offline: { model: 'curved_monitor', color: '#475569', label: 'POWERED OFF' },
-    lowTime: { model: 'curved_monitor', color: '#ff0055', label: 'EXPIRING TIME' },
-    available: { model: 'curved_monitor', color: '#05ffa1', label: 'READY TO PLAY' }
+    maintenance: { model: 'curved_monitor', color: '#ff9900', label: 'MAINTENANCE', badgeIcon: '🔧' },
+    idle: { model: 'curved_monitor', color: '#a855f7', label: 'IDLE STANDBY', badgeIcon: '💤' },
+    openTime: { model: 'curved_monitor', color: '#00f3ff', label: 'OPEN PLAY', badgeIcon: '🟢' },
+    fixedTime: { model: 'curved_monitor', color: '#6366f1', label: 'FIXED TIME', badgeIcon: '⏱️' },
+    member: { model: 'ultrawide', color: '#ffd700', label: 'VIP MEMBER', badgeIcon: '👑' },
+    admin: { model: 'gaming_tower', color: '#10b981', label: 'ADMIN / STAFF', badgeIcon: '🛡️' },
+    disconnected: { model: 'curved_monitor', color: '#ef4444', label: 'NO SIGNAL', badgeIcon: '⚠️' },
+    offline: { model: 'curved_monitor', color: '#475569', label: 'POWERED OFF', badgeIcon: '⚫' },
+    lowTime: { model: 'curved_monitor', color: '#ff0055', label: 'EXPIRING TIME', badgeIcon: '🔥' },
+    available: { model: 'curved_monitor', color: '#05ffa1', label: 'READY TO PLAY', badgeIcon: '⚡' }
   };
 
   const AVAILABLE_ESPORTS_ICONS = [
@@ -904,43 +904,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const ordersCount = (pc.orders || []).reduce((acc, it) => acc + (it.qty || 1), 0);
 
-      let actionsToolbarHtml = '';
-      if (pc.status === 'in_session' && pc.session) {
-        actionsToolbarHtml = `
-          <div class="pc-actions-toolbar pc-actions-top">
-            <button class="btn-card-action btn-vpn-toggle ${pc.vpnEnabled ? 'vpn-active' : ''}" onclick="togglePcVPN('${pc.id}')" title="Gaming VPN ${pc.vpnEnabled ? '(Active - Click to Disable)' : '(Click to Enable)'}">
-              <span class="btn-act-icon">${pc.vpnEnabled ? '🛡️' : '⚡'}</span>
-            </button>
-            <button class="btn-card-action btn-screen-view" onclick="openRemoteModal('${pc.id}')" title="Live Screen Stream">
-              <span class="btn-act-icon">👁️</span>
-            </button>
-            <button class="btn-card-action btn-more-options" onclick="toggleLockPc('${pc.id}')" title="${pc.status === 'locked' ? 'Unlock PC' : 'Lock PC'}">
-              <span class="btn-act-icon">${pc.status === 'locked' ? '🔓' : '🔒'}</span>
-            </button>
-            <button class="btn-card-action btn-checkout-card" onclick="openCheckoutModal('${pc.id}')" title="Checkout & Settle Bill">
-              <span class="btn-act-icon">🧾</span>
-            </button>
-          </div>
-        `;
-      } else {
-        actionsToolbarHtml = `
-          <div class="pc-actions-toolbar pc-actions-top">
-            <button class="btn-card-action btn-start-quick" onclick="openStartSessionModal('${pc.id}')" title="Start Session">
-              <span class="btn-act-icon">▶️</span>
-            </button>
-            <button class="btn-card-action btn-vpn-toggle ${pc.vpnEnabled ? 'vpn-active' : ''}" onclick="togglePcVPN('${pc.id}')" title="Gaming VPN ${pc.vpnEnabled ? '(Active - Click to Disable)' : '(Click to Enable)'}">
-              <span class="btn-act-icon">${pc.vpnEnabled ? '🛡️' : '⚡'}</span>
-            </button>
-            <button class="btn-card-action btn-screen-view" onclick="openRemoteModal('${pc.id}')" title="Live Screen Monitor">
-              <span class="btn-act-icon">👁️</span>
-            </button>
-            <button class="btn-card-action btn-more-options" onclick="toggleLockPc('${pc.id}')" title="${pc.status === 'locked' ? 'Unlock PC' : 'Lock PC'}">
-              <span class="btn-act-icon">${pc.status === 'locked' ? '🔓' : '🔒'}</span>
-            </button>
-          </div>
-        `;
-      }
-
       let bodyContent = '';
       if (pc.status === 'in_session' && pc.session) {
         bodyContent = `
@@ -970,18 +933,28 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       ` : '';
 
-      // PC card header: name, specs, IP + quick icon button
+      // PC card header: name + state badge indicator icon ONLY (No buttons, no clutter!)
+      const stateBadge = stateConf.badgeIcon || '⚡';
       card.innerHTML = `
         <div class="centered-name-header">
           <div class="header-name-row" style="display:flex; align-items:center; justify-content:center; gap:0.4rem; position:relative;">
-            <div class="centered-title">${pc.name}</div>
+            <div class="centered-title" title="${pc.specs} • IP: ${pc.ip || '10.10.10.101'}">
+              <span class="pc-name-txt">${pc.name}</span>
+              <span class="pc-state-indicator-badge" title="${stateConf.label} (${pcState})">${stateBadge}</span>
+            </div>
           </div>
-          <div class="centered-sub">${pc.specs} • IP: ${pc.ip || '10.10.10.101'}</div>
           ${vpnBadgeHtml}
         </div>
-        ${actionsToolbarHtml}
         ${bodyContent}
       `;
+
+      card.addEventListener('dblclick', () => {
+        if (pc.status === 'in_session') {
+          openRemoteModal(pc.id);
+        } else {
+          openStartSessionModal(pc.id);
+        }
+      });
 
       pcsCardsGrid.appendChild(card);
     });
@@ -1894,11 +1867,16 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnVpnSelect) {
     btnVpnSelect.addEventListener('click', () => {
       if (selectedPcs.size === 0) {
-        return alert('Please select at least one PC to balance and assign Gaming VPN routes!');
+        return alert('Please select at least one PC to toggle or balance Gaming VPN routes!');
+      }
+      if (selectedPcs.size === 1) {
+        const singleId = Array.from(selectedPcs)[0];
+        togglePcVPN(singleId);
+        return;
       }
       const pcIds = Array.from(selectedPcs);
       btnVpnSelect.disabled = true;
-      btnVpnSelect.innerHTML = '<span>⏳</span> Balancing VPN...';
+      btnVpnSelect.innerHTML = '<span class="power-act-icon">⏳</span>';
 
       fetch('/api/mikrotik/vpn/bulk-distribute', {
         method: 'POST',
@@ -1908,7 +1886,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(r => r.json())
         .then(res => {
           btnVpnSelect.disabled = false;
-          btnVpnSelect.innerHTML = '<span>🛡️</span> VPN Select';
+          btnVpnSelect.innerHTML = '<span class="power-act-icon">🛡️</span>';
           if (res.success) {
             window.cyberAudio?.playUnlock?.();
             const summary = (res.results || []).map(r => 
@@ -1921,9 +1899,37 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(err => {
           btnVpnSelect.disabled = false;
-          btnVpnSelect.innerHTML = '<span>🛡️</span> VPN Select';
+          btnVpnSelect.innerHTML = '<span class="power-act-icon">🛡️</span>';
           alert('Network error distributing VPN: ' + err.message);
         });
+    });
+  }
+
+  // Live Screen on Selected PC
+  const btnScreenSelect = document.getElementById('btnScreenSelect');
+  if (btnScreenSelect) {
+    btnScreenSelect.addEventListener('click', () => {
+      if (selectedPcs.size === 0) {
+        return alert('Please select a PC to view screen!');
+      }
+      const firstId = Array.from(selectedPcs)[0];
+      openRemoteModal(firstId);
+    });
+  }
+
+  // Checkout & Settle Bill on Selected PC
+  const btnCheckoutSelect = document.getElementById('btnCheckoutSelect');
+  if (btnCheckoutSelect) {
+    btnCheckoutSelect.addEventListener('click', () => {
+      if (selectedPcs.size === 0) {
+        return alert('Please select an active PC to checkout!');
+      }
+      const firstId = Array.from(selectedPcs)[0];
+      const pc = state.pcs.find(p => p.id === firstId);
+      if (!pc || pc.status !== 'in_session') {
+        return alert('Selected PC does not have an active session to checkout.');
+      }
+      openCheckoutModal(firstId);
     });
   }
 
@@ -2226,6 +2232,60 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         };
       }
+    });
+
+    // Synchronize and inject state badge icon selects
+    const STATUS_BADGE_OPTIONS = [
+      { value: '⚡', label: '⚡ Cyber Lightning' },
+      { value: '🟢', label: '🟢 Online Green' },
+      { value: '🎮', label: '🎮 Gamepad' },
+      { value: '👑', label: '👑 VIP Crown' },
+      { value: '🔥', label: '🔥 Fire Alert' },
+      { value: '⏱️', label: '⏱️ Stopwatch Timer' },
+      { value: '⏳', label: '⏳ Hourglass' },
+      { value: '💤', label: '💤 Zzz Idle' },
+      { value: '🔧', label: '🔧 Wrench Repair' },
+      { value: '🛡️', label: '🛡️ Shield Admin' },
+      { value: '⚠️', label: '⚠️ Warning Hazard' },
+      { value: '⚫', label: '⚫ Offline Dark' },
+      { value: '🚀', label: '🚀 Nitro Rocket' },
+      { value: '🎯', label: '🎯 Crosshair Target' },
+      { value: '💎', label: '💎 Diamond' },
+      { value: '🏆', label: '🏆 Trophy' },
+      { value: '🕹️', label: '🕹️ Joystick' },
+      { value: '👾', label: '👾 Retro Alien' },
+      { value: '💻', label: '💻 Esports Laptop' }
+    ];
+
+    document.querySelectorAll('.state-visual-item-card').forEach(itemCard => {
+      const key = itemCard.dataset.stateKey;
+      if (!key) return;
+      const controlsWrap = itemCard.querySelector('.state-visual-controls');
+      if (controlsWrap && !controlsWrap.querySelector('.state-badge-select')) {
+        const badgeGroup = document.createElement('div');
+        badgeGroup.className = 'control-group state-badge-group';
+        badgeGroup.innerHTML = `
+          <label>Status Badge Icon (Next to PC Name):</label>
+          <select class="form-input state-badge-select" data-state-key="${key}">
+            ${STATUS_BADGE_OPTIONS.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('')}
+          </select>
+        `;
+        controlsWrap.appendChild(badgeGroup);
+      }
+    });
+
+    document.querySelectorAll('.state-badge-select').forEach(sel => {
+      const key = sel.dataset.stateKey;
+      if (stateVisualsMap[key] && stateVisualsMap[key].badgeIcon) {
+        sel.value = stateVisualsMap[key].badgeIcon;
+      } else if (defaultStateVisuals[key] && defaultStateVisuals[key].badgeIcon) {
+        sel.value = defaultStateVisuals[key].badgeIcon;
+      }
+      sel.onchange = () => {
+        if (!currentVisuals.stateVisuals[key]) currentVisuals.stateVisuals[key] = {};
+        currentVisuals.stateVisuals[key].badgeIcon = sel.value;
+        renderPcsGrid();
+      };
     });
 
     renderMiniPreviews();
