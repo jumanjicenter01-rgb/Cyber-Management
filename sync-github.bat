@@ -1,8 +1,7 @@
 @echo off
-chcp 65001 >nul
-title رفع التعديلات إلى GitHub
+title GitHub Sync - Cyber Management
 echo ===================================================
-echo        جاري فحص ورفع التعديلات إلى GitHub...
+echo             Syncing with GitHub...
 echo ===================================================
 echo.
 
@@ -11,27 +10,25 @@ cd /d "%~dp0"
 set "GIT_EXE=C:\Program Files\Git\cmd\git.exe"
 if not exist "%GIT_EXE%" set "GIT_EXE=git"
 
-echo [1/3] فحص الملفات الجديدة والمعدلة...
+echo [1/3] Checking and adding changes...
 "%GIT_EXE%" add -A
 
 echo.
-echo [2/3] تسجيل التعديلات (Commit)...
-for /f "tokens=1-2 delims=: " %%a in ("%time%") do set current_time=%%a:%%b
-"%GIT_EXE%" commit -m "تحديث تلقائي للمشروع: %date% %current_time%"
+echo [2/3] Committing changes...
+"%GIT_EXE%" commit -m "Auto update: %date% %time%"
 
 echo.
-echo [3/3] جاري الرفع إلى GitHub (Push)...
+echo [3/3] Uploading to GitHub...
 "%GIT_EXE%" push -u origin main
 
 echo.
 if %errorlevel% equ 0 (
     echo ===================================================
-    echo       ✅ تم رفع التعديلات بنجاح إلى GitHub!
+    echo       SUCCESS: Project uploaded to GitHub!
     echo ===================================================
 ) else (
     echo ===================================================
-    echo       ❌ تنبيه: تعذر الرفع إلى GitHub.
-    echo       تأكد من اتصال الإنترنت ورابط المستودع.
+    echo       ERROR: Push failed.
     echo ===================================================
 )
 
