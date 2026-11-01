@@ -68,21 +68,24 @@
         </div>
       </div>
 
-      <!-- Header Action Buttons -->
+      <!-- Header Action Buttons (Pure Icon Only with Rich Explanatory Tooltips) -->
       <div class="header-actions">
         <!-- Theme Toggle Button -->
-        <button class="btn btn-theme-toggle" id="btnThemeToggle" title="Toggle Theme (Light / Dark)">
+        <button class="btn btn-icon-only btn-theme-toggle" id="btnThemeToggle" title="🌙 المظهر (Theme) - انقر للتبديل بين الوضع الليلي والنهاري (Dark / Light Mode)">
           <span id="themeToggleIcon">🌙</span>
-          <span id="themeToggleText">Dark Theme</span>
         </button>
-        <button class="btn btn-warning-soft" id="btnShiftOrdersBadge" style="white-space: nowrap;">
-          <span>🔔</span> Client Orders (<b id="incomingOrdersCount">0</b>)
+        <!-- Client Orders Button with Notification Counter -->
+        <button class="btn btn-icon-only btn-warning-soft" id="btnShiftOrdersBadge" title="🔔 طلبات الكافيتريا (Client Orders) - انقر لعرض وإدارة طلبات الأجهزة المباشرة">
+          <span>🔔</span>
+          <span class="btn-badge-counter" id="incomingOrdersCount">0</span>
         </button>
-        <button class="btn btn-danger-soft" id="btnCloseShiftModal">
-          <span>🔒</span> Close Shift
+        <!-- Close Shift Button -->
+        <button class="btn btn-icon-only btn-danger-soft" id="btnCloseShiftModal" title="🔒 تقفيل الوردية (Close Shift) - إغلاق الوردية الحالية وطباعة كشف الحساب والدرج">
+          <span>🔒</span>
         </button>
-        <button class="btn btn-secondary" id="btnLockMasterDashboard" title="Lock Master Screen with Password">
-          <span>🔐</span> Lock Master
+        <!-- Lock Master Screen Button -->
+        <button class="btn btn-icon-only btn-secondary" id="btnLockMasterDashboard" title="🔐 قفل اللوحة (Lock Master) - قفل لوحة الأدمن بكلمة المرور لمنع التلاعب">
+          <span>🔐</span>
         </button>
       </div>
     </header>

@@ -151,19 +151,18 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentTheme = localStorage.getItem('cyber_theme') || 'dark';
   const btnThemeToggle = document.getElementById('btnThemeToggle');
   const themeToggleIcon = document.getElementById('themeToggleIcon');
-  const themeToggleText = document.getElementById('themeToggleText');
 
   function applyTheme(theme) {
     currentTheme = theme;
     localStorage.setItem('cyber_theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
-    if (themeToggleIcon && themeToggleText) {
+    if (themeToggleIcon) {
       if (theme === 'light') {
         themeToggleIcon.textContent = '☀️';
-        themeToggleText.textContent = 'Light Theme';
+        if (btnThemeToggle) btnThemeToggle.title = '☀️ المظهر النهاري (Light Mode) - انقر للتبديل إلى الوضع الليلي';
       } else {
         themeToggleIcon.textContent = '🌙';
-        themeToggleText.textContent = 'Dark Theme';
+        if (btnThemeToggle) btnThemeToggle.title = '🌙 المظهر الليلي (Dark Mode) - انقر للتبديل إلى الوضع النهاري';
       }
     }
   }
@@ -173,7 +172,15 @@ document.addEventListener('DOMContentLoaded', () => {
     btnThemeToggle.addEventListener('click', () => {
       const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
       applyTheme(newTheme);
-      window.cyberAudio.playClick();
+      window.cyberAudio?.playClick?.();
+    });
+  }
+
+  const btnShiftOrdersBadge = document.getElementById('btnShiftOrdersBadge');
+  if (btnShiftOrdersBadge) {
+    btnShiftOrdersBadge.addEventListener('click', () => {
+      switchTab('cafeteriaTab');
+      window.cyberAudio?.playClick?.();
     });
   }
 
@@ -2126,8 +2133,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const conf = stateVisualsMap[key];
         target.innerHTML = generateHardwareSvg(conf.model, conf.color, `mini_${key}`, '', false, key, null, true);
         target.style.cursor = 'pointer';
-        target.title = 'Click to open Icon Gallery and choose style';
+        target.title = 'انقر مرتين لاختيار شكل وموديل الأيقونة (Double-click to choose icon)';
         target.onclick = (e) => {
+          e.stopPropagation();
+          openStateIconGallery(key);
+        };
+        target.ondblclick = (e) => {
+          e.stopPropagation();
+          openStateIconGallery(key);
+        };
+      }
+      const itemCard = document.querySelector(`.state-visual-item-card[data-state-key="${key}"]`);
+      if (itemCard) {
+        itemCard.ondblclick = (e) => {
+          if (e.target.closest('select') || e.target.closest('input')) return;
           e.stopPropagation();
           openStateIconGallery(key);
         };
@@ -2135,8 +2154,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const itemMeta = document.querySelector(`.state-visual-item-card[data-state-key="${key}"] .state-visual-meta`);
       if (itemMeta) {
         itemMeta.style.cursor = 'pointer';
-        itemMeta.title = 'Click to open Icon Gallery';
+        itemMeta.title = 'انقر مرتين لاختيار شكل وموديل الأيقونة (Double-click to choose icon)';
         itemMeta.onclick = (e) => {
+          e.stopPropagation();
+          openStateIconGallery(key);
+        };
+        itemMeta.ondblclick = (e) => {
           e.stopPropagation();
           openStateIconGallery(key);
         };
@@ -2597,7 +2620,319 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-});
+  // -------------------------------------------------------------
+  // MIKROTIK ROUTEROS & GAMING VPN CONTROLLER
+  // -------------------------------------------------------------
+  const btnTestMikrotikConn = document.getElementById('btnTestMikrotikConn');
+  const btnSaveMikrotikSettings = document.getElementById('btnSaveMikrotikSettings');
+  const mtSimulationMode = document.getElementById('mtSimulationMode');
+  const btnProvisionMikrotikVpn = document.getElementById('btnProvisionMikrotikVpn');
+  const btnCopyMikrotikScript = document.getElementById('btnCopyMikrotikScript');
+  const btnCopyScriptModal = document.getElementById('btnCopyScriptModal');
+  const btnOpenAddVpnServerModal = document.getElementById('btnOpenAddVpnServerModal');
+  const btnSubmitAddVpnServer = document.getElementById('btnSubmitAddVpnServer');
+  const provisionLogBox = document.getElementById('provisionLogBox');
+
+  function updateMikrotikStatusUI(status) {
+    const pill = document.getElementById('mtStatusPill');
+    if (!pill) return;
+    if (status && status.connected) {
+      pill.className = 'mt-conn-status-pill connected';
+      pill.style.background = 'rgba(5, 255, 161, 0.15)';
+      pill.style.borderColor = 'var(--neon-green, #05ffa1)';
+      pill.style.color = 'var(--neon-green, #05ffa1)';
+      const modelLabel = status.model || (status.simulationMode ? 'Lab Simulator (v7.14)' : 'RouterOS');
+      pill.innerHTML = `🟢 Connected • Verified (${modelLabel})`;
+    } else {
+      pill.className = 'mt-conn-status-pill disconnected';
+      pill.style.background = 'rgba(255, 0, 85, 0.15)';
+      pill.style.borderColor = 'var(--neon-pink, #ff0055)';
+      pill.style.color = 'var(--neon-pink, #ff0055)';
+      pill.innerHTML = `🔴 Disconnected • Unverified`;
+    }
+  }
+
+  function renderVpnServersTable(servers) {
+    const tbody = document.getElementById('vpnServersTableBody');
+    if (!tbody) return;
+    if (!servers || servers.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:1.5rem;">No VPN servers configured yet.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = servers.map(srv => `
+      <tr>
+        <td style="font-size:1.3rem;">${srv.flag || '🌐'}</td>
+        <td style="font-weight:700; color:#fff;">${srv.name}</td>
+        <td><code>${srv.ip}</code></td>
+        <td><span class="badge" style="background:rgba(5,255,161,0.15); color:var(--neon-green); border:1px solid rgba(5,255,161,0.3); padding:2px 8px; border-radius:6px; font-weight:700;">${srv.ping || '25ms'}</span></td>
+        <td><span style="color:var(--neon-green); font-size:0.85rem; font-weight:600;">● Active</span></td>
+        <td>
+          <button class="btn btn-danger-soft btn-xs btn-delete-vpn-server" data-server-id="${srv.id}" style="padding:4px 10px; font-size:0.75rem; border-radius:6px; cursor:pointer;" title="حذف هذا السيرفر من الشبكة">
+            🗑️ Delete
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    tbody.querySelectorAll('.btn-delete-vpn-server').forEach(btn => {
+      btn.onclick = () => {
+        const id = btn.dataset.serverId;
+        if (!confirm('Are you sure you want to remove this VPN server from the pool?')) return;
+        fetch(`/api/mikrotik/servers/${id}`, { method: 'DELETE' })
+          .then(r => r.json())
+          .then(res => {
+            if (res.success) {
+              renderVpnServersTable(res.servers);
+              window.cyberAudio?.playClick?.();
+            }
+          })
+          .catch(err => alert('Failed to delete server: ' + err.message));
+      };
+    });
+  }
+
+  function renderMikrotikSection() {
+    fetch('/api/mikrotik/config')
+      .then(r => r.json())
+      .then(res => {
+        if (!res.success || !res.mikrotik) return;
+        const mt = res.mikrotik;
+        if (!state.settings) state.settings = {};
+        state.settings.mikrotik = mt;
+
+        const hostEl = document.getElementById('mtHost');
+        const portEl = document.getElementById('mtPort');
+        const restPortEl = document.getElementById('mtRestPort');
+        const userEl = document.getElementById('mtUsername');
+        const passEl = document.getElementById('mtPassword');
+        const vpnListEl = document.getElementById('mtVpnList');
+        const simToggleEl = document.getElementById('mtSimulationMode');
+
+        if (hostEl) hostEl.value = mt.host || '192.168.88.1';
+        if (portEl) portEl.value = mt.port || 8728;
+        if (restPortEl) restPortEl.value = mt.restPort || 80;
+        if (userEl) userEl.value = mt.username || 'admin';
+        if (passEl && mt.password) passEl.value = mt.password;
+        if (vpnListEl) vpnListEl.value = mt.vpnList || 'GAMING-VPN';
+        if (simToggleEl) simToggleEl.checked = !!mt.simulationMode;
+
+        updateMikrotikStatusUI(mt);
+        renderVpnServersTable(mt.vpnServers || []);
+      })
+      .catch(err => console.error('Failed to load MikroTik config:', err));
+  }
+
+  if (btnTestMikrotikConn) {
+    btnTestMikrotikConn.addEventListener('click', () => {
+      btnTestMikrotikConn.disabled = true;
+      btnTestMikrotikConn.innerHTML = '<span>⏳</span> Testing RouterOS...';
+
+      const payload = {
+        host: document.getElementById('mtHost')?.value || '192.168.88.1',
+        port: parseInt(document.getElementById('mtPort')?.value) || 8728,
+        restPort: parseInt(document.getElementById('mtRestPort')?.value) || 80,
+        username: document.getElementById('mtUsername')?.value || 'admin',
+        password: document.getElementById('mtPassword')?.value || '',
+        vpnList: document.getElementById('mtVpnList')?.value || 'GAMING-VPN',
+        simulationMode: !!document.getElementById('mtSimulationMode')?.checked
+      };
+
+      fetch('/api/mikrotik/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(r => r.json())
+      .then(() => fetch('/api/mikrotik/test', { method: 'POST' }))
+      .then(r => r.json().then(data => ({ ok: r.ok, data })))
+      .then(({ ok, data }) => {
+        btnTestMikrotikConn.disabled = false;
+        btnTestMikrotikConn.innerHTML = '<span>⚡</span> Test Connection';
+        if (ok && data.connected) {
+          updateMikrotikStatusUI({ connected: true, model: data.model, simulationMode: payload.simulationMode });
+          window.cyberAudio?.playUnlock?.();
+          alert(`✅ تم الاتصال براوتر مايكروتك بنجاح!\nالراوتر: ${data.model}\nالرسالة: ${data.message}`);
+        } else {
+          updateMikrotikStatusUI({ connected: false });
+          window.cyberAudio?.playWarning?.();
+          alert(`⚠️ تعذر الاتصال بمايكروتك:\n${data.error || data.message || 'Connection failed'}\nتأكد من عنوان IP، أو قم بتفعيل وضع المحاكاة (Hardware Simulation Mode) للتجربة.`);
+        }
+      })
+      .catch(err => {
+        btnTestMikrotikConn.disabled = false;
+        btnTestMikrotikConn.innerHTML = '<span>⚡</span> Test Connection';
+        updateMikrotikStatusUI({ connected: false });
+        alert('فشل الاتصال: ' + err.message);
+      });
+    });
+  }
+
+  if (btnSaveMikrotikSettings) {
+    btnSaveMikrotikSettings.addEventListener('click', () => {
+      const payload = {
+        host: document.getElementById('mtHost')?.value || '192.168.88.1',
+        port: parseInt(document.getElementById('mtPort')?.value) || 8728,
+        restPort: parseInt(document.getElementById('mtRestPort')?.value) || 80,
+        username: document.getElementById('mtUsername')?.value || 'admin',
+        password: document.getElementById('mtPassword')?.value || '',
+        vpnList: document.getElementById('mtVpnList')?.value || 'GAMING-VPN',
+        simulationMode: !!document.getElementById('mtSimulationMode')?.checked
+      };
+
+      btnSaveMikrotikSettings.disabled = true;
+      btnSaveMikrotikSettings.innerHTML = '<span>💾</span> Saving...';
+
+      fetch('/api/mikrotik/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(r => r.json())
+      .then(res => {
+        btnSaveMikrotikSettings.disabled = false;
+        btnSaveMikrotikSettings.innerHTML = '<span>💾</span> Save Router Settings';
+        if (res.success) {
+          if (!state.settings) state.settings = {};
+          state.settings.mikrotik = res.mikrotik;
+          window.cyberAudio?.playCash?.();
+          alert('💾 تم حفظ إعدادات راوتر مايكروتك بنجاح!');
+        }
+      })
+      .catch(err => {
+        btnSaveMikrotikSettings.disabled = false;
+        btnSaveMikrotikSettings.innerHTML = '<span>💾</span> Save Router Settings';
+        alert('حدث خطأ أثناء الحفظ: ' + err.message);
+      });
+    });
+  }
+
+  if (mtSimulationMode) {
+    mtSimulationMode.addEventListener('change', () => {
+      const isSim = mtSimulationMode.checked;
+      fetch('/api/mikrotik/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ simulationMode: isSim })
+      })
+      .then(r => r.json())
+      .then(() => fetch('/api/mikrotik/test', { method: 'POST' }))
+      .then(r => r.json())
+      .then(res => {
+        updateMikrotikStatusUI(res);
+        if (isSim) {
+          window.cyberAudio?.playUnlock?.();
+        }
+      });
+    });
+  }
+
+  if (btnProvisionMikrotikVpn) {
+    btnProvisionMikrotikVpn.addEventListener('click', () => {
+      btnProvisionMikrotikVpn.disabled = true;
+      btnProvisionMikrotikVpn.innerHTML = '<span>⏳</span> Provisioning VPN...';
+
+      fetch('/api/mikrotik/provision-vpn', { method: 'POST' })
+        .then(r => r.json().then(data => ({ ok: r.ok, data })))
+        .then(({ ok, data }) => {
+          btnProvisionMikrotikVpn.disabled = false;
+          btnProvisionMikrotikVpn.innerHTML = '<span>⚡</span> Provision VPN on MikroTik Now';
+          if (ok && data.success) {
+            if (provisionLogBox) {
+              provisionLogBox.style.display = 'block';
+              provisionLogBox.innerHTML = `
+                <div style="color:var(--neon-green); font-weight:bold; margin-bottom:0.5rem;">[SUCCESS] MikroTik RouterOS Gaming VPN Provisioned:</div>
+                <pre style="margin:0; white-space:pre-wrap; font-size:0.75rem; color:#a0f0d0;">${data.script}</pre>
+              `;
+            }
+            window.cyberAudio?.playUnlock?.();
+            alert('🚀 تم نشر قواعد Gaming VPN وتوجيه الترافيك على راوتر مايكروتك بنجاح!');
+          } else {
+            window.cyberAudio?.playWarning?.();
+            alert('⚠️ ' + (data.error || 'فشل نشر القواعد. تأكد من اتصال الراوتر أو تفعيل وضع المحاكاة.'));
+          }
+        })
+        .catch(err => {
+          btnProvisionMikrotikVpn.disabled = false;
+          btnProvisionMikrotikVpn.innerHTML = '<span>⚡</span> Provision VPN on MikroTik Now';
+          alert('حدث خطأ: ' + err.message);
+        });
+    });
+  }
+
+  if (btnCopyMikrotikScript) {
+    btnCopyMikrotikScript.addEventListener('click', () => {
+      const vpnList = document.getElementById('mtVpnList')?.value || 'GAMING-VPN';
+      const scriptText = `# ==============================================================
+# CyberPulse Gaming Lounge - MikroTik RouterOS Setup Script
+# ==============================================================
+/interface wireguard add listen-port=51820 name=vpn-gaming-out comment="CyberPulse Gaming VPN Tunnel"
+/ip firewall address-list add list=${vpnList} address=127.0.0.1 comment="VPN Initializer"
+/ip firewall address-list remove [find list=${vpnList} address=127.0.0.1]
+/routing table add name=to_GAMING_VPN fib
+/ip route add dst-address=0.0.0.0/0 gateway=vpn-gaming-out routing-table=to_GAMING_VPN comment="CyberPulse Route to VPN"
+/ip firewall mangle add chain=prerouting src-address-list=${vpnList} action=mark-routing new-routing-mark=to_GAMING_VPN passthrough=no comment="CyberPulse Gaming Traffic to VPN"
+/ip firewall nat add chain=srcnat out-interface=vpn-gaming-out action=masquerade comment="CyberPulse VPN Masquerade"
+:log info "CyberPulse Gaming VPN rules successfully provisioned on RouterOS"`;
+
+      const textarea = document.getElementById('mikrotikScriptTextarea');
+      if (textarea) textarea.value = scriptText;
+      openModal('mikrotikScriptModal');
+    });
+  }
+
+  if (btnCopyScriptModal) {
+    btnCopyScriptModal.addEventListener('click', () => {
+      const textarea = document.getElementById('mikrotikScriptTextarea');
+      if (textarea) {
+        navigator.clipboard.writeText(textarea.value).then(() => {
+          btnCopyScriptModal.innerHTML = '<span>✅</span> Copied to Clipboard!';
+          window.cyberAudio?.playClick?.();
+          setTimeout(() => {
+            btnCopyScriptModal.innerHTML = '<span>📄</span> Copy Script';
+          }, 2500);
+        });
+      }
+    });
+  }
+
+  if (btnOpenAddVpnServerModal) {
+    btnOpenAddVpnServerModal.addEventListener('click', () => {
+      openModal('addVpnServerModal');
+    });
+  }
+
+  if (btnSubmitAddVpnServer) {
+    btnSubmitAddVpnServer.addEventListener('click', () => {
+      const name = document.getElementById('newVpnName')?.value?.trim();
+      const ip = document.getElementById('newVpnIp')?.value?.trim();
+      const ping = document.getElementById('newVpnPing')?.value?.trim() || '25ms';
+      const flag = document.getElementById('newVpnFlag')?.value?.trim() || '🌐';
+
+      if (!name || !ip) {
+        alert('Please enter both VPN server name and IP address.');
+        return;
+      }
+
+      fetch('/api/mikrotik/servers/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, ip, ping, flag })
+      })
+      .then(r => r.json().then(data => ({ ok: r.ok, data })))
+      .then(({ ok, data }) => {
+        if (ok && data.success) {
+          renderVpnServersTable(data.servers);
+          closeModal('addVpnServerModal');
+          document.getElementById('newVpnName').value = '';
+          document.getElementById('newVpnIp').value = '';
+          window.cyberAudio?.playCash?.();
+          alert(`✅ Added VPN Server "${name}" successfully!`);
+        } else {
+          alert('⚠️ ' + (data.error || 'Failed to add VPN server'));
+        }
+      });
+    });
+  }
 
   // -------------------------------------------------------------
   // DOUBLE-CLICK DEVICE ICON PICKER CONTROLLER
@@ -2800,6 +3135,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   function selectModelForState(stateKey, modelId) {
+    if (!currentVisuals.stateVisuals) currentVisuals.stateVisuals = {};
     if (!currentVisuals.stateVisuals[stateKey]) {
       currentVisuals.stateVisuals[stateKey] = {};
     }
@@ -2809,11 +3145,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const sel = document.querySelector(`.state-model-select[data-state-key="${stateKey}"]`);
     if (sel) sel.value = modelId;
 
+    // Persist immediately to localStorage and server
+    localStorage.setItem('cyber_custom_visuals', JSON.stringify(currentVisuals));
+    fetch('/api/settings/visuals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(currentVisuals)
+    }).catch(e => console.error(e));
+
     renderMiniPreviews();
     renderLivePreview();
+    renderPcsGrid();
 
     const modal = document.getElementById('stateIconGalleryModal');
     if (modal) modal.classList.remove('active');
 
     window.cyberAudio?.playUnlock?.();
   }
+
+});
