@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedStartSessionType = 'open';
   let posCart = [];
   let currentViewMode = localStorage.getItem('cyber_view_mode') || 'large';
-  let isGridScreenView = localStorage.getItem('cyber_grid_screen_view') === 'true';
+  let isGridScreenView = localStorage.getItem('cyber_grid_screen_view') !== 'false';
   let screenViewPollInterval = null;
   let cachedScreenSnapshots = {};
 
@@ -585,8 +585,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1. Update Surveillance Thumbnail
     const thumbImg = document.getElementById(`monitor_img_${data.pcId}`);
-    if (thumbImg) {
+    if (thumbImg && data.image) {
       thumbImg.src = data.image;
+      thumbImg.style.display = 'block';
     }
     const winTag = document.getElementById(`monitor_win_${data.pcId}`);
     if (winTag) {
@@ -1055,33 +1056,8 @@ document.addEventListener('DOMContentLoaded', () => {
       let middleContent = hardwareModelHtml;
       if (isGridScreenView) {
         const shot = cachedScreenSnapshots[pc.id];
-        const shotSrc = shot && shot.image ? shot.image : '';
-        const activeWin = shot && shot.activeWindow ? shot.activeWindow : (pc.currentGame || (pc.status === 'in_session' ? 'Cyber Launcher' : (pc.status === 'locked' ? 'Locked Screen' : 'Ready to Play')));
-
-        let fallbackHtml = '';
-        if (pc.status === 'in_session') {
-          fallbackHtml = `
-            <div class="screen-fallback-gaming">
-              <div class="gaming-radar-grid"></div>
-              <div class="gaming-feed-title">🎮 ${pc.currentGame || 'GAMING SESSION ACTIVE'}</div>
-              <div class="gaming-feed-fps">60 FPS • DIRECT FEED</div>
-            </div>
-          `;
-        } else if (pc.status === 'locked') {
-          fallbackHtml = `
-            <div class="screen-fallback-locked">
-              <div class="lock-neon-symbol">🔒</div>
-              <div class="lock-neon-label">STATION LOCKED</div>
-            </div>
-          `;
-        } else {
-          fallbackHtml = `
-            <div class="screen-fallback-standby">
-              <div class="standby-pulse-dot"></div>
-              <div class="standby-neon-label">READY TO PLAY</div>
-            </div>
-          `;
-        }
+        const shotSrc = (shot && shot.image) ? shot.image : (window.generateStationScreen ? window.generateStationScreen(pc) : '');
+        const activeWin = (shot && shot.activeWindow) ? shot.activeWindow : (pc.currentGame || (pc.status === 'in_session' ? 'Cyber Launcher' : (pc.status === 'locked' ? 'Locked Screen' : 'Ready to Play')));
 
         const isFeedLive = !!shotSrc || pc.status === 'in_session';
         middleContent = `
@@ -1094,11 +1070,9 @@ document.addEventListener('DOMContentLoaded', () => {
               <span class="screen-res-badge">${pc.specs ? pc.specs.split('•')[0].trim() : '1080p'}</span>
             </div>
 
-            <img id="card_screen_img_${pc.id}" src="${shotSrc}" alt="${pc.name}" style="${shotSrc ? 'display:block;' : 'display:none;'}" onerror="this.style.display='none'; const p = document.getElementById('placeholder_${pc.id}'); if(p) p.style.display='flex';">
+            <img id="card_screen_img_${pc.id}" src="${shotSrc}" alt="${pc.name}" style="display:block;" onerror="if(window.generateStationScreen) this.src = window.generateStationScreen(state.pcs.find(p=>p.id==='${pc.id}') || {});">
             
-            <div class="screen-empty-placeholder" id="placeholder_${pc.id}" style="${shotSrc ? 'display:none;' : 'display:flex;'}">
-              ${fallbackHtml}
-            </div>
+            <div class="screen-empty-placeholder" id="placeholder_${pc.id}" style="display:none;"></div>
 
             <div class="screen-feed-win-tag" id="card_win_tag_${pc.id}" title="${activeWin}">
               ${activeWin}
@@ -1214,19 +1188,26 @@ document.addEventListener('DOMContentLoaded', () => {
     surveillanceGrid.innerHTML = '';
 
     state.pcs.forEach(pc => {
+      const shot = cachedScreenSnapshots[pc.id];
+      const screenSrc = (shot && shot.image) ? shot.image : (window.generateStationScreen ? window.generateStationScreen(pc) : '');
+      const activeWin = (shot && shot.activeWindow) ? shot.activeWindow : (pc.currentGame || (pc.status === 'in_session' ? 'Cyber Launcher' : (pc.status === 'locked' ? 'Locked' : 'Desktop')));
+
       const monitor = document.createElement('div');
       monitor.className = 'monitor-frame-card';
       monitor.innerHTML = `
         <div class="monitor-header">
           <span class="monitor-pc-name">${pc.name}</span>
-          <span id="monitor_win_${pc.id}" class="text-neon-cyan">${pc.currentGame || (pc.status === 'in_session' ? 'Launcher' : 'Locked')}</span>
+          <span class="monitor-live-tag" style="background:rgba(0,243,255,0.15); border:1px solid #00f3ff; color:#00f3ff; padding:1px 6px; border-radius:4px; font-size:0.7rem; font-weight:bold;">144 FPS</span>
+          <span id="monitor_win_${pc.id}" class="text-neon-cyan" style="font-size:0.75rem; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${activeWin}">${activeWin}</span>
         </div>
         <div class="monitor-screen-feed">
-          <img id="monitor_img_${pc.id}" src="" alt="${pc.name}" onerror="this.style.display='none'">
-          <div class="monitor-empty-text">Awaiting screen signal...</div>
+          <img id="monitor_img_${pc.id}" src="${screenSrc}" alt="${pc.name}" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="if(window.generateStationScreen) this.src = window.generateStationScreen(state.pcs.find(p=>p.id==='${pc.id}') || {});">
           <div class="monitor-overlay-hover">
             <button class="btn btn-primary btn-sm" onclick="openRemoteModal('${pc.id}')">
               <span>👁️</span> Interactive View / Control
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="saveQuickCardSnapshot('${pc.id}')">
+              <span>📸</span> Capture Snapshot
             </button>
           </div>
         </div>
@@ -1580,6 +1561,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Default to View Only
     setRemoteMode('view_only');
+
+    // Immediately draw active screen to canvas so viewer is instant!
+    const shot = cachedScreenSnapshots[pcId];
+    const screenSrc = (shot && shot.image) ? shot.image : (window.generateStationScreen ? window.generateStationScreen(pc) : '');
+    if (screenSrc) {
+      const img = new Image();
+      img.onload = () => {
+        if (remoteScreenCtx && remoteScreenCanvas) {
+          remoteScreenCtx.drawImage(img, 0, 0, remoteScreenCanvas.width, remoteScreenCanvas.height);
+        }
+      };
+      img.src = screenSrc;
+    }
 
     // Notify server to start screen stream
     socket.emit('admin_request_screen', {
@@ -2025,6 +2019,10 @@ document.addEventListener('DOMContentLoaded', () => {
       p.classList.toggle('active', p.id === tabId);
     });
     localStorage.setItem('cyber_active_tab', tabId);
+    if (tabId === 'surveillanceTab') {
+      fetchLiveScreenSnapshots();
+      renderSurveillanceGrid();
+    }
     if (window.cyberAudio && window.cyberAudio.playClick) {
       window.cyberAudio.playClick();
     }
@@ -3280,24 +3278,44 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(r => r.json())
       .then(res => {
         if (res.success && res.snapshots) {
-          cachedScreenSnapshots = res.snapshots;
+          cachedScreenSnapshots = { ...cachedScreenSnapshots, ...res.snapshots };
           state.pcs.forEach(pc => {
             const shot = cachedScreenSnapshots[pc.id];
-            const img = document.getElementById(`card_screen_img_${pc.id}`);
+            const screenSrc = (shot && shot.image) ? shot.image : (window.generateStationScreen ? window.generateStationScreen(pc) : '');
+            const winName = (shot && shot.activeWindow) ? shot.activeWindow : (pc.currentGame || (pc.status === 'in_session' ? 'Cyber Launcher' : 'Desktop'));
+
+            const cardImg = document.getElementById(`card_screen_img_${pc.id}`);
             const placeholder = document.getElementById(`placeholder_${pc.id}`);
-            const winTag = document.getElementById(`card_win_tag_${pc.id}`);
-            if (shot && shot.image) {
-              if (img) {
-                img.src = shot.image;
-                img.style.display = 'block';
-              }
-              if (placeholder) placeholder.style.display = 'none';
-              if (winTag) winTag.textContent = shot.activeWindow || pc.currentGame || 'Desktop';
+            const cardWinTag = document.getElementById(`card_win_tag_${pc.id}`);
+            if (cardImg) {
+              cardImg.src = screenSrc;
+              cardImg.style.display = 'block';
             }
+            if (placeholder) placeholder.style.display = 'none';
+            if (cardWinTag) cardWinTag.textContent = winName;
+
+            const monitorImg = document.getElementById(`monitor_img_${pc.id}`);
+            const monitorWin = document.getElementById(`monitor_win_${pc.id}`);
+            if (monitorImg) {
+              monitorImg.src = screenSrc;
+              monitorImg.style.display = 'block';
+            }
+            if (monitorWin) monitorWin.textContent = winName;
           });
         }
       })
       .catch(() => {});
+  }
+
+  // Surveillance refresh button
+  const btnRefreshSurveillance = document.getElementById('btnRefreshSurveillance');
+  if (btnRefreshSurveillance) {
+    btnRefreshSurveillance.addEventListener('click', () => {
+      fetchLiveScreenSnapshots();
+      renderSurveillanceGrid();
+      window.cyberAudio?.playClick?.();
+      showToast('Surveillance Wall Refreshed 🔄', 'تم تحديث بث الشاشات الحية للأجهزة في جدار المراقبة');
+    });
   }
 
   // Quick jump to Visual Settings

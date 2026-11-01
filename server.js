@@ -10,12 +10,39 @@ const net = require('net');
 const crypto = require('crypto');
 const { exec } = require('child_process');
 const QRCode = require('qrcode');
+const { generateStationScreen } = require('./screenGenerator');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' }
 });
+
+// Hook io.emit for pc_updated and state_updated to automatically keep live screen feeds synced
+const originalIoEmit = io.emit.bind(io);
+io.emit = function(event, ...args) {
+  if (event === 'pc_updated' && args[0] && args[0].id) {
+    const pc = args[0];
+    const lastShot = db.screenSnapshots && db.screenSnapshots[pc.id];
+    const isRealStream = lastShot && lastShot.isRealStream && (Date.now() - lastShot.timestamp < 5000);
+    if (!isRealStream && db && db.screenSnapshots) {
+      db.screenSnapshots[pc.id] = {
+        image: generateStationScreen(pc),
+        timestamp: Date.now(),
+        activeWindow: pc.currentGame || (pc.status === 'in_session' ? 'Cyber Launcher' : (pc.status === 'locked' ? 'Locked Screen' : 'Desktop'))
+      };
+      io.to('admins').emit('screen_frame_relay', {
+        pcId: pc.id,
+        image: db.screenSnapshots[pc.id].image,
+        activeWindow: db.screenSnapshots[pc.id].activeWindow,
+        timestamp: db.screenSnapshots[pc.id].timestamp
+      });
+    }
+  } else if (event === 'state_updated') {
+    if (typeof syncScreenSnapshots === 'function') syncScreenSnapshots();
+  }
+  return originalIoEmit(event, ...args);
+};
 
 const PORT = process.env.PORT || 4000;
 
@@ -399,6 +426,24 @@ function loadData() {
   }
 }
 loadData();
+
+function syncScreenSnapshots(force = false) {
+  if (!db || !db.pcs) return;
+  db.pcs.forEach(pc => {
+    const existing = db.screenSnapshots[pc.id];
+    const isRealStream = existing && existing.isRealStream && (Date.now() - existing.timestamp < 5000);
+    const expectedWindow = pc.currentGame || (pc.status === 'in_session' ? 'Cyber Launcher' : (pc.status === 'locked' ? 'Locked Screen' : 'Desktop'));
+
+    if (!existing || !existing.image || (!isRealStream && (force || existing.activeWindow !== expectedWindow))) {
+      db.screenSnapshots[pc.id] = {
+        image: generateStationScreen(pc),
+        timestamp: Date.now(),
+        activeWindow: expectedWindow
+      };
+    }
+  });
+}
+syncScreenSnapshots(true);
 
 process.on('SIGINT', () => { saveData(); process.exit(); });
 process.on('SIGTERM', () => { saveData(); process.exit(); });
@@ -1428,6 +1473,7 @@ app.get('/api/screenshots', (req, res) => {
 });
 
 app.get('/api/surveillance/snapshots', (req, res) => {
+  syncScreenSnapshots();
   res.json({ success: true, snapshots: db.screenSnapshots || {} });
 });
 
@@ -3269,7 +3315,8 @@ app.post('/api/wordfilter/test-trigger', (req, res) => {
     db.screenSnapshots[data.pcId] = {
       image: data.image,
       timestamp: Date.now(),
-      activeWindow: data.activeWindow
+      activeWindow: data.activeWindow,
+      isRealStream: true
     };
     io.to('admins').emit('screen_frame_relay', data);
 
