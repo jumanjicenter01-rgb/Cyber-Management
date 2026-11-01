@@ -2626,7 +2626,7 @@ async function issueHotspotVoucher({ gigabytes, speedProfile, price, customerNam
           '=profile=' + profile,
           '=limit-bytes-total=' + limitBytes.toString(),
           '=limit-uptime=' + validityDays + 'd',
-          '=comment=' + `CyberPulse-باقة ${gb} جيجا (${gb} GB)-سعر: ${unitPrice} ج`
+          '=comment=' + `CyberPulse-باقة ${gb} جيجا (${gb} GB)`
         ]
       );
     } catch (mtErr) {
@@ -2706,7 +2706,7 @@ async function issueHotspotVoucher({ gigabytes, speedProfile, price, customerNam
   }
 
   saveData();
-  addAudit('WiFi Voucher Issued', `Issued ${gb}GB voucher [${pin}] (${profile}) for ${unitPrice} EGP`, 'success');
+  addAudit('WiFi Voucher Issued', `Issued ${gb}GB voucher [${pin}] (${profile})`, 'success');
 
   io.emit('voucher_created', voucher);
   if (addToDrawer) io.emit('shift_updated', db.shift);

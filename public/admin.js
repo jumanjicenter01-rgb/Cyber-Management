@@ -4250,7 +4250,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!tbody) return;
 
     if (!vouchers || vouchers.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="9" style="padding:1.8rem; text-align:center; color:var(--text-muted);">لا توجد كروت واي فاي مصدرة حالياً. اضغط على زر <b>🎫 إصدار كارت واي فاي</b> للبدء.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="padding:1.8rem; text-align:center; color:var(--text-muted);">لا توجد كروت واي فاي مصدرة حالياً. اضغط على زر <b>🎫 إصدار كارت واي فاي</b> للبدء.</td></tr>`;
       return;
     }
 
@@ -4295,9 +4295,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="badge" style="background:rgba(5,255,161,0.12); color:var(--neon-green); border:1px solid rgba(5,255,161,0.3); padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.75rem;">
               ${speedLabel}
             </span>
-          </td>
-          <td>
-            <b style="color:var(--neon-green); font-size:0.92rem;">${Number(v.price).toFixed(0)} <small>جنيه</small></b>
           </td>
           <td style="font-size:0.76rem; color:var(--text-muted);">${createdDateStr}</td>
           <td>
