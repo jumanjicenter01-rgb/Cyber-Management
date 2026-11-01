@@ -2568,11 +2568,11 @@ let vpnWatchdogFailCount = 0;
 let isVpnFailoverRunning = false;
 
 async function triggerVpnAutoFailover(mt) {
-  // Verified European & low-latency SSTP gaming nodes (0% packet loss)
+  // Ultra low-latency Southern European SSTP gaming nodes (80ms - 0% packet loss)
   const backupNodes = [
-    '143.246.221.2', '46.183.135.174', '187.138.34.255'
+    '150.40.105.17', '150.40.105.16', '150.40.105.4', '150.40.105.12'
   ];
-  const currentIp = mt.vpnServer || '143.246.221.2';
+  const currentIp = mt.vpnServer || '150.40.105.17';
   const candidate = backupNodes.find(ip => ip !== currentIp) || backupNodes[0];
 
   try {

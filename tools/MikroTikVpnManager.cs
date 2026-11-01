@@ -351,7 +351,7 @@ namespace MikroTikVpnManager
         public string Host = "10.10.10.1";
         public int Port = 8728;
         public string Username = "admin";
-        public string Password = "password";
+        public string Password = "0184255";
         public string AddressList = "GAMING-VPN";
 
         private static string ConfigPath
